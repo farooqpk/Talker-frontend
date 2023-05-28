@@ -1,11 +1,12 @@
 
-const App=()=>{
-  
+import Layout from "./Layout";
 
-  return <div>helo</div>
-    
-     
-  
+function App(){
+  return (
+    <>
+      <Layout />
+    </>
+  );
 }
 
-export default App
+export default App;
