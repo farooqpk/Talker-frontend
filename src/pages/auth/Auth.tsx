@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import authPageImg from "../../assets/images/authImg.webp";
-import {SiGoogle } from "react-icons/si";
+import { SiGoogle } from "react-icons/si";
 
 const Auth = () => {
   return (
@@ -25,10 +25,10 @@ const Auth = () => {
               animate={{ opacity: 1, scale: 1 }}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 1.1 }}
-              className="w-[71%] md:w-[30%] h-12 md:h-16 rounded-3xl mb-16 flex justify-center items-center bg-primary appearance-none"
+              className="w-[71%] md:w-[30%] h-12 md:h-16 rounded-3xl md:rounded-full mb-16 flex justify-center items-center bg-primary appearance-none"
             >
               <span className="mr-3">
-                <SiGoogle size={27}/>
+                <SiGoogle size={27} className="text-white" />
               </span>
               <span className="text-lg md:text-2xl font-medium md:font-semibold font-sans text-white">
                 Continue with Google
