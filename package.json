@@ -10,7 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.11.0",
     "@reduxjs/toolkit": "^1.9.5",
+    "axios": "^1.4.0",
     "daisyui": "^2.51.6",
     "framer-motion": "^10.12.14",
     "react": "^18.2.0",
