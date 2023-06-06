@@ -2,19 +2,21 @@ import { motion } from "framer-motion";
 import authPageImg from "../../assets/images/authImg.webp";
 import { SiGoogle } from "react-icons/si";
 import { useGoogleLogin } from "@react-oauth/google";
-import { ReactElement } from "react";
-import { usePostMethod } from "../../hooks/apiCall/usePostMethod";
+import { ReactElement, useState } from "react";
+import { useGetMethod } from "../../hooks/apiCall/useGetMethod";
+import ThemeToggle from "../../components/ui/themeToggle";
 
-const Auth = ():ReactElement => {
-
-  const {mutate} = usePostMethod('/login',{name:'farooq'})
+const Auth = (): ReactElement => {
+  const [token, setToken] = useState<string>("");
+  const {} = useGetMethod("sendAccessToken", "/login", {
+    Authorization: `Bearer ${token}`,
+  });
 
   const handleContinueWithGoogle = useGoogleLogin({
-    onSuccess(tokenResponse):void {
-      console.log(tokenResponse);
-      mutate()
+    onSuccess: (tokenResponse): void => {
+      setToken(tokenResponse.access_token);
     },
-    onError(errorResponse):void{
+    onError(errorResponse): void {
       console.log(errorResponse);
     },
   });
@@ -28,10 +30,10 @@ const Auth = ():ReactElement => {
             <img src={authPageImg} className="animate-bounce" />
           </div>
           <div className="px-3 mx-2 flex flex-col gap-1 md:gap-4 text-center flex-wrap ">
-            <h1 className="font-bold text-xl md:text-3xl font-sans">
+            <h1 className="font-bold text-xl md:text-3xl">
               Enjoy the new experiance of chatting with global friends
             </h1>
-            <span className=" text-sm md:text-2xl text-gray-400 font-sans">
+            <span className=" text-sm md:text-2xl text-gray-400">
               Connect people around the world for free
             </span>
           </div>
@@ -47,7 +49,7 @@ const Auth = ():ReactElement => {
               <span className="mr-3">
                 <SiGoogle size={27} className="text-white" />
               </span>
-              <span className="text-lg md:text-2xl font-medium md:font-semibold font-sans text-white">
+              <span className="text-lg md:text-2xl font-medium md:font-semibold text-white">
                 Continue with Google
               </span>
             </motion.button>

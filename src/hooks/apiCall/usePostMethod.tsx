@@ -1,9 +1,13 @@
 import axios from "axios";
 import { useMutation } from "react-query";
 
-const apiCall = async (data: any, endpoint: string) => {
-  try {
-    const response = await axios.post(
+
+export const usePostMethod = (endpoint: string) => {
+
+  return useMutation(async (data: string) => {
+   try {
+
+    return await axios.post(
       `${import.meta.env.VITE_SERVER_URL}${endpoint}`,
       {
         data,
@@ -15,17 +19,14 @@ const apiCall = async (data: any, endpoint: string) => {
         withCredentials: true,
       }
     );
-    return response.data;
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-export const usePostMethod = (endpoint: string, postData: any) => {
-  return useMutation(
-    async () => {
-      return await apiCall(postData, endpoint);
+   } catch (error:any) {
+     if (error.response) {
+      throw new Error(error.response.data.message);
+    } else {
+      throw new Error(
+        "Check your internet connection,or please try again later"
+      );
     }
-    // { onSuccess: (data) => console.log(data) }
-  );
+   }
+  });
 };
