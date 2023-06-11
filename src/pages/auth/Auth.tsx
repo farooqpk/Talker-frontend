@@ -2,19 +2,16 @@ import { motion } from "framer-motion";
 import authPageImg from "../../assets/images/authImg.webp";
 import { SiGoogle } from "react-icons/si";
 import { useGoogleLogin } from "@react-oauth/google";
-import { ReactElement, useState } from "react";
-import { useGetMethod } from "../../hooks/apiCall/useGetMethod";
-import ThemeToggle from "../../components/ui/themeToggle";
+import { ReactElement } from "react";
+import { useLoginPost } from "../../hooks/auth/useLoginPost";
 
 const Auth = (): ReactElement => {
-  const [token, setToken] = useState<string>("");
-  const {} = useGetMethod("sendAccessToken", "/login", {
-    Authorization: `Bearer ${token}`,
-  });
-
+  
+  const {mutate} = useLoginPost()
+  
   const handleContinueWithGoogle = useGoogleLogin({
     onSuccess: (tokenResponse): void => {
-      setToken(tokenResponse.access_token);
+     mutate(tokenResponse.access_token)
     },
     onError(errorResponse): void {
       console.log(errorResponse);
