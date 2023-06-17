@@ -1,4 +1,4 @@
-import Layout from "./Layout";
+import Layout from "./layout";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { QueryClient, QueryClientProvider } from "react-query";
 import {
@@ -13,7 +13,7 @@ import { Provider } from "react-redux";
 function App() {
   const [colorScheme, setColorScheme] = useLocalStorage<ColorScheme>({
     key: "mantine-color-scheme",
-    defaultValue: "light",
+    defaultValue: "dark",
     getInitialValueInEffect: true,
   });
 

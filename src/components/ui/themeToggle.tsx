@@ -11,7 +11,7 @@ const ThemeToggle = () => {
         color={colorScheme === "dark" ? "yellow" : "blue"}
         onClick={() => toggleColorScheme()}
         title="Toggle color scheme"
-        size={"xl"}
+        size={"md"}
       >
         {colorScheme === "dark" ? (
           <IconSun size="1.1rem" />

@@ -1,12 +1,15 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Auth from "./pages/auth/Auth";
+import Login from "./pages/auth/login";
+import { Username } from "./pages/auth/username";
+
 
 const Layout = () => {
   return (
     <>
       <BrowserRouter>
         <Routes>
-          <Route path="/auth" element={<Auth />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/username" element={<Username />} />
         </Routes>
       </BrowserRouter>
     </>

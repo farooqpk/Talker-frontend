@@ -1,25 +1,21 @@
 import axios from "axios";
 import { useMutation } from "react-query";
 
-interface LoginData {
-  access_token: string;
-  username: string;
-}
-
-export const useLoginPost = () => {
-  return useMutation(async ({ access_token, username }: LoginData) => {
+export const useIsUserAlreadyExist = () => {
+  return useMutation(async (access_token:string) => {
     try {
+      
       return await axios.post(
-        `${import.meta.env.VITE_SERVER_URL}/login`,
-        { username },
+        `${import.meta.env.VITE_SERVER_URL}/isUserAlreadyExist`,
+        {},
         {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${access_token}`,
-          },
+          }, 
           withCredentials: true,
         }
-      );
+      ); 
     } catch (error: any) {
       if (error.response) {
         throw new Error(error.response.data.message);

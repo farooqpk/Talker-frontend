@@ -2,21 +2,31 @@ import { motion } from "framer-motion";
 import authPageImg from "../../assets/images/authImg.webp";
 import { SiGoogle } from "react-icons/si";
 import { useGoogleLogin } from "@react-oauth/google";
-import { ReactElement } from "react";
-import { useLoginPost } from "../../hooks/auth/useLoginPost";
+import { ReactElement, useEffect } from "react";
+import { useIsUserAlreadyExist } from "../../hooks/auth/useIsUserAlreadyExist";
+import { useNavigate } from "react-router-dom";
 
-const Auth = (): ReactElement => {
-  
-  const {mutate} = useLoginPost()
-  
-  const handleContinueWithGoogle = useGoogleLogin({
-    onSuccess: (tokenResponse): void => {
-     mutate(tokenResponse.access_token)
+const Login = (): ReactElement => {
+  const navigate = useNavigate();
+  const { mutate, data } = useIsUserAlreadyExist();
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: (tokenResponse) => {
+      return mutate(tokenResponse.access_token);
     },
     onError(errorResponse): void {
       console.log(errorResponse);
     },
   });
+
+  useEffect(() => {
+    if (data?.data.isExist === true) {
+      console.log("already exist");
+    } else if (data?.data.isExist === false) {
+      console.log("user not exist");
+      navigate("/username", { state: "" });
+    }
+  }, [data?.data.isExist]);
 
   return (
     <>
@@ -24,11 +34,15 @@ const Auth = (): ReactElement => {
         {/* we can use absolue insert-0 to avoid viewport issue with h-screen in mobile devices */}
         <section className="flex flex-col items-center justify-center gap-10 h-full">
           <div className="p-2">
-            <img src={authPageImg} className="animate-bounce" />
+            <img
+              src={authPageImg}
+              draggable={"false"}
+              className="animate-bounce"
+            />
           </div>
           <div className="px-3 mx-2 flex flex-col gap-1 md:gap-4 text-center flex-wrap ">
             <h1 className="font-bold text-xl md:text-3xl">
-              Enjoy the new experiance of chatting with global friends
+              Enjoy The New Experiance Of Chatting With Global Friends
             </h1>
             <span className=" text-sm md:text-2xl text-gray-400">
               Connect people around the world for free
@@ -41,7 +55,7 @@ const Auth = (): ReactElement => {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 1.1 }}
               className="w-[71%] md:w-[50%] lg:w-[30%] h-12 md:h-16 rounded-3xl md:rounded-full mb-16 flex justify-center items-center bg-primary appearance-none"
-              onClick={() => handleContinueWithGoogle()}
+              onClick={() => handleGoogleLogin()}
             >
               <span className="mr-3">
                 <SiGoogle size={27} className="text-white" />
@@ -57,4 +71,4 @@ const Auth = (): ReactElement => {
   );
 };
 
-export default Auth;
+export default Login;
