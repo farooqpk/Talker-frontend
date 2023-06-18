@@ -2,24 +2,33 @@ import { useLocation, useNavigate } from "react-router-dom";
 import ThemeToggle from "../../components/ui/themeToggle";
 import { ReactElement, useEffect, useState } from "react";
 import usernameImg from "../../assets/images/username1.webp";
-import { useLoginPost } from "../../hooks/auth/useLoginPost";
+import { useSignupPost } from "../../hooks/auth/useSignupPost";
 
 export const Username = (): ReactElement => {
   const { state }: { state: string } = useLocation();
   const navigate = useNavigate();
   const [Inputvalue, setInputValue] = useState<string>("");
   const [inputValidationErr, setInputValidationErr] = useState<string>("");
-  const { mutate, isLoading, error, isError } = useLoginPost();
+  const { mutate, isLoading, error, isError, isSuccess, reset } =
+    useSignupPost();
 
   useEffect(() => {
     if (!state) {
-      navigate("/login");
+      navigate("/auth");
     }
   }, [state]);
+
+  useEffect(() => {
+    if (isSuccess === true) console.log("navigated");
+  }, [isSuccess]);
 
   const handleInput = (event: React.FormEvent<HTMLInputElement>): void => {
     setInputValidationErr("");
     setInputValue(event.currentTarget.value);
+    if (isError) {
+      // Clear the error state when input changes
+      reset();
+    }
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -35,7 +44,7 @@ export const Username = (): ReactElement => {
       setInputValidationErr("Username should contain only letters");
       return;
     }
-    mutate({ access_token: state, username: Inputvalue });
+    mutate({ access_subId: state, username: Inputvalue });
   };
 
   return (

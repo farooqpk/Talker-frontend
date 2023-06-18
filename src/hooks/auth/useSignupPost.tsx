@@ -1,21 +1,21 @@
 import axios from "axios";
 import { useMutation } from "react-query";
 
-interface LoginData {
-  access_token: string;
+interface SignupData {
+  access_subId: string;
   username: string;
 }
 
-export const useLoginPost = () => {
-  return useMutation(async ({ access_token, username }: LoginData) => {
+export const useSignupPost = () => {
+  return useMutation(async ({ access_subId, username }: SignupData) => {
     try {
-      return await axios.post(
-        `${import.meta.env.VITE_SERVER_URL}/login`,
+      return await axios.post( 
+        `${import.meta.env.VITE_SERVER_URL}/signup`,
         { username },
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${access_token}`,
+            Authorization: `Bearer ${access_subId}`,
           },
           withCredentials: true,
         }

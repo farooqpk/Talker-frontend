@@ -6,7 +6,7 @@ import { ReactElement, useEffect } from "react";
 import { useIsUserAlreadyExist } from "../../hooks/auth/useIsUserAlreadyExist";
 import { useNavigate } from "react-router-dom";
 
-const Login = (): ReactElement => {
+const Auth = (): ReactElement => {
   const navigate = useNavigate();
   const { mutate, data } = useIsUserAlreadyExist();
 
@@ -21,12 +21,12 @@ const Login = (): ReactElement => {
 
   useEffect(() => {
     if (data?.data.isExist === true) {
-      console.log("already exist");
+      console.log("user already exist");
     } else if (data?.data.isExist === false) {
       console.log("user not exist");
-      navigate("/username", { state: "" });
+      navigate("/username", { state: data.data.subId });
     }
-  }, [data?.data.isExist]);
+  }, [data?.data]);
 
   return (
     <>
@@ -71,4 +71,4 @@ const Login = (): ReactElement => {
   );
 };
 
-export default Login;
+export default Auth;
