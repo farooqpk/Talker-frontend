@@ -7,10 +7,7 @@ module.exports = {
         primary: "#7541f1",
         secondary: "#9896a0",
         accent: "#3e326f",
-      },
-      animation: {
-        wiggle: "wiggle 1s ease-in-out infinite",
-      },
+      }
     },
   },
   plugins: [require("daisyui")],

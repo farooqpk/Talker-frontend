@@ -34,11 +34,11 @@ function App() {
               colorScheme={colorScheme}
               toggleColorScheme={toggleColorScheme}
             >
-              <MantineProvider //mantine ui library
+              <MantineProvider
                 withGlobalStyles
                 withNormalizeCSS
                 theme={{
-                  colorScheme: colorScheme,
+                  colorScheme: colorScheme
                 }}
               >
                 <Layout /> {/* layout component(router)*/}
