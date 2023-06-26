@@ -6,7 +6,7 @@ export const Home = () => {
   return (
     <>
       <main className="absolute inset-0 flex flex-col items-center flex-wrap justify-between">
-        <header className="w-full">
+        <header className="w-full md:w-[50%]">
           <HomeHeader />
         </header>
         <section className="bg-red-400 w-full">
