@@ -1,26 +1,12 @@
 import Layout from "./layout";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { QueryClient, QueryClientProvider } from "react-query";
-import {
-  MantineProvider,
-  ColorSchemeProvider,
-  ColorScheme,
-} from "@mantine/core";
-import { useLocalStorage } from "@mantine/hooks";
 import { store } from "./redux/store";
 import { Provider } from "react-redux";
+import { MantineProvider } from "@mantine/core";
 
 function App() {
-  const [colorScheme, setColorScheme] = useLocalStorage<ColorScheme>({
-    key: "mantine-color-scheme",
-    defaultValue: "dark",
-    getInitialValueInEffect: true,
-  });
-
-  const toggleColorScheme = (value?: ColorScheme) => {
-    setColorScheme(value || (colorScheme === "dark" ? "light" : "dark"));
-  };
-
+  
   const client = new QueryClient();
 
   return (
@@ -30,20 +16,9 @@ function App() {
         <QueryClientProvider client={client}>
           {/* wrap with react query */}
           <GoogleOAuthProvider clientId={import.meta.env.VITE_AUTH_CLIENT_ID}>
-            <ColorSchemeProvider
-              colorScheme={colorScheme}
-              toggleColorScheme={toggleColorScheme}
-            >
-              <MantineProvider
-                withGlobalStyles
-                withNormalizeCSS
-                theme={{
-                  colorScheme: colorScheme
-                }}
-              >
-                <Layout /> {/* layout component(router)*/}
-              </MantineProvider>
-            </ColorSchemeProvider>
+            <MantineProvider withGlobalStyles withNormalizeCSS>
+              <Layout /> {/* layout component(router)*/}
+            </MantineProvider>
           </GoogleOAuthProvider>
         </QueryClientProvider>
       </Provider>

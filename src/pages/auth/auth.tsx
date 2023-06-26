@@ -5,7 +5,7 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { ReactElement, useEffect } from "react";
 import { useIsUserAlreadyExist } from "../../hooks/auth/useIsUserAlreadyExist";
 import { useNavigate } from "react-router-dom";
-import { Loader } from "@mantine/core";
+import { ThreeDots } from "react-loader-spinner";
 
 const Auth = (): ReactElement => {
   const navigate = useNavigate();
@@ -23,6 +23,7 @@ const Auth = (): ReactElement => {
   useEffect(() => {
     if (data?.data.isExist === true) {
       console.log("user already exist");
+      navigate("/home");
     } else if (data?.data.isExist === false) {
       console.log("user not exist");
       navigate("/username", { state: data.data.subId });
@@ -33,7 +34,15 @@ const Auth = (): ReactElement => {
     <>
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <Loader color="indigo" size="xl" variant="bars" />
+          <ThreeDots
+            height="100"
+            width="100"
+            radius="9"
+            color="#7541f1"
+            ariaLabel="three-dots-loading"
+            wrapperStyle={{}}
+            visible={true}
+          />
         </div>
       )}
 
@@ -48,7 +57,7 @@ const Auth = (): ReactElement => {
             />
           </div>
           <div className="px-3 mx-2 flex flex-col gap-4 md:gap-4 text-center flex-wrap ">
-            <h1 className="font-bold text-xl md:text-3xl">
+            <h1 className="font-bold text-xl md:text-3xl text-white">
               Enjoy The New Experiance Of Chatting With Global Friends
             </h1>
             <span className=" text-sm md:text-2xl text-secondary">
@@ -71,7 +80,7 @@ const Auth = (): ReactElement => {
                 Continue with Google
               </span>
             </motion.button>
-            <p className="text-xs md:text-sm font-sans">Powered by talker</p>
+            <p className="text-xs md:text-sm font-sans text-secondary">Powered by talker</p>
           </div>
         </section>
       </main>

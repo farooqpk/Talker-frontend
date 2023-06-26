@@ -1,5 +1,4 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import ThemeToggle from "../../components/ui/themeToggle";
 import { ReactElement, useEffect, useState } from "react";
 import usernameImg from "../../assets/images/username1.webp";
 import { useSignupPost } from "../../hooks/auth/useSignupPost";
@@ -19,7 +18,7 @@ export const Username = (): ReactElement => {
   }, [state]);
 
   useEffect(() => {
-    if (isSuccess === true) console.log("navigated");
+    if (isSuccess === true) navigate("/home");
   }, [isSuccess]);
 
   const handleInput = (event: React.FormEvent<HTMLInputElement>): void => {
@@ -50,29 +49,26 @@ export const Username = (): ReactElement => {
   return (
     <>
       <main className="absolute inset-0">
-        <section className="flex justify-end p-3 md:p-4 h-[5%]">
-          <ThemeToggle />
-        </section>
-        <section className="flex h-[95%] flex-col gap-6 items-center">
+        <section className="flex flex-col gap-6 items-center">
           <div>
             <img src={usernameImg} alt="loading.." draggable={"false"} />
           </div>
 
           <div>
-            <h1 className="font-semibold text-lg md:text-2xl">
+            <h1 className="font-semibold text-lg md:text-2xl text-white">
               Create Your Unique Username
             </h1>
           </div>
 
           <form
             onSubmit={handleSubmit}
-            className="flex flex-col gap-3 md:gap-4 md:w-[20%]"
+            className="flex flex-col gap-3 md:gap-4 w-[70%] md:w-[20%]"
           >
             <input
               type="text"
               placeholder="*username"
               onChange={handleInput}
-              className="input input-secondary md:text-xl input-sm md:input-md"
+              className="input border-secondary md:text-xl input-sm md:input-md text-secondary"
             />
             {inputValidationErr && (
               <span className="text-error text-center">
