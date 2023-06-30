@@ -3,16 +3,19 @@ import { FaSearch } from "react-icons/fa";
 export const HomeHeader = () => {
   return (
     <>
-      <div className="flex mx-4 my-5 p-2 rounded-3xl h-1/2 md:h-2/3 border border-transparent bg-base-300">
-        <div className="flex items-center mx-5">
-          <FaSearch size={20} color={"gray"} />
+      <div className="flex justify-center w-full md:w-[40%] my-5">
+      
+        <div className="flex w-[80%] md:w-[90%] p-2 rounded-3xl md:rounded-xl h-3/4 border border-transparent bg-black ">
+          <div className="flex items-center mx-5">
+            <FaSearch size={17} color={"gray"} />
+          </div>
+          <input
+            type="search"
+            placeholder="Search for users..."
+            className=" bg-transparent outline-none  w-full text-sm md:text-xl text-secondary"
+          />
+          <span className="loading loading-dots loading-sm text-white md:loading-md mx-2" />
         </div>
-        <input
-          type="search"
-          placeholder="Search for users..."
-          className=" bg-transparent outline-none w-full text-lg md:text-xl text-secondary"
-        />
-        <span className="loading loading-dots loading-sm text-white md:loading-md mx-2" />
       </div>
     </>
   );
