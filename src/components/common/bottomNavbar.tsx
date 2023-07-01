@@ -1,7 +1,7 @@
 import { AiOutlinePhone, AiOutlineHome } from "react-icons/ai";
 import { CgProfile } from "react-icons/cg";
 
-export const HomeFooter = () => {
+export const BottomNavbar = () => {
   return (
     <>
       <div className="btm-nav bg-black rounded-box">
