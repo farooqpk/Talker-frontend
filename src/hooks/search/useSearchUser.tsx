@@ -1,15 +1,17 @@
 import axios from "axios";
 import { useQuery } from "react-query";
 
-export const useRandomUsersForSearchbar = () => {
-    
+export const useSearchUser = (searchName: string) => {
   return useQuery(
-    "getRandomUsersForSearch",
+    ["searchuser", searchName],
     async () => {
       try {
         return await axios.get(
-          `${import.meta.env.VITE_SERVER_URL}/getRandomUsersForSearch`,{
-            withCredentials:true
+          `${
+            import.meta.env.VITE_SERVER_URL
+          }/searchUser?userName=${searchName}`,
+          {
+            withCredentials: true,
           }
         );
       } catch (error: any) {
@@ -23,8 +25,9 @@ export const useRandomUsersForSearchbar = () => {
       }
     },
     {
-      retry: false,
-      staleTime: Infinity,
+     enabled:!!searchName,
+     staleTime: 0,
+     retry:false
     }
   );
 };
