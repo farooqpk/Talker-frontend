@@ -1,9 +1,11 @@
 import { ReactElement } from "react";
+import { Link } from "react-router-dom";
 
 export const HomeList = (prop: { name: string }): ReactElement => {
   return (
     <>
       <div className="md:w-[50%]">
+        <Link to={'/chat'}>
         <div className="flex justify-between p-4 hover:bg-base-200">
           <div className="flex items-center">
             <img className="avatar rounded-full w-11 md:w-14" alt="img" />
@@ -17,6 +19,7 @@ export const HomeList = (prop: { name: string }): ReactElement => {
             <span className="badge badge-primary badge-sm md:badge-md">3</span>
           </div>
         </div>
+        </Link>
       </div>
     </>
   );

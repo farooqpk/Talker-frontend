@@ -71,7 +71,7 @@ export const HomeSearchBox = () => {
                   (user: UsersType, index: number) => {
                     return (
                       <li key={index}>
-                        <Link to={""} className="flex items-center space-x-5">
+                        <Link to={"/chat"} className="flex items-center space-x-5">
                           <img
                             src={user.picture}
                             alt="img"
@@ -91,7 +91,7 @@ export const HomeSearchBox = () => {
                 randomUsers.data?.data.map((user: UsersType, index: number) => {
                   return (
                     <li key={index}>
-                      <Link to={""} className="flex items-center space-x-5">
+                      <Link to={"/chat"} className="flex items-center space-x-5">
                         <img
                           src={user.picture}
                           alt="img"
