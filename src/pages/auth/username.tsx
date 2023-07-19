@@ -18,7 +18,11 @@ export const Username = (): ReactElement => {
   }, [state]);
 
   useEffect(() => {
-    if (isSuccess === true) navigate("/home");
+    if (isSuccess === true) {
+      // it may help
+      localStorage.setItem('username',Inputvalue)
+      navigate("/home");
+    }
   }, [isSuccess]);
 
   const handleInput = (event: React.FormEvent<HTMLInputElement>): void => {

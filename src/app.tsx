@@ -6,7 +6,6 @@ import { Provider } from "react-redux";
 import { MantineProvider } from "@mantine/core";
 
 function App() {
-  
   const client = new QueryClient();
 
   return (

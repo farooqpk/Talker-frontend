@@ -1,8 +1,9 @@
+import { ReactElement } from "react";
 import { ChatContent } from "../../components/chatHome/chatContent";
 import { ChatFooter } from "../../components/chatHome/chatFooter";
 import { ChatHeader } from "../../components/chatHome/chatHeader";
 
-export const ChatHome = () => {
+export const ChatHome = (): ReactElement => {
   return (
     <>
       <main className="absolute inset-0 flex flex-col flex-wrap">
