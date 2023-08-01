@@ -1,21 +1,11 @@
-import { ReactElement, useContext, useEffect } from "react";
+import { ReactElement} from "react";
 import { BottomNavbar } from "../../components/common/bottomNavbar";
 import { HomeSearchBox } from "../../components/home/homeSearchBox";
 import { HomeList } from "../../components/home/homeList";
 import { TopNavbar } from "../../components/common/topNavbar";
-// import { SocketContext } from "../../socket/socketProvider";
 
 
 export const Home = (): ReactElement => {
-
-  // const socket = useContext(SocketContext)
-
-  // useEffect(()=>{
-  //    socket?.emit("chat",'how are you?')
-  //    socket?.on("chat",(data)=>{
-  //     console.log(data);
-  //    })
-  // })
 
   return (
     <>

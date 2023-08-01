@@ -1,4 +1,6 @@
+import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
+import { RootStateTypes } from "../../redux/store";
 
 interface UsersType {
   name: string;
@@ -9,8 +11,9 @@ interface UsersType {
 export const ChatContent = () => {
 
   const {state}:{state:UsersType} = useLocation()
+  const {message,sender} = useSelector((state:RootStateTypes) => state.ChatMsg);
 
-  function truncateUsername(username: string) {
+  function truncateUsername(username: string): string {
     const maxLength = 7; // Define the maximum length for the truncated username
     if (username.length <= maxLength) {
       return username;
@@ -29,7 +32,7 @@ export const ChatContent = () => {
             {truncateUsername(state.name)}
             <time className="text-xs md:text-sm opacity-50">2 hours ago</time>
           </div>
-          <div className="chat-bubble md:text-lg">You were the Chosen One!</div>
+          <div className="chat-bubble md:text-lg">{message}</div>
           <div className="chat-footer opacity-50">Seen</div>
         </div>
 

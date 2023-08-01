@@ -19,8 +19,6 @@ export const Username = (): ReactElement => {
 
   useEffect(() => {
     if (isSuccess === true) {
-      // it may help
-      localStorage.setItem('username',Inputvalue)
       navigate("/home");
     }
   }, [isSuccess]);
