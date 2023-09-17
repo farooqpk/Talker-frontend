@@ -11,13 +11,7 @@ const verifyRouteApiReq = async (): Promise<any> => {
     );
     return response.data;
   } catch (error: any) {
-    if (error.response) {
-      throw new Error(error.response.data.message);
-    } else {
-      throw new Error(
-        "Check your internet connection,or please try again later"
-      );
-    }
+    throw new Error(error.message);
   }
 };
 

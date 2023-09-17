@@ -3,8 +3,11 @@ import { FaMicrophone, FaLocationArrow } from "react-icons/fa";
 import { MdAddCircleOutline } from "react-icons/md";
 import { useSocket } from "../../socket/socketProvider";
 import { useLocation } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setMessage } from "../../redux/slices/chatMsgSlice";
+import { RootStateTypes } from "../../redux/store";
+import { setMyOwnMsg } from "../../redux/slices/myOwnMsgSlice";
+import { Peer } from "peerjs";
 
 interface UsersType {
   name: string;
@@ -13,11 +16,17 @@ interface UsersType {
 }
 
 export const ChatFooter = () => {
-  
   const [content, setContent] = useState<string>("");
   const socket = useSocket();
   const { state }: { state: UsersType } = useLocation();
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
+
+  // const peer = new Peer({
+  //   host: "0.peerjs.com",
+  //   port: 443,
+  //   path: "/",
+  //   pingInterval: 5000,
+  // });
 
   const handleAudio = (): void => {
     navigator.mediaDevices
@@ -27,19 +36,22 @@ export const ChatFooter = () => {
   };
 
   const handleSendMsg = (): void => {
-    socket?.emit("chat", { recipient: state._id, message: content ,sender:'me'});
+    if (content.length > 0) {
+      socket?.emit("chat", {
+        recipient: state._id,
+        message: content,
+        sender: "me",
+      });
+      dispatch(setMyOwnMsg(content));
+    } else {
+      return;
+    }
   };
 
   useEffect(() => {
     socket?.on("chat", (msg) => {
-      dispatch(setMessage(msg))
-      console.log(msg);
+      dispatch(setMessage(msg));
     });
-
-    socket?.on("offline",(msg)=>{
-        console.log(msg);
-    })
-
     return () => {
       socket?.off("chat");
     };

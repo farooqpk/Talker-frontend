@@ -2,7 +2,8 @@ import { BiArrowBack } from "react-icons/bi";
 import { IoMdCall } from "react-icons/io";
 import { FaVideo } from "react-icons/fa";
 import { Link, useLocation } from "react-router-dom";
-
+import { useEffect } from "react";
+import { useSocket } from "../../socket/socketProvider";
 
 interface UsersType {
   name: string;
@@ -10,11 +11,10 @@ interface UsersType {
   picture: string;
 }
 
-
 export const ChatHeader = () => {
+  const { state }: { state: UsersType } = useLocation();
+  const socket = useSocket();
 
-  const {state}:{state:UsersType} = useLocation()
-  
   function truncateUsername(username: string) {
     const maxLength = 10; // Define the maximum length for the truncated username
     if (username.length <= maxLength) {
@@ -22,6 +22,7 @@ export const ChatHeader = () => {
     }
     return username.substring(0, maxLength) + "...";
   }
+
 
   return (
     <>
@@ -47,7 +48,9 @@ export const ChatHeader = () => {
             <p className="text-white text-lg truncate md:hidden">
               {truncateUsername(state.name)}
             </p>
-            <p className="text-white text-xl md:block hidden md:font-semi-bold">{state.name}</p>
+            <p className="text-white text-xl md:block hidden md:font-semi-bold">
+              {state.name}
+            </p>
             <span className="text-sm md:text-sm text-success">Online</span>
           </div>
         </div>

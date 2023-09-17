@@ -2,16 +2,16 @@ import { createSlice } from "@reduxjs/toolkit";
 
 export type ChatMsgStateType = {
   sender: string;
-  message: string;
+  message: string[];
 };
 
 const ChatMsgSlice = createSlice({
-  initialState: { sender: "", message: "" } as ChatMsgStateType,
+  initialState: { sender: "", message: [] } as ChatMsgStateType,
   name: "messageSlice",
   reducers: {
     setMessage: (state, action) => {
       const { sender, message } = action.payload;
-      state.message = message;
+      state.message.push(message);
       state.sender = sender;
     },
   },

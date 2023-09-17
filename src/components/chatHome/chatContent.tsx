@@ -9,42 +9,46 @@ interface UsersType {
 }
 
 export const ChatContent = () => {
-
-  const {state}:{state:UsersType} = useLocation()
-  const {message,sender} = useSelector((state:RootStateTypes) => state.ChatMsg);
-
-  function truncateUsername(username: string): string {
-    const maxLength = 7; // Define the maximum length for the truncated username
-    if (username.length <= maxLength) {
-      return username;
-    }
-    return username.substring(0, maxLength) + "...";
-  }
-
- 
+  const { state }: { state: UsersType } = useLocation();
+  const { message, sender } = useSelector(
+    (state: RootStateTypes) => state.ChatMsg
+  );
+  const { myMessage } = useSelector((state: RootStateTypes) => state.MyOwnMsg);
 
   return (
     <>
       <div className=" text-white h-full md:w-[70%] break-all">
+        {message.length > 0 &&
+          message.map((msg, index) => {
+            return (
+              <div className="chat chat-start mt-3" key={index}>
+                <div className="chat-header flex gap-3 md:text-sm">
+                  <time className="text-xs md:text-sm opacity-50">
+                    2 hours ago
+                  </time>
+                </div>
+                <div className="chat-bubble md:text-lg">{msg}</div>
 
-        <div className="chat chat-start">
-          <div className="chat-header flex gap-3 md:text-sm">
-            {truncateUsername(state.name)}
-            <time className="text-xs md:text-sm opacity-50">2 hours ago</time>
-          </div>
-          <div className="chat-bubble md:text-lg">{message}</div>
-          <div className="chat-footer opacity-50">Seen</div>
-        </div>
+                <div className="chat-footer opacity-50">Seen</div>
+              </div>
+            );
+          })}
 
-        <div className="chat chat-end">
-          <div className="chat-header flex gap-3 md:text-sm">
-            Me
-            <time className="text-xs md:text-sm opacity-50">2 hours ago</time>
-          </div>
-          <div className="chat-bubble md:text-lg">You were the Chosen One!</div>
-          <div className="chat-footer opacity-50">Seen</div>
-        </div>
-        
+        {myMessage.length > 0 &&
+          myMessage.map((myMsg, index) => {
+            return (
+              <div className="chat chat-end mt-3" key={index}>
+                <div className="chat-header flex gap-3 md:text-sm">
+                  Me
+                  <time className="text-xs md:text-sm opacity-50">
+                    2 hours ago
+                  </time>
+                </div>
+                <div className="chat-bubble md:text-lg">{myMsg}</div>
+                <div className="chat-footer opacity-50">Seen</div>
+              </div>
+            );
+          })}
       </div>
     </>
   );
