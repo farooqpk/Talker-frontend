@@ -2,7 +2,7 @@ import { BiArrowBack } from "react-icons/bi";
 import { IoMdCall } from "react-icons/io";
 import { FaVideo } from "react-icons/fa";
 import { Link, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSocket } from "../../socket/socketProvider";
 
 interface UsersType {
@@ -14,6 +14,18 @@ interface UsersType {
 export const ChatHeader = () => {
   const { state }: { state: UsersType } = useLocation();
   const socket = useSocket();
+  const [recipientStatus, setRecipientStatus] = useState<string>("offline");
+
+  useEffect(() => {
+    socket?.emit("status", state._id);
+
+    socket?.on("status", (data: { status: string }) => {
+      setRecipientStatus(data.status);
+    });
+    return () => {
+      socket?.off("status");
+    };
+  }, [socket]);
 
   function truncateUsername(username: string) {
     const maxLength = 10; // Define the maximum length for the truncated username
@@ -22,7 +34,6 @@ export const ChatHeader = () => {
     }
     return username.substring(0, maxLength) + "...";
   }
-
 
   return (
     <>
@@ -34,14 +45,12 @@ export const ChatHeader = () => {
         </Link>
 
         <div className="flex items-center gap-6 hover:scale-[0.99]">
-          <div className="avatar online ">
-            <div className="w-11 md:w-14">
-              <img
-                className="rounded-full hover:scale-[0.95]"
-                src={state.picture}
-                alt="Tailwind-CSS-Avatar-component"
-              />
-            </div>
+          <div className="w-11 md:w-14">
+            <img
+              className="rounded-full hover:scale-[0.95]"
+              src={state.picture}
+              alt="Tailwind-CSS-Avatar-component"
+            />
           </div>
 
           <div className="flex flex-col md:gap-2">
@@ -51,7 +60,15 @@ export const ChatHeader = () => {
             <p className="text-white text-xl md:block hidden md:font-semi-bold">
               {state.name}
             </p>
-            <span className="text-sm md:text-sm text-success">Online</span>
+            {recipientStatus === "online" ? (
+              <span className="text-sm md:text-sm text-success">
+                {recipientStatus}
+              </span>
+            ) : (
+              <span className="text-sm md:text-sm text-error">
+                {recipientStatus}
+              </span>
+            )}
           </div>
         </div>
 
