@@ -2,7 +2,7 @@ import { AxiosResponse } from "axios";
 import React, { useEffect } from "react";
 import { useQuery } from "react-query";
 import { NavigateFunction, useNavigate } from "react-router-dom";
-import _axios from "../../utils/_axios";
+import _axios from "../../lib/_axios";
 
 const verifyRouteApiReq = async (): Promise<any> => {
   try {
