@@ -1,9 +1,7 @@
 import { FaSearch } from "react-icons/fa";
 import { AiOutlineCloseCircle } from "react-icons/ai";
-import { useRandomUsersForSearchbar } from "../../hooks/search/useRandomUsersForSearchbar";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useSearchUser } from "../../hooks/search/useSearchUser";
 import useDebounce from "../../hooks/debounce/useDebounce";
 
 
@@ -15,11 +13,11 @@ interface UsersType {
 
 export const HomeSearchBox = () => {
   const [isInputClick, setIsinputClick] = useState<boolean>(false);
-  const randomUsers = useRandomUsersForSearchbar();
+  // const randomUsers = useRandomUsersForSearchbar();
   const [searchInput, setSearchInput] = useState<string>("");
   // debounce hook
   const searchName = useDebounce(searchInput, 600);
-  const searchedUsers = useSearchUser(searchName);
+  // const searchedUsers = useSearchUser(searchName);
 
   const handleInput = (event: React.FormEvent<HTMLInputElement>) => {
     setSearchInput(event.currentTarget.value);
@@ -40,10 +38,10 @@ export const HomeSearchBox = () => {
             className=" bg-transparent outline-none  w-full text-sm md:text-xl text-secondary"
           />
 
-          {randomUsers.isLoading ||
+          {/* {randomUsers.isLoading ||
             (searchedUsers.isLoading && (
               <span className="loading loading-dots loading-sm text-white md:loading-md mx-2" />
-            ))}
+            ))} */}
         </div>
         {/*searchbar ends */}
         {/* randomUsersList or searchUsersList started*/}
@@ -58,15 +56,15 @@ export const HomeSearchBox = () => {
                 </div>
               </div>
 
-              {searchedUsers.isError && (
+              {/* {searchedUsers.isError && (
                 <div className="flex-1 mb-2 ">
                   <p className="text-md md:text-lg text-secondary text-center font-thin">
                     {(searchedUsers.error as any).message}
                   </p>
                 </div>
-              )}
+              )} */}
 
-              {searchedUsers.data?.data &&
+              {/* {searchedUsers.data?.data &&
                 searchedUsers.data?.data.map(
                   (user: UsersType, index: number) => {
                     return (
@@ -84,9 +82,9 @@ export const HomeSearchBox = () => {
                       </li>
                     );
                   }
-                )}
+                )} */}
 
-              {searchInput === "" &&
+              {/* {searchInput === "" &&
                 randomUsers &&
                 randomUsers.data?.data.map((user: UsersType, index: number) => {
                   return (
@@ -103,7 +101,7 @@ export const HomeSearchBox = () => {
                       </Link>
                     </li>
                   );
-                })}
+                })} */}
 
             </ul>
           </div>

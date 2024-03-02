@@ -1,13 +1,13 @@
-import axios, { AxiosResponse } from "axios";
+import { AxiosResponse } from "axios";
 import React, { useEffect } from "react";
 import { useQuery } from "react-query";
 import { NavigateFunction, useNavigate } from "react-router-dom";
+import _axios from "../../utils/_axios";
 
 const verifyRouteApiReq = async (): Promise<any> => {
   try {
-    const response: AxiosResponse = await axios.get(
-      `${import.meta.env.VITE_SERVER_URL}/verifyRoute`,
-      { headers: { "Content-Type": "application/json" }, withCredentials: true }
+    const response: AxiosResponse = await _axios.get(
+      `${import.meta.env.VITE_SERVER_URL}/verifyRoute`
     );
     return response.data;
   } catch (error: any) {

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import Cookie from 'js-cookie'
 
 export const SocketContext = createContext<Socket | undefined>(undefined);
 
@@ -13,6 +14,9 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const newSocket: Socket = io(import.meta.env.VITE_SERVER_URL, {
       withCredentials: true,
+      query:{
+        token:Cookie.get('token')
+      }
     });
     setSocket(newSocket);
 
