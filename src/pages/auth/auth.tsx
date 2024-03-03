@@ -21,23 +21,84 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { useMutation } from "react-query";
+import { login, signup } from "@/services/api/auth";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const formSchema = z.object({
-  username: z.string().min(3).max(8),
-  password: z.string().min(6),
+  username: z
+    .string()
+    .min(3, "username must be at least 3 characters")
+    .max(15, "username must be at most 15 characters"),
+  password: z.string().min(6, "password must be at least 6 characters"),
 });
 
 const Auth = (): ReactElement => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
   });
 
-  const handleLogin = (values: z.infer<typeof formSchema>) => {
-    console.log(values);
+  const {
+    mutate: loginMutate,
+    isLoading: loginLoading,
+    error: loginError,
+    isError: loginIsError,
+  } = useMutation(login);
+  const {
+    mutate: signupMutate,
+    isLoading: signupLoading,
+    error: signupError,
+    isError: signupIsError,
+  } = useMutation(signup);
+
+  const handleLogin = ({ username, password }: z.infer<typeof formSchema>) => {
+    loginMutate(
+      {
+        username,
+        password,
+      },
+      {
+        onSuccess: (data) => {
+          if (data) {
+            toast({
+              title: "Login Success",
+              description: "You have successfully logged in.",
+              variant: "default",
+            });
+            localStorage.setItem("user", JSON.stringify(data?.user));
+            navigate("/");
+          }
+        },
+      }
+    );
   };
 
-  const handleSignup = (values: z.infer<typeof formSchema>) => {
-    console.log(values);
+  const handleSignup = ({ username, password }: z.infer<typeof formSchema>) => {
+    signupMutate(
+      {
+        username,
+        password,
+      },
+      {
+        onSuccess: (data) => {
+          if (data) {
+            toast({
+              title: "Signup Success",
+              description: "You have successfully signed up.",
+              variant: "default",
+            });
+            localStorage.setItem("user", JSON.stringify(data?.user));
+            navigate("/");
+          }
+        },
+      }
+    );
   };
 
   return (
@@ -60,6 +121,19 @@ const Auth = (): ReactElement => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2">
+                    {loginIsError && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          {(
+                            loginError as {
+                              response?: { data?: { message?: string } };
+                            }
+                          )?.response?.data?.message || "An error occurred"}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
                     <FormField
                       control={form.control}
                       name="username"
@@ -89,7 +163,12 @@ const Auth = (): ReactElement => {
                     />
                   </CardContent>
                   <CardFooter>
-                    <Button>Submit</Button>
+                    <Button disabled={loginLoading}>
+                      {loginLoading && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Submit
+                    </Button>
                   </CardFooter>
                 </Card>
               </form>
@@ -106,6 +185,18 @@ const Auth = (): ReactElement => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2">
+                    {signupIsError && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          {(
+                            signupError as {
+                              response?: { data?: { message?: string } };
+                            }
+                          )?.response?.data?.message || "An error occurred"}
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     <FormField
                       control={form.control}
                       name="username"
@@ -135,7 +226,12 @@ const Auth = (): ReactElement => {
                     />
                   </CardContent>
                   <CardFooter>
-                    <Button>Submit</Button>
+                    <Button disabled={signupLoading}>
+                      {signupLoading && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Submit
+                    </Button>
                   </CardFooter>
                 </Card>
               </form>
