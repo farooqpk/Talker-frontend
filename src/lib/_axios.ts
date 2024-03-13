@@ -41,17 +41,21 @@ _axios.interceptors.response.use(
   async (error) => {
     if (error.response && error.response.status === 401) {
       const refreshToken = Cookies.get("refreshtoken");
+
       if (refreshToken) {
         try {
           if (!isRefreshing) {
             isRefreshing = true;
-            const refreshResponse = await axios.post(`${import.meta.env.VITE_API_URL}/auth/refresh`, {}, {
-              headers: {
-                Authorization: `Bearer ${refreshToken}`,
-                "Content-Type": "application/json",
-              },
-            });
-            
+            const refreshResponse = await axios.post(
+              `${import.meta.env.VITE_API_URL}/auth/refresh`,
+              {},
+              {
+                headers: {
+                  Authorization: `Bearer ${refreshToken}`,
+                  "Content-Type": "application/json",
+                },
+              }
+            );
 
             if (refreshResponse.data?.accesstoken) {
               Cookies.set("accesstoken", refreshResponse.data.accesstoken, {
