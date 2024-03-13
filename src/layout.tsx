@@ -14,7 +14,7 @@ const Layout = () => {
           <Route element={<SocketLayout />}>
             <Route path="/" element={<VerifyRoute children={<Home />} />} />
             <Route
-              path="/chat"
+              path="/chat/:id"
               element={<VerifyRoute children={<ChatHome />} />}
             />
           </Route>

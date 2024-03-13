@@ -1,9 +1,9 @@
 export const debounce = (func: any, timeout: number) => {
   let timer: any;
-  return (value: string) => {
+  return () => {
     clearTimeout(timer);
     timer = setTimeout(() => {
-      func(value);
+      func();
     }, timeout);
   };
 };

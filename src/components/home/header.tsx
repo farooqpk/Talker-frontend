@@ -11,9 +11,11 @@ import { useInfiniteQuery } from "react-query";
 import { getUsersForSearch } from "@/services/api/search";
 import { useState } from "react";
 import { debounce } from "@/lib/debounce";
+import { useNavigate } from "react-router-dom";
 
 const HomeHeader = () => {
   const [searchInput, setSearchInput] = useState("");
+  const navigate = useNavigate();
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
@@ -38,7 +40,10 @@ const HomeHeader = () => {
             <Input
               placeholder="Search for users"
               className="pl-8 rounded-xl bg-slate-900"
-              onChange={(e) => debounce(setSearchInput, 500)(e.target.value)}
+              onChange={(e) =>
+                debounce(() => setSearchInput(e.target.value), 1000)()
+              }
+              type="text"
             />
           </div>
         </PopoverTrigger>
@@ -46,9 +51,13 @@ const HomeHeader = () => {
           <ScrollArea
             className={`${userList.length < 2 ? "h-[100px]" : "h-[200px]"}`}
           >
-            <div className="flex flex-col gap-2 p-3">
+            <div className="flex flex-col gap-3 p-3">
               {userList.map((user) => (
-                <Button key={user.userId} variant="ghost">
+                <Button
+                  key={user.userId}
+                  variant="ghost"
+                  onClick={() => navigate(`/chat/${user.userId}`)}
+                >
                   {user.username}
                 </Button>
               ))}
