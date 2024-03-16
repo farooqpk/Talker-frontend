@@ -61,18 +61,20 @@ const HomeHeader = () => {
                   {user.username}
                 </Button>
               ))}
-              <Button
-                onClick={() => fetchNextPage()}
-                size={"sm"}
-                variant={"default"}
-                disabled={!hasNextPage || isFetchingNextPage}
-              >
-                {isFetchingNextPage
-                  ? "Loading..."
-                  : hasNextPage
-                  ? "Load More"
-                  : "Nothing more to load"}
-              </Button>
+              {userList.length > 0 && (
+                <Button
+                  onClick={() => fetchNextPage()}
+                  size={"sm"}
+                  variant={"default"}
+                  disabled={!hasNextPage || isFetchingNextPage}
+                >
+                  {isFetchingNextPage
+                    ? "Loading..."
+                    : hasNextPage
+                    ? "Load More"
+                    : "Nothing more to load"}
+                </Button>
+              )}
             </div>
           </ScrollArea>
         </PopoverContent>
