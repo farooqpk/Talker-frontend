@@ -14,6 +14,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const newSocket: Socket = io(import.meta.env.VITE_API_URL, {
       withCredentials: true,
+      autoConnect: true,
     });
     setSocket(newSocket);
 
@@ -23,6 +24,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <SocketContext.Provider value={socket as Socket}>{children}</SocketContext.Provider>
+    <SocketContext.Provider value={socket as Socket}>
+      {children}
+    </SocketContext.Provider>
   );
 };

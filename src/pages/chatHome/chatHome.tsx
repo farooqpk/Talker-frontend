@@ -1,6 +1,6 @@
 import { ReactElement } from "react";
-// import { ChatContent } from "../../components/chatHome/chatContent";
-// import { ChatFooter } from "../../components/chatHome/chatFooter";
+import { ChatContent } from "../../components/chatHome/chatContent";
+import { ChatFooter } from "../../components/chatHome/chatFooter";
 import { ChatHeader } from "../../components/chatHome/chatHeader";
 import { useParams } from "react-router-dom";
 import { useQuery } from "react-query";
@@ -55,16 +55,17 @@ export const ChatHome = (): ReactElement => {
 
   return (
     <>
-      <main className="absolute inset-0 flex flex-col flex-wrap">
+      <main className="h-screen flex flex-col">
         {(isLoading && <Loader />) || (!socket && <Loader />)}
-        {user && <ChatHeader user={user} userStatus={userStatus} />}
+        {user && (
+          <>
+            <ChatHeader user={user} userStatus={userStatus} />
 
-        {/* <section className="max-h-[78%] md:flex md:justify-center flex-1 overflow-y-auto scroll-smooth my-5 md:my-10 mx-3">
-          <ChatContent />
-        </section>
-        <section className="h-[10%] flex justify-center mx-1">
-          <ChatFooter />
-        </section> */}
+            <ChatContent />
+
+            <ChatFooter />
+          </>
+        )}
       </main>
     </>
   );

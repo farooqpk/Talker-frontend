@@ -1,8 +1,8 @@
 import { BiArrowBack } from "react-icons/bi";
-import { IoMdCall } from "react-icons/io";
-import { FaVideo } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { truncateUsername } from "@/lib/trunctuate";
+import { Button } from "../ui/button";
+import { MoveLeft, Phone, Video } from "lucide-react";
 
 type User = {
   userId: string;
@@ -20,9 +20,9 @@ export const ChatHeader = ({
     <>
       <div className="flex justify-around items-center p-3 border-b rounded-xl ">
         <Link to={"/"}>
-          <div className="text-xl md:text-2xl hover:scale-[0.9] font-bold">
-            <BiArrowBack />
-          </div>
+          <Button variant="ghost" size="icon" className="rounded-full p-2">
+            <MoveLeft />
+          </Button>
         </Link>
 
         <div className="flex items-center gap-6 ">
@@ -39,12 +39,13 @@ export const ChatHeader = ({
         </div>
 
         <div className="text-xl md:text-2xl flex gap-10 md:gap-14">
-          <div className="hover:scale-[0.9]">
-            <FaVideo />
-          </div>
-          <div className="hover:scale-[0.9]">
-            <IoMdCall />
-          </div>
+          <Button variant="ghost" size="icon" className="rounded-full p-2">
+            <Video />
+          </Button>
+
+          <Button variant="ghost" size="icon" className="rounded-full p-2">
+            <Phone />
+          </Button>
         </div>
       </div>
     </>

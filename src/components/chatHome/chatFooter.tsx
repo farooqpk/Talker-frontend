@@ -1,29 +1,26 @@
-import { FaMicrophone, FaLocationArrow } from "react-icons/fa";
-import { MdAddCircleOutline } from "react-icons/md";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "../ui/button";
+import { Mic, SendHorizontal, Smile } from "lucide-react";
 
 export const ChatFooter = () => {
+  let typing = true;
   return (
-    <div className="h-[60%] flex justify-evenly md:justify-center items-center w-full gap-1 md:gap-7 md:w-[70%]">
-      <input type="file" id="fileInput" className="hidden" />
-      <label
-        htmlFor="fileInput"
-        className="text-3xl md:text-4xl text-primary cursor-pointer"
-      >
-        <MdAddCircleOutline />
-      </label>
+    <section className="flex gap-3 md:gap-4 items-center px-5 md:px-24">
+      <Button variant="ghost" size="icon" className="rounded-full p-2">
+        <Smile />
+      </Button>
 
-      <textarea
-        placeholder="Type something..."
-        className="rounded-box bg-base-300 w-[60%] pl-2 p-1 md:p-5 pt-2 text-secondary md:text-lg outline-none resize-none"
-      />
+      <Textarea placeholder="Type something..." className="resize-none" />
 
-      <button className="text-xl md:text-2xl text-primary">
-        <FaMicrophone />
-      </button>
-
-      <button className="text-primary text-xl md:text-2xl">
-        <FaLocationArrow />
-      </button>
-    </div>
+      {typing ? (
+        <Button variant="ghost" size="icon" className="rounded-full p-2">
+          <SendHorizontal />
+        </Button>
+      ) : (
+        <Button variant="ghost" size="icon" className="rounded-full p-2">
+          <Mic />
+        </Button>
+      )}
+    </section>
   );
 };
