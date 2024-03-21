@@ -20,6 +20,15 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         token: Cookies.get("accesstoken"),
       },
     });
+
+    newSocket.on("connect", () => {
+      console.log("connected");
+    });
+
+    newSocket.on("disconnect", () => {
+      console.log("disconnected");
+    });
+
     setSocket(newSocket);
 
     return () => {

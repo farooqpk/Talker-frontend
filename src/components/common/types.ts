@@ -14,7 +14,7 @@ export type MessageType = {
   createdAt: string;
 };
 
-export type localStorageUserType = {
+export type User = {
   userId: string;
   username: string;
 };

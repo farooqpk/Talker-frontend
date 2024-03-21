@@ -29,7 +29,7 @@ export const ChatFooter = ({
   };
 
   return (
-    <section className="flex gap-3 md:gap-4 items-center px-5 md:px-24 relative">
+    <section className="flex gap-1 md:gap-4 items-center px-5 md:px-24 relative">
       <Dialog>
         <DialogTrigger>
           <Button variant="ghost" size="icon" className="rounded-full p-2">

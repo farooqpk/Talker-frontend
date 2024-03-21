@@ -1,7 +1,7 @@
-import { localStorageUserType } from "@/components/common/types";
+import { User } from "@/components/common/types";
 
 export const useGetUser = () => {
   const user = localStorage.getItem("user");
-  if (user) return { user: JSON.parse(user) as localStorageUserType };
+  if (user) return { user: JSON.parse(user) as User };
   return { user: null };
 };

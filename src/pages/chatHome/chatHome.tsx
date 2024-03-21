@@ -9,8 +9,7 @@ import Loader from "@/components/loader";
 import { useSocket } from "@/socket/socketProvider";
 import { useEffect, useState } from "react";
 import { MessageType, UserStatusEnum } from "@/components/common/types";
-
-
+import { getMessagesApi } from "@/services/api/chat";
 
 export const ChatHome = (): ReactElement => {
   const { id } = useParams();
@@ -24,6 +23,13 @@ export const ChatHome = (): ReactElement => {
   const { data: user, isLoading } = useQuery({
     queryKey: ["userquery", id],
     queryFn: () => findUserApi(id!),
+  });
+
+  const { isLoading: messagesLoading } = useQuery({
+    queryKey: ["messagesquery", id],
+    queryFn: () => getMessagesApi(user.chatId!),
+    enabled: !!user,
+    onSuccess: (data) => setMessages(data),
   });
 
   const handleTyping = (value: string) => {
@@ -107,12 +113,12 @@ export const ChatHome = (): ReactElement => {
   return (
     <>
       <main className="h-screen flex flex-col">
-        {(isLoading && <Loader />) || (!socket && <Loader />)}
+        {(isLoading || !socket || messagesLoading) && <Loader />}
         {user && (
           <>
             <ChatHeader user={user} userStatus={userStatus} />
 
-            <ChatContent messages={messages} />
+            <ChatContent messages={messages} user={user} />
 
             <ChatFooter
               handleTyping={handleTyping}

@@ -2,12 +2,9 @@ import { Link } from "react-router-dom";
 import { truncateUsername } from "@/lib/trunctuate";
 import { Button } from "../ui/button";
 import { MoveLeft, Phone, Video } from "lucide-react";
-import { UserStatusEnum } from "../common/types";
+import { User, UserStatusEnum } from "../common/types";
 
-type User = {
-  userId: string;
-  username: string;
-};
+
 
 export const ChatHeader = ({
   user,
