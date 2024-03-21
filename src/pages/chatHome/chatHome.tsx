@@ -8,7 +8,9 @@ import { findUserApi } from "@/services/api/user";
 import Loader from "@/components/loader";
 import { useSocket } from "@/socket/socketProvider";
 import { useEffect, useState } from "react";
-import { UserStatusEnum } from "@/components/common/types";
+import { MessageType, UserStatusEnum } from "@/components/common/types";
+
+
 
 export const ChatHome = (): ReactElement => {
   const { id } = useParams();
@@ -16,11 +18,30 @@ export const ChatHome = (): ReactElement => {
   const [userStatus, setUserStatus] = useState<UserStatusEnum>(
     UserStatusEnum.OFFLINE
   );
+  const [typedText, setTypedText] = useState<string>("");
+  const [messages, setMessages] = useState<MessageType[]>([]);
 
   const { data: user, isLoading } = useQuery({
     queryKey: ["userquery", id],
     queryFn: () => findUserApi(id!),
   });
+
+  const handleTyping = (value: string) => {
+    if (!socket) return;
+    setTypedText(value);
+    if (value.length > 0) {
+      socket.emit("isTyping", { toUserId: id });
+    } else {
+      socket.emit("isNotTyping", { toUserId: id });
+    }
+  };
+
+  const handleSendMessage = () => {
+    if (!socket) return;
+    socket.emit("sendMessage", { userId: id, message: typedText });
+    setTypedText("");
+    socket.emit("isNotTyping", { toUserId: id });
+  };
 
   useEffect(() => {
     if (!socket) return;
@@ -55,6 +76,10 @@ export const ChatHome = (): ReactElement => {
       }
     };
 
+    const handleSendMessage = (data: any) => {
+      setMessages((prev) => [...prev, data]);
+    };
+
     socket.emit("isOnline", id);
 
     socket.on("isOnline", handleIsOnline);
@@ -67,23 +92,17 @@ export const ChatHome = (): ReactElement => {
 
     socket.on("isNotTyping", handleIsNotTyping);
 
+    socket.on("sendMessage", handleSendMessage);
+
     return () => {
       socket.off("isOnline", handleIsOnline);
       socket.off("isDisconnected", handleIsDisconnected);
       socket.off("isConnected", handleIsConnected);
       socket.off("isTyping", handleIsTyping);
       socket.off("isNotTyping", handleIsNotTyping);
+      socket.off("sendMessage", handleSendMessage);
     };
   }, [id, socket]);
-
-  const handleTyping = (value: string) => {
-    if (!socket) return;
-    if (value.length > 0) {
-      socket.emit("isTyping", { toUserId: id });
-    } else {
-      socket.emit("isNotTyping", { toUserId: id });
-    }
-  };
 
   return (
     <>
@@ -93,9 +112,13 @@ export const ChatHome = (): ReactElement => {
           <>
             <ChatHeader user={user} userStatus={userStatus} />
 
-            <ChatContent />
+            <ChatContent messages={messages} />
 
-            <ChatFooter handleTyping={handleTyping} />
+            <ChatFooter
+              handleTyping={handleTyping}
+              handleSendMessage={handleSendMessage}
+              typedText={typedText}
+            />
           </>
         )}
       </main>

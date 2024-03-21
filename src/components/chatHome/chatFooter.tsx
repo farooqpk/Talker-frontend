@@ -8,10 +8,15 @@ import { useRef } from "react";
 
 type Props = {
   handleTyping: (value: string) => void;
+  handleSendMessage: () => void;
+  typedText: string;
 };
 
-export const ChatFooter = ({ handleTyping }: Props) => {
-  let typing = true;
+export const ChatFooter = ({
+  handleTyping,
+  handleSendMessage,
+  typedText,
+}: Props) => {
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
 
   const handleOnEmojiClick = (emojiData: any) => {
@@ -47,10 +52,16 @@ export const ChatFooter = ({ handleTyping }: Props) => {
         className="resize-none"
         ref={chatInputRef}
         onChange={(e) => handleTyping(e.target.value)}
+        value={typedText}
       />
 
-      {typing ? (
-        <Button variant="ghost" size="icon" className="rounded-full p-2">
+      {typedText.length > 0 ? (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full p-2"
+          onClick={handleSendMessage}
+        >
           <SendHorizontal />
         </Button>
       ) : (
