@@ -4,12 +4,23 @@ import { Mic, SendHorizontal, Smile } from "lucide-react";
 import { Theme } from "emoji-picker-react";
 import EmojiPicker from "emoji-picker-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { useRef } from "react";
 
-export const ChatFooter = () => {
+type Props = {
+  handleTyping: (value: string) => void;
+};
+
+export const ChatFooter = ({ handleTyping }: Props) => {
   let typing = true;
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleOnEmojiClick = (emoji: any) => {
-    console.log(emoji.emoji);
+  const handleOnEmojiClick = (emojiData: any) => {
+    if (chatInputRef.current) {
+      const emoji = emojiData.emoji;
+      chatInputRef.current.value += emoji;
+      chatInputRef.current.focus();
+      handleTyping(chatInputRef.current.value);
+    }
   };
 
   return (
@@ -31,7 +42,12 @@ export const ChatFooter = () => {
         </DialogContent>
       </Dialog>
 
-      <Textarea placeholder="Type something..." className="resize-none" />
+      <Textarea
+        placeholder="Type something..."
+        className="resize-none"
+        ref={chatInputRef}
+        onChange={(e) => handleTyping(e.target.value)}
+      />
 
       {typing ? (
         <Button variant="ghost" size="icon" className="rounded-full p-2">

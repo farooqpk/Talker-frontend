@@ -1,8 +1,8 @@
-import { BiArrowBack } from "react-icons/bi";
 import { Link } from "react-router-dom";
 import { truncateUsername } from "@/lib/trunctuate";
 import { Button } from "../ui/button";
 import { MoveLeft, Phone, Video } from "lucide-react";
+import { UserStatusEnum } from "../common/types";
 
 type User = {
   userId: string;
@@ -14,7 +14,7 @@ export const ChatHeader = ({
   userStatus,
 }: {
   user: User;
-  userStatus: "online" | "offline";
+  userStatus: UserStatusEnum;
 }) => {
   return (
     <>
@@ -30,11 +30,13 @@ export const ChatHeader = ({
             <p className="text-lg truncate">
               {truncateUsername(user.username)}
             </p>
-            {userStatus === "online" ? (
+            {userStatus === UserStatusEnum.ONLINE ? (
               <span className="text-sm md:text-sm text-success">Online</span>
-            ) : (
+            ) : userStatus === UserStatusEnum.OFFLINE ? (
               <span className="text-sm md:text-sm text-error">Offline</span>
-            )}
+            ) : userStatus === UserStatusEnum.TYPING ? (
+              <span className="text-sm md:text-sm text-warning">Typing...</span>
+            ) : null}
           </div>
         </div>
 
