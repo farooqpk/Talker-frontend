@@ -113,8 +113,9 @@ export const ChatHome = (): ReactElement => {
   return (
     <>
       <main className="h-screen flex flex-col relative">
-        {(isLoading|| !socket || user?.chatId && messagesLoading) && <Loader />}
-        {user && (
+        {isLoading || !socket || (user?.chatId && messagesLoading) ? (
+          <Loader />
+        ) : (
           <>
             <ChatHeader user={user} userStatus={userStatus} />
 

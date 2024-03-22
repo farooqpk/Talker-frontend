@@ -12,10 +12,11 @@ export const useSocket = () => {
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<Socket>();
   const accessToken = Cookies.get("accesstoken");
+  const refershToken = Cookies.get("refreshtoken");
 
   useEffect(() => {
     if (!accessToken) {
-      return;
+      return
     }
     const newSocket: Socket = io(import.meta.env.VITE_API_URL, {
       withCredentials: true,
@@ -38,7 +39,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       newSocket.close();
     };
-  }, [accessToken]);
+  }, [accessToken, refershToken]);
 
   return (
     <SocketContext.Provider value={socket as Socket}>

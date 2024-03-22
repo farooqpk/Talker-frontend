@@ -13,7 +13,7 @@ export const ChatContent = ({ messages, user: sender }: Props) => {
   return (
     <>
       <Container>
-        <section className="flex flex-col gap-4 h-[67vh] md:h-[65vh] overflow-y-scroll px-10 py-4">
+        <section className="flex flex-col gap-4 h-[67vh] md:h-[65vh] overflow-y-scroll px-3 md:px-14 py-4">
           {messages.map((message, index) => (
             <div
               key={index}
