@@ -11,13 +11,17 @@ export const useSocket = () => {
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<Socket>();
+  const accessToken = Cookies.get("accesstoken");
 
   useEffect(() => {
+    if (!accessToken) {
+      return;
+    }
     const newSocket: Socket = io(import.meta.env.VITE_API_URL, {
       withCredentials: true,
       autoConnect: true,
       auth: {
-        token: Cookies.get("accesstoken"),
+        token: accessToken,
       },
     });
 
@@ -34,7 +38,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       newSocket.close();
     };
-  }, []);
+  }, [accessToken]);
 
   return (
     <SocketContext.Provider value={socket as Socket}>

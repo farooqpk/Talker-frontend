@@ -28,7 +28,7 @@ export const ChatHome = (): ReactElement => {
   const { isLoading: messagesLoading } = useQuery({
     queryKey: ["messagesquery", id],
     queryFn: () => getMessagesApi(user.chatId!),
-    enabled: !!user,
+    enabled: !!user?.chatId,
     onSuccess: (data) => setMessages(data),
   });
 
@@ -112,8 +112,8 @@ export const ChatHome = (): ReactElement => {
 
   return (
     <>
-      <main className="h-screen flex flex-col">
-        {(isLoading || !socket || messagesLoading) && <Loader />}
+      <main className="h-screen flex flex-col relative">
+        {(isLoading|| !socket || user?.chatId && messagesLoading) && <Loader />}
         {user && (
           <>
             <ChatHeader user={user} userStatus={userStatus} />

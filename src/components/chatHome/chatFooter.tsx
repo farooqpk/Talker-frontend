@@ -28,6 +28,13 @@ export const ChatFooter = ({
     }
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault(); // Prevents adding a new line
+      typedText.length > 0 && handleSendMessage();
+    }
+  };
+
   return (
     <section className="flex gap-1 md:gap-4 items-center px-5 md:px-24 relative">
       <Dialog>
@@ -43,6 +50,8 @@ export const ChatFooter = ({
             skinTonesDisabled
             width={"95%"}
             style={{ backgroundColor: "transparent" }}
+            lazyLoadEmojis
+            searchDisabled
           />
         </DialogContent>
       </Dialog>
@@ -53,6 +62,7 @@ export const ChatFooter = ({
         ref={chatInputRef}
         onChange={(e) => handleTyping(e.target.value)}
         value={typedText}
+        onKeyDown={handleKeyDown}
       />
 
       {typedText.length > 0 ? (

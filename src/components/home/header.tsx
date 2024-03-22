@@ -49,7 +49,7 @@ const HomeHeader = () => {
         </PopoverTrigger>
         <PopoverContent>
           <ScrollArea
-            className={`${userList.length < 2 ? "h-[100px]" : "h-[200px]"}`}
+            className={`${userList.length <= 2 ? "h-[100px]" : "h-[200px]"}`}
           >
             <div className="flex flex-col gap-3 p-3">
               {userList.map((user) => (
@@ -65,7 +65,7 @@ const HomeHeader = () => {
                 <Button
                   onClick={() => fetchNextPage()}
                   size={"sm"}
-                  variant={"default"}
+                  variant={"outline"}
                   disabled={!hasNextPage || isFetchingNextPage}
                 >
                   {isFetchingNextPage
