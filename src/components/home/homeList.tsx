@@ -5,9 +5,17 @@ import { Badge } from "@/components/ui/badge";
 import { formateDate } from "@/lib/format-date";
 import { truncateMessage } from "@/lib/trunctuate";
 import { useGetUser } from "@/hooks/user";
+import { MessageType } from "../common/types";
 
-export const HomeList = ({ data }: any): ReactElement => {
+export const HomeList = ({
+  data,
+  latestMessage,
+}: {
+  data: any;
+  latestMessage: MessageType | null;
+}): ReactElement => {
   const { user } = useGetUser();
+
   return (
     <>
       {data?.map((chats: any, index: number) => (
@@ -27,7 +35,11 @@ export const HomeList = ({ data }: any): ReactElement => {
                 </h2>
                 <span className="text-secondary text-xs md:text-lg">
                   {truncateMessage(
-                    user?.userId === chats?.messages[0]?.senderId
+                    latestMessage && latestMessage.chatId === chats?.chatId
+                      ? user?.userId === latestMessage?.senderId
+                        ? latestMessage?.contentForSender
+                        : latestMessage?.contentForRecipient
+                      : user?.userId === chats?.messages[0]?.senderId
                       ? chats?.messages[0]?.contentForSender
                       : chats?.messages[0]?.contentForRecipient
                   )}

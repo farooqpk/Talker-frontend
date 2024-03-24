@@ -31,11 +31,10 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     newSocket.on("unauthorized", (reason) => {
       console.log(reason);
-      console.log(accessToken);
-      
-      setTimeout(() => {
-        newSocket.connect()
-      }, 2000);
+
+      newSocket.connect().auth = {
+        token: localStorage.getItem("accesstoken"),
+      };
     });
 
     setSocket(newSocket);

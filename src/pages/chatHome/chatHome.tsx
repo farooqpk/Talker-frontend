@@ -155,7 +155,7 @@ export const ChatHome = (): ReactElement => {
           <>
             <ChatHeader recipient={recipient} userStatus={userStatus} />
 
-            <ChatContent messages={messages} recipient={recipient} />
+            <ChatContent recipient={recipient} messages={messages} />
 
             <ChatFooter
               handleTyping={handleTyping}

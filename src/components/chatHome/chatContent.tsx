@@ -2,6 +2,7 @@ import { useGetUser } from "@/hooks/user";
 import Container from "../Container";
 import { MessageType, User } from "../common/types";
 import { formateDate } from "@/lib/format-date";
+import { useEffect, useRef } from "react";
 
 type Props = {
   messages: MessageType[];
@@ -10,11 +11,21 @@ type Props = {
 
 export const ChatContent = ({ messages, recipient }: Props) => {
   const { user } = useGetUser();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   return (
     <>
       <Container>
-        <section className="flex flex-col gap-4 h-[67vh] md:h-[65vh] overflow-y-scroll px-3 md:px-14 py-4">
+        <section
+          ref={scrollRef}
+          className="flex flex-col gap-4 h-[67vh] md:h-[65vh] overflow-y-scroll px-3 md:px-14 py-4"
+        >
           {messages.map((message, index) => (
             <div
               key={index}
