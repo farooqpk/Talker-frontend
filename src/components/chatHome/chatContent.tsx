@@ -5,11 +5,12 @@ import { formateDate } from "@/lib/format-date";
 
 type Props = {
   messages: MessageType[];
-  user: User;
+  recipient: User;
 };
 
-export const ChatContent = ({ messages, user: sender }: Props) => {
+export const ChatContent = ({ messages, recipient }: Props) => {
   const { user } = useGetUser();
+
   return (
     <>
       <Container>
@@ -23,12 +24,16 @@ export const ChatContent = ({ messages, user: sender }: Props) => {
             >
               <div className="border-b">
                 <h3 className="text-sm font-semibold">
-                  {message.senderId === sender.userId ? sender.username : "You"}
+                  {message.senderId === recipient.userId
+                    ? recipient.username
+                    : "You"}
                 </h3>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground font-semibold">
-                  {message.content}
+                  {message.senderId === recipient.userId
+                    ? message.contentForRecipient
+                    : message.contentForSender}
                 </p>
               </div>
               <div className="ml-auto">

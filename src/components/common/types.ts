@@ -5,11 +5,12 @@ export enum UserStatusEnum {
 }
 
 export type MessageType = {
-  messageId: string;
+  messageId?: string;
   chatId: string;
   senderId: string;
   contentType: string;
-  content: string;
+  contentForRecipient: string;
+  contentForSender: string;
   mediaUrl: string;
   createdAt: string;
 };

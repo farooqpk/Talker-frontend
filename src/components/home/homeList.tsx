@@ -3,8 +3,11 @@ import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { formateDate } from "@/lib/format-date";
+import { truncateMessage } from "@/lib/trunctuate";
+import { useGetUser } from "@/hooks/user";
 
 export const HomeList = ({ data }: any): ReactElement => {
+  const { user } = useGetUser();
   return (
     <>
       {data?.map((chats: any, index: number) => (
@@ -23,7 +26,11 @@ export const HomeList = ({ data }: any): ReactElement => {
                   {chats?.participants[0]?.user?.username}
                 </h2>
                 <span className="text-secondary text-xs md:text-lg">
-                  {chats?.messages[0]?.content}
+                  {truncateMessage(
+                    user?.userId === chats?.messages[0]?.senderId
+                      ? chats?.messages[0]?.contentForSender
+                      : chats?.messages[0]?.contentForRecipient
+                  )}
                 </span>
               </div>
               <div className="flex flex-col items-center gap-2 justify-evenly">

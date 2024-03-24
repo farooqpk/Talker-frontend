@@ -12,14 +12,9 @@ export const useSocket = () => {
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<Socket>();
   const accessToken = Cookies.get("accesstoken");
-  const refershToken = Cookies.get("refreshtoken");
 
   useEffect(() => {
-    if (!accessToken) {
-      return
-    }
     const newSocket: Socket = io(import.meta.env.VITE_API_URL, {
-      withCredentials: true,
       autoConnect: true,
       auth: {
         token: accessToken,
@@ -34,12 +29,21 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("disconnected");
     });
 
+    newSocket.on("unauthorized", (reason) => {
+      console.log(reason);
+      console.log(accessToken);
+      
+      setTimeout(() => {
+        newSocket.connect()
+      }, 2000);
+    });
+
     setSocket(newSocket);
 
     return () => {
       newSocket.close();
     };
-  }, [accessToken, refershToken]);
+  }, []);
 
   return (
     <SocketContext.Provider value={socket as Socket}>

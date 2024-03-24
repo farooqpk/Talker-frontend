@@ -7,10 +7,10 @@ import { User, UserStatusEnum } from "../common/types";
 
 
 export const ChatHeader = ({
-  user,
+  recipient,
   userStatus,
 }: {
-  user: User;
+  recipient: User;
   userStatus: UserStatusEnum;
 }) => {
   return (
@@ -25,7 +25,7 @@ export const ChatHeader = ({
         <div className="flex items-center gap-6 ">
           <div className="flex flex-col md:gap-2">
             <p className="text-lg truncate">
-              {truncateUsername(user.username)}
+              {truncateUsername(recipient.username)}
             </p>
             {userStatus === UserStatusEnum.ONLINE ? (
               <span className="text-sm md:text-sm text-success">Online</span>

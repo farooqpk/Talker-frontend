@@ -2,14 +2,36 @@ import HomeAddButton from "@/components/home/addButton";
 import HomeHeader from "@/components/home/header";
 import { HomeList } from "@/components/home/homeList";
 import Loader from "@/components/loader";
+import { useGetUser } from "@/hooks/user";
+import { decrypt } from "@/lib/ecrypt_decrypt";
 import { getChatListApi } from "@/services/api/chat";
-import { ReactElement } from "react";
+import { ReactElement, useState } from "react";
 import { useQuery } from "react-query";
 
 export const Home = (): ReactElement => {
-  const { data, isLoading } = useQuery({
+  const [chatData, setChatData] = useState<any[]>([]);
+  const { user } = useGetUser();
+
+  const { isLoading } = useQuery({
     queryKey: ["chatlist"],
     queryFn: getChatListApi,
+    onSuccess: async (data) => {
+      const decryptedData = await Promise.all(
+        data.map(async (chat: any) => {
+          if (user?.userId === chat?.messages[0]?.senderId) {
+            chat.messages[0].contentForSender = await decrypt(
+              chat.messages[0].contentForSender
+            );
+          } else {
+            chat.messages[0].contentForRecipient = await decrypt(
+              chat.messages[0].contentForRecipient
+            );
+          }
+          return chat;
+        })
+      );
+      setChatData(decryptedData);
+    },
   });
 
   return (
@@ -23,7 +45,7 @@ export const Home = (): ReactElement => {
               <HomeHeader />
             </section>
             <section>
-              <HomeList data={data} />
+              <HomeList data={chatData} />
             </section>
             <section>
               <HomeAddButton />

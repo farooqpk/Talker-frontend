@@ -1,6 +1,6 @@
 import _axios from "@/lib/_axios";
 
-export const signup = async (data: { username: string; password: string }) => {
+export const signup = async (data: { username: string; password: string, publicKey: string }) => {
   return (await _axios.post(`/auth/signup`, data)).data;
 };
 

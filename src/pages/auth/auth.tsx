@@ -27,6 +27,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
+import { createKeys } from "@/lib/ecrypt_decrypt";
 
 const formSchema = z.object({
   username: z
@@ -79,11 +80,17 @@ const Auth = (): ReactElement => {
     );
   };
 
-  const handleSignup = ({ username, password }: z.infer<typeof formSchema>) => {
+  const handleSignup = async ({
+    username,
+    password,
+  }: z.infer<typeof formSchema>) => {
+    const { privateKey, publicKey } = await createKeys();
+
     signupMutate(
       {
         username,
         password,
+        publicKey: JSON.stringify(publicKey),
       },
       {
         onSuccess: (data) => {
@@ -94,6 +101,8 @@ const Auth = (): ReactElement => {
               variant: "default",
             });
             localStorage.setItem("user", JSON.stringify(data?.user));
+            localStorage.setItem("privateKey", JSON.stringify(privateKey));
+            localStorage.setItem("publicKey", JSON.stringify(publicKey));
             navigate("/");
           }
         },

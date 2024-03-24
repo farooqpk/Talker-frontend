@@ -10,26 +10,44 @@ import { useSocket } from "@/socket/socketProvider";
 import { useEffect, useState } from "react";
 import { MessageType, UserStatusEnum } from "@/components/common/types";
 import { getMessagesApi } from "@/services/api/chat";
+import { decrypt, encrypt } from "@/lib/ecrypt_decrypt";
+import { useGetUser } from "@/hooks/user";
 
 export const ChatHome = (): ReactElement => {
   const { id } = useParams();
   const socket = useSocket();
+  const { user } = useGetUser();
+
   const [userStatus, setUserStatus] = useState<UserStatusEnum>(
     UserStatusEnum.OFFLINE
   );
   const [typedText, setTypedText] = useState<string>("");
   const [messages, setMessages] = useState<MessageType[]>([]);
 
-  const { data: user, isLoading } = useQuery({
+  const { data: recipient, isLoading } = useQuery({
     queryKey: ["userquery", id],
     queryFn: () => findUserApi(id!),
   });
 
   const { isLoading: messagesLoading } = useQuery({
     queryKey: ["messagesquery", id],
-    queryFn: () => getMessagesApi(user.chatId!),
-    enabled: !!user?.chatId,
-    onSuccess: (data) => setMessages(data),
+    queryFn: () => getMessagesApi(recipient.chatId!),
+    enabled: !!recipient?.chatId,
+    onSuccess: async (data) => {
+      const decryptedData = await Promise.all(
+        data.map(async (message: MessageType) => {
+          if (user?.userId === message.senderId) {
+            message.contentForSender = await decrypt(message.contentForSender);
+          } else {
+            message.contentForRecipient = await decrypt(
+              message.contentForRecipient
+            );
+          }
+          return message;
+        })
+      );
+      setMessages(decryptedData);
+    },
   });
 
   const handleTyping = (value: string) => {
@@ -42,9 +60,21 @@ export const ChatHome = (): ReactElement => {
     }
   };
 
-  const handleSendMessage = () => {
-    if (!socket) return;
-    socket.emit("sendMessage", { userId: id, message: typedText });
+  const handleSendMessage = async () => {
+    if (!socket || !recipient) return;
+    const encryptedMessageForRecipient = await encrypt(
+      typedText,
+      recipient.publicKey
+    );
+    const encryptedMessageForSender = await encrypt(
+      typedText,
+      localStorage.getItem("publicKey")!
+    );
+
+    socket.emit("sendMessage", {
+      userId: id,
+      message: { encryptedMessageForSender, encryptedMessageForRecipient },
+    });
     setTypedText("");
     socket.emit("isNotTyping", { toUserId: id });
   };
@@ -82,7 +112,13 @@ export const ChatHome = (): ReactElement => {
       }
     };
 
-    const handleSendMessage = (data: any) => {
+    const handleRecieveMessage = async (data: MessageType) => {
+      if (user?.userId === data.senderId) {
+        data.contentForSender = await decrypt(data.contentForSender);
+      } else {
+        data.contentForRecipient = await decrypt(data.contentForRecipient);
+      }
+
       setMessages((prev) => [...prev, data]);
     };
 
@@ -98,7 +134,7 @@ export const ChatHome = (): ReactElement => {
 
     socket.on("isNotTyping", handleIsNotTyping);
 
-    socket.on("sendMessage", handleSendMessage);
+    socket.on("sendMessage", handleRecieveMessage);
 
     return () => {
       socket.off("isOnline", handleIsOnline);
@@ -106,20 +142,20 @@ export const ChatHome = (): ReactElement => {
       socket.off("isConnected", handleIsConnected);
       socket.off("isTyping", handleIsTyping);
       socket.off("isNotTyping", handleIsNotTyping);
-      socket.off("sendMessage", handleSendMessage);
+      socket.off("sendMessage", handleRecieveMessage);
     };
   }, [id, socket]);
 
   return (
     <>
       <main className="h-screen flex flex-col relative">
-        {isLoading || !socket || (user?.chatId && messagesLoading) ? (
+        {isLoading || !socket || (recipient?.chatId && messagesLoading) ? (
           <Loader />
         ) : (
           <>
-            <ChatHeader user={user} userStatus={userStatus} />
+            <ChatHeader recipient={recipient} userStatus={userStatus} />
 
-            <ChatContent messages={messages} user={user} />
+            <ChatContent messages={messages} recipient={recipient} />
 
             <ChatFooter
               handleTyping={handleTyping}
