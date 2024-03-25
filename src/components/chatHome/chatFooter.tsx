@@ -1,6 +1,6 @@
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "../ui/button";
-import { Mic, SendHorizontal, Smile } from "lucide-react";
+import { SendHorizontal, Smile } from "lucide-react";
 import { Theme } from "emoji-picker-react";
 import EmojiPicker from "emoji-picker-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -65,20 +65,15 @@ export const ChatFooter = ({
         onKeyDown={handleKeyDown}
       />
 
-      {typedText.length > 0 ? (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full p-2"
-          onClick={handleSendMessage}
-        >
-          <SendHorizontal />
-        </Button>
-      ) : (
-        <Button variant="ghost" size="icon" className="rounded-full p-2">
-          <Mic />
-        </Button>
-      )}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="rounded-full p-2"
+        onClick={handleSendMessage}
+        disabled={typedText.length > 0 ? false : true}
+      >
+        <SendHorizontal />
+      </Button>
     </section>
   );
 };
