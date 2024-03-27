@@ -13,6 +13,8 @@ export type MessageType = {
   contentForSender: string;
   mediaUrl: string;
   createdAt: string;
+  encryptedSymetricKeyForRecipient: string;
+  encryptedSymetricKeyForSender: string;
 };
 
 export type User = {

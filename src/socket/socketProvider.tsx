@@ -10,43 +10,57 @@ export const useSocket = () => {
 };
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
-  const [socket, setSocket] = useState<Socket>();
-  const accessToken = Cookies.get("accesstoken");
+  const [socket, setSocket] = useState<Socket | undefined>();
+  const [accessToken, setAccessToken] = useState<string | undefined>(
+    Cookies.get("accesstoken") || undefined
+  );
 
   useEffect(() => {
-    const newSocket: Socket = io(import.meta.env.VITE_API_URL, {
-      autoConnect: true,
-      auth: {
-        token: accessToken,
-      },
-    });
+    const accessTokenInterval = setInterval(() => {
+      const newAccessToken = Cookies.get("accesstoken");
+      if (newAccessToken !== accessToken) {
+        setAccessToken(newAccessToken);
+      }
+    }, 2000);
 
-    newSocket.on("connect", () => {
-      console.log("connected");
-    });
+    return () => clearInterval(accessTokenInterval);
+  }, [accessToken]);
 
-    newSocket.on("disconnect", () => {
-      console.log("disconnected");
-    });
+  useEffect(() => {
+    const connectSocket = () => {
+      if (accessToken) {
+        const newSocket: Socket = io(import.meta.env.VITE_API_URL, {
+          autoConnect: true,
+          auth: {
+            token: accessToken,
+          },
+        });
 
-    newSocket.on("unauthorized", (reason) => {
-      console.log(reason);
+        newSocket.on("connect", () => {
+          console.log("connected");
+        });
 
-      newSocket.connect().auth = {
-        token: localStorage.getItem("accesstoken"),
-      };
-    });
+        newSocket.on("disconnect", () => {
+          console.log("disconnected");
+        });
 
-    setSocket(newSocket);
+        newSocket.on("unauthorized", (reason) => {
+          console.log(reason);
+          newSocket.connect();
+        });
 
-    return () => {
-      newSocket.close();
+        setSocket(newSocket);
+
+        return () => {
+          newSocket.close();
+        };
+      }
     };
-  }, []);
+
+    connectSocket(); // Initial connection
+  }, [accessToken]); // useEffect triggers when accessToken changes
 
   return (
-    <SocketContext.Provider value={socket as Socket}>
-      {children}
-    </SocketContext.Provider>
+    <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
   );
 };

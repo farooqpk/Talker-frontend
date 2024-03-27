@@ -4,7 +4,7 @@ import HomeHeader from "@/components/home/header";
 import { HomeList } from "@/components/home/homeList";
 import Loader from "@/components/loader";
 import { useGetUser } from "@/hooks/user";
-import { decrypt } from "@/lib/ecrypt_decrypt";
+import { decryptMessage } from "@/lib/ecrypt_decrypt";
 import { getChatListApi } from "@/services/api/chat";
 import { useSocket } from "@/socket/socketProvider";
 import { ReactElement, useEffect, useState } from "react";
@@ -15,20 +15,25 @@ export const Home = (): ReactElement => {
   const { user } = useGetUser();
   const socket = useSocket();
   const [latestMessage, setLatestMessage] = useState<MessageType | null>(null);
+  const [isTyping, setIsTyping] = useState<string[]>([]);
 
-  const { isLoading } = useQuery({
+  const { isLoading, refetch } = useQuery({
     queryKey: ["chatlist"],
     queryFn: getChatListApi,
     onSuccess: async (data) => {
       const decryptedData = await Promise.all(
         data.map(async (chat: any) => {
           if (user?.userId === chat?.messages[0]?.senderId) {
-            chat.messages[0].contentForSender = await decrypt(
-              chat.messages[0].contentForSender
+            chat.messages[0].contentForSender = await decryptMessage(
+              chat.messages[0].contentForSender,
+              chat.messages[0].encryptedSymetricKeyForSender,
+              localStorage.getItem("privateKey")!
             );
           } else {
-            chat.messages[0].contentForRecipient = await decrypt(
-              chat.messages[0].contentForRecipient
+            chat.messages[0].contentForRecipient = await decryptMessage(
+              chat.messages[0].contentForRecipient,
+              chat.messages[0].encryptedSymetricKeyForRecipient,
+              localStorage.getItem("privateKey")!
             );
           }
           return chat;
@@ -40,18 +45,55 @@ export const Home = (): ReactElement => {
 
   // to update latest message in the home
   useEffect(() => {
-    const handleRecieveMessage = async (data: MessageType) => {
-      if (user?.userId === data.senderId) {
-        data.contentForSender = await decrypt(data.contentForSender);
+    const handleUpdateChatList = async ({
+      isRefetchChatList,
+      message,
+    }: {
+      isRefetchChatList: boolean;
+      message?: MessageType;
+    }) => {
+      console.log("hai");
+
+      if (isRefetchChatList) {
+        refetch();
       } else {
-        data.contentForRecipient = await decrypt(data.contentForRecipient);
+        if (!message) return;
+
+        user?.userId === message?.senderId
+          ? (message.contentForSender = await decryptMessage(
+              message.contentForSender,
+              message.encryptedSymetricKeyForSender,
+              localStorage.getItem("privateKey")!
+            ))
+          : (message.contentForRecipient = await decryptMessage(
+              message.contentForRecipient,
+              message.encryptedSymetricKeyForRecipient,
+              localStorage.getItem("privateKey")!
+            ));
+        setLatestMessage(message);
       }
-      setLatestMessage(data);
     };
 
-    socket?.on("sendMessage", handleRecieveMessage);
+    const handleIsTyping = (userId: string) => {
+      setIsTyping((prev) => [...prev, userId]);
+    };
+
+    const handleIsNotTyping = (userId: string) => {
+      setIsTyping(isTyping.filter((id) => id !== userId));
+    };
+
+    socket?.on("updateChatList", handleUpdateChatList);
+
+    socket?.on("isTyping", handleIsTyping);
+
+    socket?.on("isNotTyping", handleIsNotTyping);
+
     return () => {
-      socket?.off("sendMessage", handleRecieveMessage);
+      socket?.off("updateChatList", handleUpdateChatList);
+
+      socket?.off("isTyping", handleIsTyping);
+
+      socket?.off("isNotTyping", handleIsNotTyping);
     };
   }, [socket]);
 
@@ -66,7 +108,11 @@ export const Home = (): ReactElement => {
               <HomeHeader />
             </section>
             <section>
-              <HomeList data={chatData} latestMessage={latestMessage} />
+              <HomeList
+                data={chatData}
+                latestMessage={latestMessage}
+                isTyping={isTyping}
+              />
             </section>
             <section>
               <HomeAddButton />

@@ -27,7 +27,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
-import { createKeys } from "@/lib/ecrypt_decrypt";
+import { createAssymetricKeys, createSymetricKey } from "@/lib/ecrypt_decrypt";
 
 const formSchema = z.object({
   username: z
@@ -84,7 +84,8 @@ const Auth = (): ReactElement => {
     username,
     password,
   }: z.infer<typeof formSchema>) => {
-    const { privateKey, publicKey } = await createKeys();
+    const { privateKey, publicKey } = await createAssymetricKeys();
+    const symetricKey = await createSymetricKey();
 
     signupMutate(
       {
@@ -103,6 +104,7 @@ const Auth = (): ReactElement => {
             localStorage.setItem("user", JSON.stringify(data?.user));
             localStorage.setItem("privateKey", JSON.stringify(privateKey));
             localStorage.setItem("publicKey", JSON.stringify(publicKey));
+            localStorage.setItem("symetricKey", symetricKey);
             navigate("/");
           }
         },

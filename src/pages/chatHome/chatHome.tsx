@@ -10,7 +10,7 @@ import { useSocket } from "@/socket/socketProvider";
 import { useEffect, useState } from "react";
 import { MessageType, UserStatusEnum } from "@/components/common/types";
 import { getMessagesApi } from "@/services/api/chat";
-import { decrypt, encrypt } from "@/lib/ecrypt_decrypt";
+import { decryptMessage, encryptMessage } from "@/lib/ecrypt_decrypt";
 import { useGetUser } from "@/hooks/user";
 
 export const ChatHome = (): ReactElement => {
@@ -37,10 +37,16 @@ export const ChatHome = (): ReactElement => {
       const decryptedData = await Promise.all(
         data.map(async (message: MessageType) => {
           if (user?.userId === message.senderId) {
-            message.contentForSender = await decrypt(message.contentForSender);
+            message.contentForSender = await decryptMessage(
+              message.contentForSender,
+              message.encryptedSymetricKeyForSender,
+              localStorage.getItem("privateKey")!
+            );
           } else {
-            message.contentForRecipient = await decrypt(
-              message.contentForRecipient
+            message.contentForRecipient = await decryptMessage(
+              message.contentForRecipient,
+              message.encryptedSymetricKeyForRecipient,
+              localStorage.getItem("privateKey")!
             );
           }
           return message;
@@ -62,18 +68,32 @@ export const ChatHome = (): ReactElement => {
 
   const handleSendMessage = async () => {
     if (!socket || !recipient) return;
-    const encryptedMessageForRecipient = await encrypt(
+
+    const {
+      encryptedMessage: encryptedMessageForRecipient,
+      encryptedSymetricKey: encryptedSymetricKeyForRecipient,
+    } = await encryptMessage(
       typedText,
+      localStorage.getItem("symetricKey")!,
       recipient.publicKey
     );
-    const encryptedMessageForSender = await encrypt(
+    const {
+      encryptedMessage: encryptedMessageForSender,
+      encryptedSymetricKey: encryptedSymetricKeyForSender,
+    } = await encryptMessage(
       typedText,
+      localStorage.getItem("symetricKey")!,
       localStorage.getItem("publicKey")!
     );
 
     socket.emit("sendMessage", {
       userId: id,
-      message: { encryptedMessageForSender, encryptedMessageForRecipient },
+      message: {
+        encryptedMessageForRecipient,
+        encryptedSymetricKeyForRecipient,
+        encryptedMessageForSender,
+        encryptedSymetricKeyForSender,
+      },
     });
     setTypedText("");
     socket.emit("isNotTyping", { toUserId: id });
@@ -114,9 +134,17 @@ export const ChatHome = (): ReactElement => {
 
     const handleRecieveMessage = async (data: MessageType) => {
       if (user?.userId === data.senderId) {
-        data.contentForSender = await decrypt(data.contentForSender);
+        data.contentForSender = await decryptMessage(
+          data.contentForSender,
+          data.encryptedSymetricKeyForSender,
+          localStorage.getItem("privateKey")!
+        );
       } else {
-        data.contentForRecipient = await decrypt(data.contentForRecipient);
+        data.contentForRecipient = await decryptMessage(
+          data.contentForRecipient,
+          data.encryptedSymetricKeyForRecipient,
+          localStorage.getItem("privateKey")!
+        );
       }
 
       setMessages((prev) => [...prev, data]);
