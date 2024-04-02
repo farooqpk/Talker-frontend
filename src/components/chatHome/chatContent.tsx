@@ -2,7 +2,8 @@ import { useGetUser } from "@/hooks/user";
 import Container from "../Container";
 import { MessageType, User } from "../common/types";
 import { formateDate } from "@/lib/format-date";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Pause, Play } from "lucide-react";
 
 type Props = {
   messages: MessageType[];
@@ -18,6 +19,35 @@ export const ChatContent = ({ messages, recipient }: Props) => {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const [audioPlayers, setAudioPlayers] = useState<
+    Record<string, HTMLAudioElement>
+  >({});
+
+  const handleAudio = (audioId: string, audioBlob: Blob, isPlay: boolean) => {
+    if (isPlay) {
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audioPlayer = new Audio(audioUrl);
+      audioPlayer.play().catch((error) => {
+        console.error("Failed to play audio:", error);
+      });
+      setAudioPlayers((prevState) => ({
+        ...prevState,
+        [audioId]: audioPlayer,
+      }));
+    } else {
+      const audioPlayer = audioPlayers[audioId];
+      if (audioPlayer) {
+        audioPlayer.pause();
+        audioPlayer.currentTime = 0;
+        setAudioPlayers((prevState) => {
+          const newState = { ...prevState };
+          delete newState[audioId];
+          return newState;
+        });
+      }
+    }
+  };
 
   return (
     <>
@@ -41,11 +71,44 @@ export const ChatContent = ({ messages, recipient }: Props) => {
                 </h3>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground font-semibold">
-                  {message.senderId === recipient.userId
-                    ? message.contentForRecipient
-                    : message.contentForSender}
-                </p>
+                {message.contentType === "TEXT" ? (
+                  <p className="text-sm text-muted-foreground font-semibold">
+                    {message.senderId === recipient.userId
+                      ? message.contentForRecipient
+                      : message.contentForSender}
+                  </p>
+                ) : (
+                  <div className="flex gap-3 p-3">
+                    {audioPlayers[message?.messageId!!] ? (
+                      <Pause
+                        className="cursor-pointer"
+                        onClick={() =>
+                          handleAudio(
+                            message?.messageId!!,
+                            message.senderId === recipient.userId
+                              ? (message.audioForRecipient as Blob)
+                              : (message.audioForSender as Blob),
+                            false
+                          )
+                        }
+                      />
+                    ) : (
+                      <Play
+                        className="cursor-pointer"
+                        onClick={() =>
+                          handleAudio(
+                            message?.messageId!!,
+                            message.senderId === recipient.userId
+                              ? (message.audioForRecipient as Blob)
+                              : (message.audioForSender as Blob),
+                            true
+                          )
+                        }
+                      />
+                    )}
+                    <p>audio..</p>
+                  </div>
+                )}
               </div>
               <div className="ml-auto">
                 <span className="text-xs text-muted-foreground">

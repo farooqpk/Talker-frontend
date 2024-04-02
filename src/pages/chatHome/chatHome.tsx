@@ -12,6 +12,7 @@ import { MessageType, UserStatusEnum } from "@/components/common/types";
 import { getMessagesApi } from "@/services/api/chat";
 import { decryptMessage, encryptMessage } from "@/lib/ecrypt_decrypt";
 import { useGetUser } from "@/hooks/user";
+import { useAudioRecorder } from "react-audio-voice-recorder";
 
 export const ChatHome = (): ReactElement => {
   const { id } = useParams();
@@ -37,17 +38,33 @@ export const ChatHome = (): ReactElement => {
       const decryptedData = await Promise.all(
         data.map(async (message: MessageType) => {
           if (user?.userId === message.senderId) {
-            message.contentForSender = await decryptMessage(
-              message.contentForSender,
-              message.encryptedSymetricKeyForSender,
-              localStorage.getItem("privateKey")!
-            );
+            message.contentType === "TEXT"
+              ? (message.contentForSender = await decryptMessage(
+                  message.contentForSender,
+                  message.encryptedSymetricKeyForSender,
+                  localStorage.getItem("privateKey")!,
+                  false
+                ))
+              : (message.audioForSender = await decryptMessage(
+                  message.contentForSender,
+                  message.encryptedSymetricKeyForSender,
+                  localStorage.getItem("privateKey")!,
+                  true
+                ));
           } else {
-            message.contentForRecipient = await decryptMessage(
-              message.contentForRecipient,
-              message.encryptedSymetricKeyForRecipient,
-              localStorage.getItem("privateKey")!
-            );
+            message.contentType === "TEXT"
+              ? (message.contentForRecipient = await decryptMessage(
+                  message.contentForRecipient,
+                  message.encryptedSymetricKeyForRecipient,
+                  localStorage.getItem("privateKey")!,
+                  false
+                ))
+              : (message.audioForRecipient = await decryptMessage(
+                  message.contentForRecipient,
+                  message.encryptedSymetricKeyForRecipient,
+                  localStorage.getItem("privateKey")!,
+                  true
+                ));
           }
           return message;
         })
@@ -93,6 +110,7 @@ export const ChatHome = (): ReactElement => {
         encryptedSymetricKeyForRecipient,
         encryptedMessageForSender,
         encryptedSymetricKeyForSender,
+        contentType: "TEXT",
       },
     });
     setTypedText("");
@@ -134,17 +152,33 @@ export const ChatHome = (): ReactElement => {
 
     const handleRecieveMessage = async (data: MessageType) => {
       if (user?.userId === data.senderId) {
-        data.contentForSender = await decryptMessage(
-          data.contentForSender,
-          data.encryptedSymetricKeyForSender,
-          localStorage.getItem("privateKey")!
-        );
+        data.contentType === "TEXT"
+          ? (data.contentForSender = await decryptMessage(
+              data.contentForSender,
+              data.encryptedSymetricKeyForSender,
+              localStorage.getItem("privateKey")!,
+              false
+            ))
+          : (data.audioForSender = await decryptMessage(
+              data.contentForSender,
+              data.encryptedSymetricKeyForSender,
+              localStorage.getItem("privateKey")!,
+              true
+            ));
       } else {
-        data.contentForRecipient = await decryptMessage(
-          data.contentForRecipient,
-          data.encryptedSymetricKeyForRecipient,
-          localStorage.getItem("privateKey")!
-        );
+        data.contentType === "TEXT"
+          ? (data.contentForRecipient = await decryptMessage(
+              data.contentForRecipient,
+              data.encryptedSymetricKeyForRecipient,
+              localStorage.getItem("privateKey")!,
+              false
+            ))
+          : (data.audioForRecipient = await decryptMessage(
+              data.contentForRecipient,
+              data.encryptedSymetricKeyForRecipient,
+              localStorage.getItem("privateKey")!,
+              true
+            ));
       }
 
       setMessages((prev) => [...prev, data]);
@@ -174,6 +208,56 @@ export const ChatHome = (): ReactElement => {
     };
   }, [id, socket]);
 
+  const { isRecording, startRecording, stopRecording, recordingBlob } =
+    useAudioRecorder();
+
+  const handleAudioMessage = async () => {
+    if (!socket || !recipient || !recordingBlob) return;
+
+    const {
+      encryptedMessage: encryptedMessageForRecipient,
+      encryptedSymetricKey: encryptedSymetricKeyForRecipient,
+    } = await encryptMessage(
+      recordingBlob,
+      localStorage.getItem("symetricKey")!,
+      recipient.publicKey
+    );
+    const {
+      encryptedMessage: encryptedMessageForSender,
+      encryptedSymetricKey: encryptedSymetricKeyForSender,
+    } = await encryptMessage(
+      recordingBlob,
+      localStorage.getItem("symetricKey")!,
+      localStorage.getItem("publicKey")!
+    );
+
+    socket.emit("sendMessage", {
+      userId: id,
+      message: {
+        encryptedMessageForRecipient,
+        encryptedSymetricKeyForRecipient,
+        encryptedMessageForSender,
+        encryptedSymetricKeyForSender,
+        contentType: "AUDIO",
+      },
+    });
+  };
+
+  useEffect(() => {
+    const sendAudioMessage = async () => {
+      if (recordingBlob) {
+        try {
+          await handleAudioMessage();
+        } catch (error) {
+          console.error("Error sending audio message:", error);
+          // Handle the error (e.g., display an error message to the user)
+        }
+      }
+    };
+
+    sendAudioMessage();
+  }, [recordingBlob]);
+
   return (
     <>
       <main className="h-screen flex flex-col relative">
@@ -189,6 +273,9 @@ export const ChatHome = (): ReactElement => {
               handleTyping={handleTyping}
               handleSendMessage={handleSendMessage}
               typedText={typedText}
+              isRecording={isRecording}
+              startRecoring={startRecording}
+              stopRecording={stopRecording}
             />
           </>
         )}

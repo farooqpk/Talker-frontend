@@ -42,7 +42,7 @@ export const HomeList = ({
                 ) : (
                   <span className="text-secondary text-xs md:text-lg">
                     {truncateMessage(
-                      latestMessage && latestMessage.chatId === chats?.chatId
+                      latestMessage && latestMessage?.chatId === chats?.chatId
                         ? user?.userId === latestMessage?.senderId
                           ? latestMessage?.contentForSender
                           : latestMessage?.contentForRecipient

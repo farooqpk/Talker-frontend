@@ -90,17 +90,31 @@ const decryptSymetricKey = async (
 };
 
 export const encryptMessage = async (
-  message: string,
+  message: string | Blob,
   symetricKey: string,
   publicKey: string
 ): Promise<{ encryptedMessage: string; encryptedSymetricKey: string }> => {
-  const encryptedMessage = CryptoJS.AES.encrypt(
-    message,
-    symetricKey
-  ).toString();
+  let encodedMessage;
+
+  if (typeof message === "string") {
+    encodedMessage = CryptoJS.AES.encrypt(message, symetricKey).toString();
+  } else {
+    // Encrypt Blob message
+    const reader = new FileReader();
+    reader.readAsArrayBuffer(message);
+    await new Promise((resolve, reject) => {
+      reader.onload = resolve;
+      reader.onerror = reject;
+    });
+    encodedMessage = new Uint8Array(reader.result as ArrayBuffer);
+  }
+
   const encryptedSymetricKey = await encryptSymetricKey(symetricKey, publicKey);
   return {
-    encryptedMessage,
+    encryptedMessage:
+      encodedMessage instanceof Uint8Array
+        ? btoa(String.fromCharCode(...new Uint8Array(encodedMessage)))
+        : encodedMessage,
     encryptedSymetricKey,
   };
 };
@@ -108,15 +122,29 @@ export const encryptMessage = async (
 export const decryptMessage = async (
   message: string,
   encryptedSymetricKey: string,
-  privateKey: string
-): Promise<string> => {
+  privateKey: string,
+  isAudio?: boolean
+): Promise<any> => {
   const decryptedSymetricKey = await decryptSymetricKey(
     encryptedSymetricKey,
     privateKey
   );
-  const decryptedMessage = CryptoJS.AES.decrypt(
-    message,
-    decryptedSymetricKey
-  ).toString(CryptoJS.enc.Utf8);
-  return decryptedMessage;
+
+  if (isAudio) {
+    try {
+      const decodedMessage = atob(message);
+      const decodedArray = new Uint8Array(decodedMessage.length);
+      for (let i = 0; i < decodedMessage.length; i++) {
+        decodedArray[i] = decodedMessage.charCodeAt(i);
+      }
+      return new Blob([decodedArray], { type: "audio/webm;codecs=opus" });
+    } catch (error) {
+      console.log(error);
+      throw new Error("Error decrypting message: " + error);
+    }
+  } else {
+    return CryptoJS.AES.decrypt(message, decryptedSymetricKey).toString(
+      CryptoJS.enc.Utf8
+    ) as string;
+  }
 };

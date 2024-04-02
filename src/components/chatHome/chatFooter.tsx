@@ -1,6 +1,6 @@
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "../ui/button";
-import { SendHorizontal, Smile } from "lucide-react";
+import { Disc, Mic, SendHorizontal, Smile } from "lucide-react";
 import { Theme } from "emoji-picker-react";
 import EmojiPicker from "emoji-picker-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -10,12 +10,18 @@ type Props = {
   handleTyping: (value: string) => void;
   handleSendMessage: () => void;
   typedText: string;
+  isRecording: boolean;
+  startRecoring: () => void;
+  stopRecording: () => void;
 };
 
 export const ChatFooter = ({
   handleTyping,
   handleSendMessage,
   typedText,
+  isRecording,
+  startRecoring,
+  stopRecording,
 }: Props) => {
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -65,15 +71,24 @@ export const ChatFooter = ({
         onKeyDown={handleKeyDown}
       />
 
-      <Button
-        variant="ghost"
-        size="icon"
-        className="rounded-full p-2"
-        onClick={handleSendMessage}
-        disabled={typedText.length > 0 ? false : true}
-      >
-        <SendHorizontal />
-      </Button>
+      {typedText.length > 0 ? (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full p-2"
+          onClick={handleSendMessage}
+        >
+          <SendHorizontal />
+        </Button>
+      ) : (
+        <Button variant="ghost" size="icon" className="rounded-full p-2">
+          {isRecording ? (
+            <Disc onClick={stopRecording} />
+          ) : (
+            <Mic onClick={startRecoring} />
+          )}
+        </Button>
+      )}
     </section>
   );
 };

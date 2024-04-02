@@ -11,6 +11,8 @@ export type MessageType = {
   contentType: string;
   contentForRecipient: string;
   contentForSender: string;
+  audioForRecipient?: Blob;
+  audioForSender?: Blob;
   mediaUrl: string;
   createdAt: string;
   encryptedSymetricKeyForRecipient: string;

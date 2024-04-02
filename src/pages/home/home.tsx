@@ -24,17 +24,23 @@ export const Home = (): ReactElement => {
       const decryptedData = await Promise.all(
         data.map(async (chat: any) => {
           if (user?.userId === chat?.messages[0]?.senderId) {
-            chat.messages[0].contentForSender = await decryptMessage(
-              chat.messages[0].contentForSender,
-              chat.messages[0].encryptedSymetricKeyForSender,
-              localStorage.getItem("privateKey")!
-            );
+            chat.messages[0].contentType === "TEXT"
+              ? (chat.messages[0].contentForSender = await decryptMessage(
+                  chat.messages[0].contentForSender,
+                  chat.messages[0].encryptedSymetricKeyForSender,
+                  localStorage.getItem("privateKey")!,
+                  false
+                ))
+              : (chat.messages[0].contentForSender = "AUDIO");
           } else {
-            chat.messages[0].contentForRecipient = await decryptMessage(
-              chat.messages[0].contentForRecipient,
-              chat.messages[0].encryptedSymetricKeyForRecipient,
-              localStorage.getItem("privateKey")!
-            );
+            chat.messages[0].contentType === "TEXT"
+              ? (chat.messages[0].contentForRecipient = await decryptMessage(
+                  chat.messages[0].contentForRecipient,
+                  chat.messages[0].encryptedSymetricKeyForRecipient,
+                  localStorage.getItem("privateKey")!,
+                  false
+                ))
+              : (chat.messages[0].contentForRecipient = "AUDIO");
           }
           return chat;
         })
@@ -52,24 +58,29 @@ export const Home = (): ReactElement => {
       isRefetchChatList: boolean;
       message?: MessageType;
     }) => {
-      console.log("hai");
-
       if (isRefetchChatList) {
-        refetch();
+        await refetch();
       } else {
         if (!message) return;
-
-        user?.userId === message?.senderId
-          ? (message.contentForSender = await decryptMessage(
-              message.contentForSender,
-              message.encryptedSymetricKeyForSender,
-              localStorage.getItem("privateKey")!
-            ))
-          : (message.contentForRecipient = await decryptMessage(
-              message.contentForRecipient,
-              message.encryptedSymetricKeyForRecipient,
-              localStorage.getItem("privateKey")!
-            ));
+        if (user?.userId === message?.senderId) {
+          message.contentType === "TEXT"
+            ? (message.contentForSender = await decryptMessage(
+                message.contentForSender,
+                message.encryptedSymetricKeyForSender,
+                localStorage.getItem("privateKey")!,
+                false
+              ))
+            : (message.contentForSender = "AUDIO");
+        } else {
+          message.contentType === "TEXT"
+            ? (message.contentForRecipient = await decryptMessage(
+                message.contentForRecipient,
+                message.encryptedSymetricKeyForRecipient,
+                localStorage.getItem("privateKey")!,
+                false
+              ))
+            : (message.contentForRecipient = "AUDIO");
+        }
         setLatestMessage(message);
       }
     };

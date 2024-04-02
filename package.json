@@ -38,6 +38,7 @@
     "parse-json": "^8.1.0",
     "peerjs": "^1.4.7",
     "react": "^18.2.0",
+    "react-audio-voice-recorder": "^2.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.51.0",
     "react-icons": "^4.8.0",
