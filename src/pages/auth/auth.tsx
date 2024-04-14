@@ -58,7 +58,10 @@ const Auth = (): ReactElement => {
     isError: signupIsError,
   } = useMutation(signup);
 
-  const handleLogin = ({ username, password }: z.infer<typeof formSchema>) => {
+  const handleLogin =  ({
+    username,
+    password,
+  }: z.infer<typeof formSchema>) => {
     loginMutate(
       {
         username,

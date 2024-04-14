@@ -1,23 +1,31 @@
-import { ReactElement } from "react";
+import { ReactElement, useRef } from "react";
 import { ChatContent } from "../../components/chatHome/chatContent";
 import { ChatFooter } from "../../components/chatHome/chatFooter";
 import { ChatHeader } from "../../components/chatHome/chatHeader";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "react-query";
 import { findUserApi } from "@/services/api/user";
 import Loader from "@/components/loader";
-import { useSocket } from "@/socket/socketProvider";
+import { useSocket } from "@/context/socketProvider";
 import { useEffect, useState } from "react";
 import { MessageType, UserStatusEnum } from "@/components/common/types";
 import { getMessagesApi } from "@/services/api/chat";
 import { decryptMessage, encryptMessage } from "@/lib/ecrypt_decrypt";
 import { useGetUser } from "@/hooks/user";
 import { useAudioRecorder } from "react-audio-voice-recorder";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Terminal } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+import { confirmAlert } from "react-confirm-alert"; // Import
+import "react-confirm-alert/src/react-confirm-alert.css"; // Import css
 
 export const ChatHome = (): ReactElement => {
   const { id } = useParams();
   const socket = useSocket();
   const { user } = useGetUser();
+  const navigate = useNavigate();
+  const callTypeRef = useRef<"voice-call" | "video-call">("voice-call");
 
   const [userStatus, setUserStatus] = useState<UserStatusEnum>(
     UserStatusEnum.OFFLINE
@@ -184,6 +192,35 @@ export const ChatHome = (): ReactElement => {
       setMessages((prev) => [...prev, data]);
     };
 
+    const handleGetAnotherUserPeerId = (peerId: string) => {
+      navigate(
+        `/chat/${
+          callTypeRef?.current
+        }/${id}?peerId=${peerId}&initiateCall=${"true"}`
+      );
+    };
+
+    const handleAnswerOrRejectCall = (data: any) => {
+      console.log(data, "answerOrRejectCall");
+
+      confirmAlert({
+        title: `Call from ${data?.fromUsername}`,
+        message: "Are you sure to answer or reject the call?",
+        buttons: [
+          {
+            label: "Yes",
+            onClick: () =>{
+              socket.emit("callAnswered",{toUserId: id})
+              navigate(`/chat/${data?.callType}/${id}`)
+            },
+          },
+          {
+            label: "No",
+            onClick: () => alert("Click No"),
+          },
+        ],
+      });
+    };
     socket.emit("isOnline", id);
 
     socket.on("isOnline", handleIsOnline);
@@ -198,6 +235,10 @@ export const ChatHome = (): ReactElement => {
 
     socket.on("sendMessage", handleRecieveMessage);
 
+    socket.on("getAnotherUserPeerId", handleGetAnotherUserPeerId);
+
+    socket.on("answerOrRejectCall", handleAnswerOrRejectCall);
+
     return () => {
       socket.off("isOnline", handleIsOnline);
       socket.off("isDisconnected", handleIsDisconnected);
@@ -205,6 +246,8 @@ export const ChatHome = (): ReactElement => {
       socket.off("isTyping", handleIsTyping);
       socket.off("isNotTyping", handleIsNotTyping);
       socket.off("sendMessage", handleRecieveMessage);
+      socket.off("getAnotherUserPeerId", handleGetAnotherUserPeerId);
+      socket.off("answerOrRejectCall", handleAnswerOrRejectCall);
     };
   }, [id, socket]);
 
@@ -258,6 +301,12 @@ export const ChatHome = (): ReactElement => {
     sendAudioMessage();
   }, [recordingBlob]);
 
+  const handleClickCallButton = (type: "voice-call" | "video-call") => {
+    if (!socket || !recipient) return;
+    callTypeRef.current = type;
+    socket?.emit("getAnotherUserPeerId", recipient?.userId);
+  };
+
   return (
     <>
       <main className="h-screen flex flex-col relative">
@@ -265,7 +314,11 @@ export const ChatHome = (): ReactElement => {
           <Loader />
         ) : (
           <>
-            <ChatHeader recipient={recipient} userStatus={userStatus} />
+            <ChatHeader
+              recipient={recipient}
+              userStatus={userStatus}
+              handleClickCallButton={handleClickCallButton}
+            />
 
             <ChatContent recipient={recipient} messages={messages} />
 

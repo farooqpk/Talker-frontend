@@ -6,9 +6,10 @@ import Loader from "@/components/loader";
 import { useGetUser } from "@/hooks/user";
 import { decryptMessage } from "@/lib/ecrypt_decrypt";
 import { getChatListApi } from "@/services/api/chat";
-import { useSocket } from "@/socket/socketProvider";
+import { useSocket } from "@/context/socketProvider";
 import { ReactElement, useEffect, useState } from "react";
 import { useQuery } from "react-query";
+import { Peer } from "peerjs";
 
 export const Home = (): ReactElement => {
   const [chatData, setChatData] = useState<any[]>([]);

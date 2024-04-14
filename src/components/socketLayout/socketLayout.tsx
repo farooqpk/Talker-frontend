@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import { SocketProvider } from "../../socket/socketProvider";
+import { SocketProvider } from "../../context/socketProvider";
 
 export const SocketLayout = () => {
     return (

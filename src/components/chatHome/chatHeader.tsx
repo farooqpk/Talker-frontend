@@ -4,14 +4,14 @@ import { Button } from "../ui/button";
 import { MoveLeft, Phone, Video } from "lucide-react";
 import { User, UserStatusEnum } from "../common/types";
 
-
-
 export const ChatHeader = ({
   recipient,
   userStatus,
+  handleClickCallButton,
 }: {
   recipient: User;
   userStatus: UserStatusEnum;
+  handleClickCallButton: (type: "voice-call" | "video-call") => void;
 }) => {
   return (
     <>
@@ -38,11 +38,21 @@ export const ChatHeader = ({
         </div>
 
         <div className="text-xl md:text-2xl flex gap-10 md:gap-14">
-          <Button variant="ghost" size="icon" className="rounded-full p-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full p-2"
+            onClick={() => handleClickCallButton("video-call")}
+          >
             <Video />
           </Button>
 
-          <Button variant="ghost" size="icon" className="rounded-full p-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full p-2"
+            onClick={() => handleClickCallButton("voice-call")}
+          >
             <Phone />
           </Button>
         </div>
