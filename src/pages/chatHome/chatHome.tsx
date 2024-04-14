@@ -13,9 +13,7 @@ import { getMessagesApi } from "@/services/api/chat";
 import { decryptMessage, encryptMessage } from "@/lib/ecrypt_decrypt";
 import { useGetUser } from "@/hooks/user";
 import { useAudioRecorder } from "react-audio-voice-recorder";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
 
 import { confirmAlert } from "react-confirm-alert"; // Import
 import "react-confirm-alert/src/react-confirm-alert.css"; // Import css

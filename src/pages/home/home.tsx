@@ -9,7 +9,7 @@ import { getChatListApi } from "@/services/api/chat";
 import { useSocket } from "@/context/socketProvider";
 import { ReactElement, useEffect, useState } from "react";
 import { useQuery } from "react-query";
-import { Peer } from "peerjs";
+
 
 export const Home = (): ReactElement => {
   const [chatData, setChatData] = useState<any[]>([]);
