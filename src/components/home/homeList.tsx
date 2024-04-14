@@ -7,6 +7,7 @@ import { truncateMessage } from "@/lib/trunctuate";
 import { useGetUser } from "@/hooks/user";
 import { MessageType } from "../common/types";
 
+
 export const HomeList = ({
   data,
   latestMessage,

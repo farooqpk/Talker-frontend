@@ -10,18 +10,19 @@ import { useSocket } from "@/context/socketProvider";
 import { ReactElement, useEffect, useState } from "react";
 import { useQuery } from "react-query";
 
-
 export const Home = (): ReactElement => {
   const [chatData, setChatData] = useState<any[]>([]);
   const { user } = useGetUser();
   const socket = useSocket();
   const [latestMessage, setLatestMessage] = useState<MessageType | null>(null);
   const [isTyping, setIsTyping] = useState<string[]>([]);
+  const [decryptLoading, setDecryptLoading] = useState<boolean>(false);
 
   const { isLoading, refetch } = useQuery({
     queryKey: ["chatlist"],
     queryFn: getChatListApi,
     onSuccess: async (data) => {
+      setDecryptLoading(true);
       const decryptedData = await Promise.all(
         data.map(async (chat: any) => {
           if (user?.userId === chat?.messages[0]?.senderId) {
@@ -46,6 +47,8 @@ export const Home = (): ReactElement => {
           return chat;
         })
       );
+
+      setDecryptLoading(false);
       setChatData(decryptedData);
     },
   });
@@ -112,7 +115,7 @@ export const Home = (): ReactElement => {
   return (
     <>
       <main className="absolute inset-0 flex flex-col flex-wrap py-6 px-4 gap-8">
-        {isLoading ? (
+        {isLoading || decryptLoading ? (
           <Loader />
         ) : (
           <>

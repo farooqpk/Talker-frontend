@@ -32,7 +32,6 @@ const HomeHeader = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold">Messages</h1>
       <Popover>
         <PopoverTrigger>
           <div className="relative flex items-center max-w-2xl w-full">
