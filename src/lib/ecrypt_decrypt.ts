@@ -25,7 +25,7 @@ export const createSymetricKey = async () => {
   return base64Key;
 };
 
-const encryptSymetricKey = async (
+export const encryptSymetricKey = async (
   symetricKey: string,
   publicKey: string
 ): Promise<string> => {
