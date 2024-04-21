@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "../ui/button";
 import { ArrowLeft } from "lucide-react";
 
-export const ChatHeader = ({
+export const PersonalChatHeader = ({
   recipient,
   userStatus,
 }: {
@@ -20,7 +20,7 @@ export const ChatHeader = ({
           </Button>
         </Link>
         <div className="flex flex-col md:gap-2 mx-auto">
-          <p className="text-lg truncate">
+          <p className="text-lg truncate font-semibold">
             {truncateUsername(recipient.username)}
           </p>
           {userStatus === UserStatusEnum.ONLINE ? (

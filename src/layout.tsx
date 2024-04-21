@@ -2,8 +2,9 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Auth from "./pages/auth/auth";
 import { Home } from "./pages/home/home";
 import { VerifyRoute } from "./components/auth/verifyRoute";
-import { ChatHome } from "./pages/chatHome/chatHome";
+import { PersonalChatHome } from "./pages/personalHome/personalChatHome";
 import { SocketLayout } from "./components/socketLayout/socketLayout";
+import { GroupChatHome } from "./pages/groupHome/groupChatHome";
 
 const Layout = () => {
   return (
@@ -15,7 +16,11 @@ const Layout = () => {
             <Route path="/" element={<VerifyRoute children={<Home />} />} />
             <Route
               path="/chat/:id"
-              element={<VerifyRoute children={<ChatHome />} />}
+              element={<VerifyRoute children={<PersonalChatHome />} />}
+            />
+            <Route
+              path="/group/:id"
+              element={<VerifyRoute children={<GroupChatHome />} />}
             />
           </Route>
         </Routes>

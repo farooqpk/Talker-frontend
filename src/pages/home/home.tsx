@@ -22,11 +22,14 @@ export const Home = (): ReactElement => {
     queryKey: ["chatlist"],
     queryFn: getChatListApi,
     onSuccess: async (data) => {
+      const personalChats = data.filter((item: any) => item?.isGroup === false);
+      const groupChats = data.filter((item: any) => item?.isGroup === true);
+
       setDecryptLoading(true);
-      const decryptedData = await Promise.all(
-        data.map(async (chat: any) => {
+      const decryptedPersonalData = await Promise.all(
+        personalChats.map(async (chat: any) => {
           if (user?.userId === chat?.messages[0]?.senderId) {
-            chat.messages[0].contentType === "TEXT"
+            chat.messages[0]?.contentType === "TEXT"
               ? (chat.messages[0].contentForSender = await decryptMessage(
                   chat.messages[0].contentForSender,
                   chat.messages[0].encryptedSymetricKeyForSender,
@@ -35,7 +38,7 @@ export const Home = (): ReactElement => {
                 ))
               : (chat.messages[0].contentForSender = "AUDIO");
           } else {
-            chat.messages[0].contentType === "TEXT"
+            chat.messages[0]?.contentType === "TEXT"
               ? (chat.messages[0].contentForRecipient = await decryptMessage(
                   chat.messages[0].contentForRecipient,
                   chat.messages[0].encryptedSymetricKeyForRecipient,
@@ -48,8 +51,17 @@ export const Home = (): ReactElement => {
         })
       );
 
+      const decryptedGroupData = await Promise.all(
+        groupChats?.map((chat: any) => {
+          if (chat?.messages?.length === 0) {
+            return chat;
+          }
+          return chat;
+        })
+      );
+
       setDecryptLoading(false);
-      setChatData(decryptedData);
+      setChatData([...decryptedPersonalData, ...decryptedGroupData]);
     },
   });
 
@@ -67,7 +79,7 @@ export const Home = (): ReactElement => {
       } else {
         if (!message) return;
         if (user?.userId === message?.senderId) {
-          message.contentType === "TEXT"
+          message?.contentType === "TEXT"
             ? (message.contentForSender = await decryptMessage(
                 message.contentForSender,
                 message.encryptedSymetricKeyForSender,
@@ -76,7 +88,7 @@ export const Home = (): ReactElement => {
               ))
             : (message.contentForSender = "AUDIO");
         } else {
-          message.contentType === "TEXT"
+          message?.contentType === "TEXT"
             ? (message.contentForRecipient = await decryptMessage(
                 message.contentForRecipient,
                 message.encryptedSymetricKeyForRecipient,

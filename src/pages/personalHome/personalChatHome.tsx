@@ -1,7 +1,7 @@
 import { ReactElement } from "react";
-import { ChatContent } from "../../components/chatHome/chatContent";
-import { ChatFooter } from "../../components/chatHome/chatFooter";
-import { ChatHeader } from "../../components/chatHome/chatHeader";
+import { PersonalChatContent } from "../../components/personalHome/chatContent";
+import { PersonalChatFooter } from "../../components/personalHome/chatFooter";
+import { PersonalChatHeader } from "../../components/personalHome/chatHeader";
 import { useParams } from "react-router-dom";
 import { useQuery } from "react-query";
 import { findUserApi } from "@/services/api/user";
@@ -14,7 +14,7 @@ import { decryptMessage, encryptMessage } from "@/lib/ecrypt_decrypt";
 import { useGetUser } from "@/hooks/user";
 import { useAudioRecorder } from "react-audio-voice-recorder";
 
-export const ChatHome = (): ReactElement => {
+export const PersonalChatHome = (): ReactElement => {
   const { id } = useParams();
   const socket = useSocket();
   const { user } = useGetUser();
@@ -264,11 +264,11 @@ export const ChatHome = (): ReactElement => {
           <Loader />
         ) : (
           <>
-            <ChatHeader recipient={recipient} userStatus={userStatus} />
+            <PersonalChatHeader recipient={recipient} userStatus={userStatus} />
 
-            <ChatContent recipient={recipient} messages={messages} />
+            <PersonalChatContent recipient={recipient} messages={messages} />
 
-            <ChatFooter
+            <PersonalChatFooter
               handleTyping={handleTyping}
               handleSendMessage={handleSendMessage}
               typedText={typedText}

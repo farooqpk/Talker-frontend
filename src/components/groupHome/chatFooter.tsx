@@ -15,7 +15,7 @@ type Props = {
   stopRecording: () => void;
 };
 
-export const ChatFooter = ({
+export const GroupChatFooter = ({
   handleTyping,
   handleSendMessage,
   typedText,

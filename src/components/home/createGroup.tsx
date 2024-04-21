@@ -27,7 +27,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createSymetricKey, encryptSymetricKey } from "@/lib/ecrypt_decrypt";
-import { useMutation } from "react-query";
+import { useMutation, useQueryClient } from "react-query";
 import { useGetUser } from "@/hooks/user";
 import { toast } from "../ui/use-toast";
 
@@ -41,6 +41,7 @@ const CreateGroup = () => {
   const [users, setUsers] = useState<Option[]>([]);
   const { user } = useGetUser();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     findUsersToCreateGroupApi().then((res: Option[]) => {
@@ -94,6 +95,7 @@ const CreateGroup = () => {
               description: "Group created successfully.",
               variant: "default",
             });
+            queryClient.invalidateQueries({ queryKey: ["chatlist"] });
           }
         },
         onError() {
@@ -108,91 +110,105 @@ const CreateGroup = () => {
   };
 
   return (
-    <Dialog open={isModalOpen} onOpenChange={(state) => setIsModalOpen(state)}>
-      <DialogTrigger asChild>
-        <div className="absolute bottom-10">
-          <Button
-            variant={"outline"}
-            className="rounded-full p-2"
-            onClick={() => setIsModalOpen(true)}
-          >
-            <Plus className="h-7 w-7" />
-          </Button>
-        </div>
-      </DialogTrigger>
+    <div className="w-full max-w-lg mx-auto p-4">
+      <Dialog
+        open={isModalOpen}
+        onOpenChange={(state) => setIsModalOpen(state)}
+      >
+        <DialogTrigger asChild>
+          <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6">
+            <Button
+              variant={"outline"}
+              className="rounded-full p-2 "
+              onClick={() => setIsModalOpen(true)}
+            >
+              <Plus className="h-5 md:h-7" />
+            </Button>
+          </div>
+        </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Create group</DialogTitle>
-        </DialogHeader>
+        <DialogContent className="p-4 md:p-6 ">
+          <DialogHeader>
+            <DialogTitle>Create group</DialogTitle>
+          </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleCreateGroup)}>
-            <div className="flex flex-col gap-4 mt-3">
-              <FormField
-                control={form.control}
-                name="groupName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Group Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleCreateGroup)}>
+              <div className="flex flex-col gap-4 mt-3 md:mt-6">
+                <FormField
+                  control={form.control}
+                  name="groupName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Group Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="members"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>Select members</FormLabel>
-                    <FormControl>
-                      <MultipleSelector
-                        defaultOptions={users}
-                        onChange={(formValue) => {
-                          let newArr = formValue?.map((option) => option.value);
-                          form.setValue(
-                            "members",
-                            newArr as z.infer<typeof formSchema>["members"]
-                          );
-                        }}
-                        emptyIndicator={
-                          <p className="text-center text-sm leading-10 text-gray-600 dark:text-gray-400">
-                            no results found.
-                          </p>
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+                <FormField
+                  control={form.control}
+                  name="members"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>Select members</FormLabel>
+                      <FormControl>
+                        <MultipleSelector
+                          defaultOptions={users}
+                          onChange={(formValue) => {
+                            let newArr = formValue?.map(
+                              (option) => option.value
+                            );
+                            form.setValue(
+                              "members",
+                              newArr as z.infer<typeof formSchema>["members"]
+                            );
+                          }}
+                          emptyIndicator={
+                            <p className="text-center text-sm md:text-base leading-10 text-gray-600 dark:text-gray-400">
+                              no results found.
+                            </p>
+                          }
+                          className="w-full"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full md:w-auto"
+                >
+                  {isLoading && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Save
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
 

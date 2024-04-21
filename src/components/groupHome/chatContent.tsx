@@ -10,7 +10,7 @@ type Props = {
   recipient: User;
 };
 
-export const ChatContent = ({ messages, recipient }: Props) => {
+export const GroupChatContent = ({ messages, recipient }: Props) => {
   const { user } = useGetUser();
   const scrollRef = useRef<HTMLDivElement>(null);
 

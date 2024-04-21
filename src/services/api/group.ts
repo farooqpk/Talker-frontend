@@ -13,3 +13,7 @@ export const getPublicKeysApi = async (
 export const createGroupApi = async (data: any) => {
   return (await _axios.post(`/create-group`, data)).data;
 };
+
+export const getGroupDetailsApi = async (groupId: string) => {
+  return (await _axios.get(`/group/${groupId}`)).data;
+};
