@@ -58,7 +58,7 @@ export const encryptSymetricKey = async (
   }
 };
 
-const decryptSymetricKey = async (
+export const decryptSymetricKey = async (
   encryptedSymetricKey: string,
   privateKey: string
 ): Promise<string> => {
@@ -84,7 +84,7 @@ const decryptSymetricKey = async (
 
     return new TextDecoder().decode(new Uint8Array(decryptedSymetricKey));
   } catch (error: any) {
-    console.log(error.message);
+    console.log(error);
     throw new Error(error);
   }
 };
@@ -120,7 +120,7 @@ export const encryptMessage = async (
 };
 
 export const decryptMessage = async (
-  message: string,
+  encryptedMessage: string,
   encryptedSymetricKey: string,
   privateKey: string,
   isAudio?: boolean
@@ -132,7 +132,7 @@ export const decryptMessage = async (
 
   if (isAudio) {
     try {
-      const decodedMessage = atob(message);
+      const decodedMessage = atob(encryptedMessage);
       const decodedArray = new Uint8Array(decodedMessage.length);
       for (let i = 0; i < decodedMessage.length; i++) {
         decodedArray[i] = decodedMessage.charCodeAt(i);
@@ -143,8 +143,42 @@ export const decryptMessage = async (
       throw new Error("Error decrypting message: " + error);
     }
   } else {
-    return CryptoJS.AES.decrypt(message, decryptedSymetricKey).toString(
-      CryptoJS.enc.Utf8
-    ) as string;
+    return CryptoJS.AES.decrypt(
+      encryptedMessage,
+      decryptedSymetricKey
+    ).toString(CryptoJS.enc.Utf8) as string;
   }
+};
+
+export const encryptMessageForGroup = async (
+  message: string | Blob,
+  encryptedSymetricKey: string,
+  privateKey: string
+): Promise<string> => {
+  let encodedMessage;
+
+  const decryptedSymetricKey = await decryptSymetricKey(
+    encryptedSymetricKey!,
+    privateKey!
+  );
+
+  if (typeof message === "string") {
+    encodedMessage = CryptoJS.AES.encrypt(
+      message,
+      decryptedSymetricKey
+    ).toString();
+  } else {
+    // Encrypt Blob message
+    const reader = new FileReader();
+    reader.readAsArrayBuffer(message);
+    await new Promise((resolve, reject) => {
+      reader.onload = resolve;
+      reader.onerror = reject;
+    });
+    encodedMessage = new Uint8Array(reader.result as ArrayBuffer);
+  }
+
+  return encodedMessage instanceof Uint8Array
+    ? btoa(String.fromCharCode(...new Uint8Array(encodedMessage)))
+    : encodedMessage;
 };

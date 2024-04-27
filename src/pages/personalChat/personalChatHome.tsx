@@ -1,7 +1,7 @@
 import { ReactElement } from "react";
-import { PersonalChatContent } from "../../components/personalHome/chatContent";
-import { PersonalChatFooter } from "../../components/personalHome/chatFooter";
-import { PersonalChatHeader } from "../../components/personalHome/chatHeader";
+import { PersonalChatContent } from "../../components/personalChat/chatContent";
+import { PersonalChatFooter } from "../../components/personalChat/chatFooter";
+import { PersonalChatHeader } from "../../components/personalChat/chatHeader";
 import { useParams } from "react-router-dom";
 import { useQuery } from "react-query";
 import { findUserApi } from "@/services/api/user";
@@ -14,7 +14,7 @@ import { decryptMessage, encryptMessage } from "@/lib/ecrypt_decrypt";
 import { useGetUser } from "@/hooks/user";
 import { useAudioRecorder } from "react-audio-voice-recorder";
 
-export const PersonalChatHome = (): ReactElement => {
+export const PersonalChat = (): ReactElement => {
   const { id } = useParams();
   const socket = useSocket();
   const { user } = useGetUser();
@@ -23,6 +23,8 @@ export const PersonalChatHome = (): ReactElement => {
   );
   const [typedText, setTypedText] = useState<string>("");
   const [messages, setMessages] = useState<MessageType[]>([]);
+  const { isRecording, startRecording, stopRecording, recordingBlob } =
+    useAudioRecorder();
 
   const { data: recipient, isLoading } = useQuery({
     queryKey: ["userquery", id],
@@ -33,34 +35,34 @@ export const PersonalChatHome = (): ReactElement => {
     queryKey: ["messagesquery", id],
     queryFn: () => getMessagesApi(recipient.chatId!),
     enabled: !!recipient?.chatId,
-    onSuccess: async (data) => {
+    onSuccess: async (data: MessageType[]) => {
       const decryptedData = await Promise.all(
-        data.map(async (message: MessageType) => {
+        data.map(async (message) => {
           if (user?.userId === message.senderId) {
             message.contentType === "TEXT"
               ? (message.contentForSender = await decryptMessage(
-                  message.contentForSender,
-                  message.encryptedSymetricKeyForSender,
+                  message?.contentForSender!,
+                  message?.encryptedSymetricKeyForSender!,
                   localStorage.getItem("privateKey")!,
                   false
                 ))
               : (message.audioForSender = await decryptMessage(
-                  message.contentForSender,
-                  message.encryptedSymetricKeyForSender,
+                  message?.contentForSender!,
+                  message?.encryptedSymetricKeyForSender!,
                   localStorage.getItem("privateKey")!,
                   true
                 ));
           } else {
             message.contentType === "TEXT"
               ? (message.contentForRecipient = await decryptMessage(
-                  message.contentForRecipient,
-                  message.encryptedSymetricKeyForRecipient,
+                  message?.contentForRecipient!,
+                  message?.encryptedSymetricKeyForRecipient!,
                   localStorage.getItem("privateKey")!,
                   false
                 ))
               : (message.audioForRecipient = await decryptMessage(
-                  message.contentForRecipient,
-                  message.encryptedSymetricKeyForRecipient,
+                  message?.contentForRecipient!,
+                  message?.encryptedSymetricKeyForRecipient!,
                   localStorage.getItem("privateKey")!,
                   true
                 ));
@@ -149,38 +151,42 @@ export const PersonalChatHome = (): ReactElement => {
       }
     };
 
-    const handleRecieveMessage = async (data: MessageType) => {
-      if (user?.userId === data.senderId) {
-        data.contentType === "TEXT"
-          ? (data.contentForSender = await decryptMessage(
-              data.contentForSender,
-              data.encryptedSymetricKeyForSender,
+    const handleRecieveMessage = async ({
+      message,
+    }: {
+      message: MessageType;
+    }) => {
+      if (user?.userId === message.senderId) {
+        message.contentType === "TEXT"
+          ? (message.contentForSender = await decryptMessage(
+              message?.contentForSender!,
+              message?.encryptedSymetricKeyForSender!,
               localStorage.getItem("privateKey")!,
               false
             ))
-          : (data.audioForSender = await decryptMessage(
-              data.contentForSender,
-              data.encryptedSymetricKeyForSender,
+          : (message.audioForSender = await decryptMessage(
+              message?.contentForSender!,
+              message?.encryptedSymetricKeyForSender!,
               localStorage.getItem("privateKey")!,
               true
             ));
       } else {
-        data.contentType === "TEXT"
-          ? (data.contentForRecipient = await decryptMessage(
-              data.contentForRecipient,
-              data.encryptedSymetricKeyForRecipient,
+        message.contentType === "TEXT"
+          ? (message.contentForRecipient = await decryptMessage(
+              message?.contentForRecipient!,
+              message?.encryptedSymetricKeyForRecipient!,
               localStorage.getItem("privateKey")!,
               false
             ))
-          : (data.audioForRecipient = await decryptMessage(
-              data.contentForRecipient,
-              data.encryptedSymetricKeyForRecipient,
+          : (message.audioForRecipient = await decryptMessage(
+              message?.contentForRecipient!,
+              message?.encryptedSymetricKeyForRecipient!,
               localStorage.getItem("privateKey")!,
               true
             ));
       }
 
-      setMessages((prev) => [...prev, data]);
+      setMessages((prev) => [...prev, message]);
     };
 
     socket.emit("isOnline", id);
@@ -206,9 +212,6 @@ export const PersonalChatHome = (): ReactElement => {
       socket.off("sendMessage", handleRecieveMessage);
     };
   }, [id, socket]);
-
-  const { isRecording, startRecording, stopRecording, recordingBlob } =
-    useAudioRecorder();
 
   const handleAudioMessage = async () => {
     if (!socket || !recipient || !recordingBlob) return;

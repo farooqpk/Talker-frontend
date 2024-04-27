@@ -12,9 +12,8 @@ import CreateGroup from "@/components/home/createGroup";
 
 export const Home = (): ReactElement => {
   const [chatData, setChatData] = useState<any[]>([]);
-  const { user } = useGetUser();
+  const { user, privateKey } = useGetUser();
   const socket = useSocket();
-  const [latestMessage, setLatestMessage] = useState<MessageType | null>(null);
   const [isTyping, setIsTyping] = useState<string[]>([]);
   const [decryptLoading, setDecryptLoading] = useState<boolean>(false);
 
@@ -52,9 +51,14 @@ export const Home = (): ReactElement => {
       );
 
       const decryptedGroupData = await Promise.all(
-        groupChats?.map((chat: any) => {
-          if (chat?.messages?.length === 0) {
-            return chat;
+        groupChats?.map(async (chat: any) => {
+          if (chat?.messages?.[0]) {
+            chat.messages[0].contentForGroup = await decryptMessage(
+              chat.messages[0].contentForGroup,
+              chat.Group[0].GroupKey[0].encryptedGroupKey,
+              privateKey!,
+              chat.messages[0].contentType === "TEXT" ? false : true
+            );
           }
           return chat;
         })
@@ -67,39 +71,9 @@ export const Home = (): ReactElement => {
 
   // to update latest message in the home
   useEffect(() => {
-    const handleUpdateChatList = async ({
-      isRefetchChatList,
-      message,
-    }: {
-      isRefetchChatList: boolean;
-      message?: MessageType;
-    }) => {
-      if (isRefetchChatList) {
-        await refetch();
-      } else {
-        if (!message) return;
-        if (user?.userId === message?.senderId) {
-          message?.contentType === "TEXT"
-            ? (message.contentForSender = await decryptMessage(
-                message.contentForSender,
-                message.encryptedSymetricKeyForSender,
-                localStorage.getItem("privateKey")!,
-                false
-              ))
-            : (message.contentForSender = "AUDIO");
-        } else {
-          message?.contentType === "TEXT"
-            ? (message.contentForRecipient = await decryptMessage(
-                message.contentForRecipient,
-                message.encryptedSymetricKeyForRecipient,
-                localStorage.getItem("privateKey")!,
-                false
-              ))
-            : (message.contentForRecipient = "AUDIO");
-        }
-        setLatestMessage(message);
-      }
-    };
+    const groupIds = chatData
+      ?.filter((item: any) => item?.isGroup === true)
+      ?.map((item: any) => item?.Group[0]?.groupId);
 
     const handleIsTyping = (userId: string) => {
       setIsTyping((prev) => [...prev, userId]);
@@ -109,20 +83,100 @@ export const Home = (): ReactElement => {
       setIsTyping(isTyping.filter((id) => id !== userId));
     };
 
-    socket?.on("updateChatList", handleUpdateChatList);
+    const handleRecieveMessageGroup = async (message: MessageType) => {
+      const encryptedGroupKey = chatData?.find(
+        (item) => item?.isGroup === true && item?.chatId === message?.chatId
+      )?.Group[0]?.GroupKey[0]?.encryptedGroupKey;
+
+      const decrypted = await decryptMessage(
+        message?.contentForGroup!,
+        encryptedGroupKey!,
+        privateKey!,
+        message?.contentType === "TEXT" ? false : true
+      );
+      message.contentForGroup = decrypted;
+
+      setChatData((prev) => {
+        const chat = prev?.find((item) => item.chatId === message.chatId);
+        if (chat) {
+          const index = prev?.indexOf(chat);
+          prev[index] = { ...chat, messages: [message] };
+        }
+        return [...prev];
+      });
+    };
+
+    const handleRecieveMessage = async ({
+      message,
+      isRefetchChatList,
+    }: {
+      message: MessageType;
+      isRefetchChatList?: boolean;
+    }) => {
+      if (isRefetchChatList) {
+        refetch();
+        return;
+      }
+      if (user?.userId === message.senderId) {
+        message.contentType === "TEXT"
+          ? (message.contentForSender = await decryptMessage(
+              message?.contentForSender!,
+              message?.encryptedSymetricKeyForSender!,
+              privateKey!,
+              false
+            ))
+          : (message.audioForSender = await decryptMessage(
+              message?.contentForSender!,
+              message?.encryptedSymetricKeyForSender!,
+              privateKey!,
+              true
+            ));
+      } else {
+        message.contentType === "TEXT"
+          ? (message.contentForRecipient = await decryptMessage(
+              message?.contentForRecipient!,
+              message?.encryptedSymetricKeyForRecipient!,
+              localStorage.getItem("privateKey")!,
+              false
+            ))
+          : (message.audioForRecipient = await decryptMessage(
+              message?.contentForRecipient!,
+              message?.encryptedSymetricKeyForRecipient!,
+              localStorage.getItem("privateKey")!,
+              true
+            ));
+      }
+
+      setChatData((prev) => {
+        const chat = prev?.find((item) => item.chatId === message.chatId);
+        if (chat) {
+          const index = prev?.indexOf(chat);
+          prev[index] = { ...chat, messages: [message] };
+        }
+        return [...prev];
+      });
+    };
+
+    socket?.emit("joinGroup", { groupIds });
 
     socket?.on("isTyping", handleIsTyping);
 
     socket?.on("isNotTyping", handleIsNotTyping);
 
-    return () => {
-      socket?.off("updateChatList", handleUpdateChatList);
+    socket?.on("sendMessageForGroup", handleRecieveMessageGroup);
 
+    socket?.on("sendMessage", handleRecieveMessage);
+
+    return () => {
       socket?.off("isTyping", handleIsTyping);
 
       socket?.off("isNotTyping", handleIsNotTyping);
+
+      socket?.off("sendMessageForGroup", handleRecieveMessageGroup);
+
+      socket?.off("sendMessage", handleRecieveMessage);
     };
-  }, [socket]);
+  }, [socket, chatData]);
 
   return (
     <>
@@ -136,11 +190,7 @@ export const Home = (): ReactElement => {
             </section>
 
             <section>
-              <HomeList
-                data={chatData}
-                latestMessage={latestMessage}
-                isTyping={isTyping}
-              />
+              <HomeList data={chatData} isTyping={isTyping} />
             </section>
 
             <section>

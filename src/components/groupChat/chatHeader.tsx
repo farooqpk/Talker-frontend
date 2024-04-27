@@ -26,7 +26,7 @@ export const GroupChatHeader = ({ groupDetails }: { groupDetails: any }) => {
         </Link>
 
         <Sheet>
-          <SheetTrigger className="flex flex-col md:gap-2 mx-auto items-center cursor-pointer hover:bg-slate-900 p-3 rounded-md">
+          <SheetTrigger className="flex flex-col md:gap-2 mx-auto items-center cursor-pointer hover:bg-slate-900 px-3 py-1 rounded-md">
             <p className="text-lg truncate font-semibold">
               {groupDetails?.name}
             </p>

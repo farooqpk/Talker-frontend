@@ -9,14 +9,16 @@ export type MessageType = {
   chatId: string;
   senderId: string;
   contentType: string;
-  contentForRecipient: string;
-  contentForSender: string;
+  contentForRecipient?: string;
+  contentForSender?: string;
   audioForRecipient?: Blob;
   audioForSender?: Blob;
-  mediaUrl: string;
+  mediaUrl?: string;
   createdAt: string;
-  encryptedSymetricKeyForRecipient: string;
-  encryptedSymetricKeyForSender: string;
+  encryptedSymetricKeyForRecipient?: string;
+  encryptedSymetricKeyForSender?: string;
+  contentForGroup?: string;
+  sender?:User
 };
 
 export type User = {
