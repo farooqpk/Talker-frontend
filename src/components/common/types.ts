@@ -19,6 +19,7 @@ export type MessageType = {
   encryptedSymetricKeyForSender?: string;
   contentForGroup?: string;
   sender?:User
+  audioForGroup?:Blob
 };
 
 export type User = {

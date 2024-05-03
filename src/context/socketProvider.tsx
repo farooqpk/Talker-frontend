@@ -42,6 +42,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
         newSocket.on("disconnect", () => {
           console.log("disconnected");
+          
         });
 
         newSocket.on("unauthorized", (reason) => {

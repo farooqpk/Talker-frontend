@@ -53,12 +53,16 @@ export const Home = (): ReactElement => {
       const decryptedGroupData = await Promise.all(
         groupChats?.map(async (chat: any) => {
           if (chat?.messages?.[0]) {
-            chat.messages[0].contentForGroup = await decryptMessage(
-              chat.messages[0].contentForGroup,
-              chat.Group[0].GroupKey[0].encryptedGroupKey,
-              privateKey!,
-              chat.messages[0].contentType === "TEXT" ? false : true
-            );
+            if (chat?.messages?.[0]?.contentType === "TEXT") {
+              chat.messages[0].contentForGroup = await decryptMessage(
+                chat.messages[0].contentForGroup,
+                chat.Group[0].GroupKey[0].encryptedGroupKey,
+                privateKey!,
+                false
+              );
+            } else {
+              chat.messages[0].contentForGroup = "AUDIO";
+            }
           }
           return chat;
         })
@@ -88,13 +92,16 @@ export const Home = (): ReactElement => {
         (item) => item?.isGroup === true && item?.chatId === message?.chatId
       )?.Group[0]?.GroupKey[0]?.encryptedGroupKey;
 
-      const decrypted = await decryptMessage(
-        message?.contentForGroup!,
-        encryptedGroupKey!,
-        privateKey!,
-        message?.contentType === "TEXT" ? false : true
-      );
-      message.contentForGroup = decrypted;
+      if (message.contentType === "TEXT") {
+        message.contentForGroup = await decryptMessage(
+          message?.contentForGroup!,
+          encryptedGroupKey!,
+          privateKey!,
+          false
+        );
+      } else {
+        message.contentForGroup = "AUDIO";
+      }
 
       setChatData((prev) => {
         const chat = prev?.find((item) => item.chatId === message.chatId);
@@ -125,12 +132,7 @@ export const Home = (): ReactElement => {
               privateKey!,
               false
             ))
-          : (message.audioForSender = await decryptMessage(
-              message?.contentForSender!,
-              message?.encryptedSymetricKeyForSender!,
-              privateKey!,
-              true
-            ));
+          : (message.contentForSender = "AUDIO");
       } else {
         message.contentType === "TEXT"
           ? (message.contentForRecipient = await decryptMessage(
@@ -139,12 +141,7 @@ export const Home = (): ReactElement => {
               localStorage.getItem("privateKey")!,
               false
             ))
-          : (message.audioForRecipient = await decryptMessage(
-              message?.contentForRecipient!,
-              message?.encryptedSymetricKeyForRecipient!,
-              localStorage.getItem("privateKey")!,
-              true
-            ));
+          : (message.contentForRecipient = "AUDIO");
       }
 
       setChatData((prev) => {
@@ -175,6 +172,8 @@ export const Home = (): ReactElement => {
       socket?.off("sendMessageForGroup", handleRecieveMessageGroup);
 
       socket?.off("sendMessage", handleRecieveMessage);
+
+      socket?.emit("leaveGroup", { groupIds });
     };
   }, [socket, chatData]);
 

@@ -17,3 +17,7 @@ export const createGroupApi = async (data: any) => {
 export const getGroupDetailsApi = async (groupId: string) => {
   return (await _axios.get(`/group/${groupId}`)).data;
 };
+
+export const groupIdsApi = async () => {
+  return (await _axios.get(`/groupIds`)).data;
+};

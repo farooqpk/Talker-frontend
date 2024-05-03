@@ -1,7 +1,7 @@
 import { ReactElement } from "react";
-import { PersonalChatContent } from "../../components/personalChat/chatContent";
-import { PersonalChatFooter } from "../../components/personalChat/chatFooter";
-import { PersonalChatHeader } from "../../components/personalChat/chatHeader";
+import { ChatContent } from "../../components/chat/chatContent";
+import { ChatFooter } from "../../components/chat/chatFooter";
+import { ChatHeader } from "../../components/chat/chatHeader";
 import { useParams } from "react-router-dom";
 import { useQuery } from "react-query";
 import { findUserApi } from "@/services/api/user";
@@ -267,17 +267,28 @@ export const PersonalChat = (): ReactElement => {
           <Loader />
         ) : (
           <>
-            <PersonalChatHeader recipient={recipient} userStatus={userStatus} />
+            <ChatHeader
+              recipient={recipient}
+              userStatus={userStatus}
+              key={id}
+              isGroup={false}
+            />
 
-            <PersonalChatContent recipient={recipient} messages={messages} />
+            <ChatContent
+              recipient={recipient}
+              messages={messages}
+              isGroup={false}
+              key={id}
+            />
 
-            <PersonalChatFooter
+            <ChatFooter
               handleTyping={handleTyping}
               handleSendMessage={handleSendMessage}
               typedText={typedText}
               isRecording={isRecording}
               startRecoring={startRecording}
               stopRecording={stopRecording}
+              key={id}
             />
           </>
         )}
