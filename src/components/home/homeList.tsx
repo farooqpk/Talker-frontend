@@ -21,24 +21,24 @@ export const HomeList = ({
           <div className="md:w-[60%] mx-auto" key={index}>
             {chats?.isGroup ? (
               <Link
-                to={`/group/${chats?.Group[0]?.groupId}`}
+                to={`/group/${chats?.Group?.[0]?.groupId}`}
                 className="flex justify-between items-center p-3 hover:bg-slate-900 rounded-2xl "
               >
                 <Avatar>
                   <AvatarFallback className="capitalize">
-                    {chats?.Group[0]?.name[0]}
+                    {chats?.Group?.[0]?.name[0]}
                   </AvatarFallback>
                 </Avatar>
 
                 <div className="flex flex-col items-center gap-2">
                   <h2 className="text-sm md:text-xl font-semibold">
-                    {chats?.Group[0]?.name}
+                    {chats?.Group?.[0]?.name}
                   </h2>
 
                   <span className="text-secondary text-xs md:text-lg">
                     {truncateMessage(
                       chats?.messages[0]?.contentForGroup ||
-                        chats?.Group[0]?.description
+                        chats?.Group?.[0]?.description
                     )}
                   </span>
                 </div>

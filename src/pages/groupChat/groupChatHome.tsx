@@ -1,6 +1,6 @@
 import { MessageType } from "@/components/common/types";
 import { ChatContent } from "@/components/chat/chatContent";
-import { GroupChatFooter } from "@/components/chat/chatFooter";
+import { ChatFooter } from "@/components/chat/chatFooter";
 import { ChatHeader } from "@/components/chat/chatHeader";
 import Loader from "@/components/loader";
 import { useSocket } from "@/context/socketProvider";
@@ -21,13 +21,15 @@ export const GroupChat = (): ReactElement => {
   const { isRecording, startRecording, stopRecording, recordingBlob } =
     useAudioRecorder();
   const { privateKey } = useGetUser();
+  const [encryptedGroupKey, setEncryptedGroupKey] = useState("");
 
   const { data: groupDetails, isLoading: groupDetailsLoading } = useQuery({
     queryKey: [id, "groupdetails"],
     queryFn: () => getGroupDetailsApi(id!),
+    onSuccess: (data) => {
+      if (data) setEncryptedGroupKey(data?.GroupKey?.[0]?.encryptedGroupKey);
+    },
   });
-
-  const encryptedGroupKey = groupDetails?.GroupKey?.[0]?.encryptedGroupKey;
 
   const { isLoading: messagesLoading } = useQuery({
     queryKey: ["messagesqueryforgroup", id],
@@ -83,7 +85,7 @@ export const GroupChat = (): ReactElement => {
   };
 
   useEffect(() => {
-    if (!socket || !id) return;
+    if (!socket || !id || !encryptedGroupKey || !privateKey) return;
 
     const handleRecieveMessage = async (message: MessageType) => {
       if (message.contentType === "TEXT") {
@@ -101,7 +103,6 @@ export const GroupChat = (): ReactElement => {
           true
         );
       }
-      alert(message.contentForGroup);
 
       setMessages((prev) => [...prev, message]);
     };
@@ -114,7 +115,7 @@ export const GroupChat = (): ReactElement => {
       socket?.off("sendMessageForGroup", handleRecieveMessage);
       socket?.emit("leaveGroup", { groupIds: [id] });
     };
-  }, [id, socket]);
+  }, [id, socket, encryptedGroupKey, privateKey]);
 
   const handleAudioMessage = async () => {
     if (!socket || !recordingBlob) return;
@@ -149,13 +150,16 @@ export const GroupChat = (): ReactElement => {
   return (
     <>
       <main className="h-screen flex flex-col relative">
-        {groupDetailsLoading || messagesLoading || !socket ? (
+        {groupDetailsLoading ||
+        messagesLoading ||
+        !socket ||
+        !encryptedGroupKey ? (
           <Loader />
         ) : (
           <>
             <ChatHeader groupDetails={groupDetails} isGroup />
             <ChatContent messages={messages} isGroup key={id} />
-            <GroupChatFooter
+            <ChatFooter
               handleTyping={handleTyping}
               handleSendMessage={handleSendMessage}
               typedText={typedText}

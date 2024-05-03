@@ -16,7 +16,7 @@ type Props = {
 };
 
 export const ChatFooter = ({
-  handleTyping,
+  handleTyping, 
   handleSendMessage,
   typedText,
   isRecording,

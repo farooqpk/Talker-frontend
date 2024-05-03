@@ -86,7 +86,9 @@ export const ChatContent = ({ messages, recipient, isGroup }: Props) => {
             >
               <div className="border-b">
                 <h3 className="text-sm font-semibold">{`${
-                  msg.senderId === user?.userId ? "You" : msg.sender?.username
+                  msg.senderId === user?.userId
+                    ? "You"
+                    : msg?.sender?.username ?? ""
                 }`}</h3>
               </div>
 

@@ -65,7 +65,7 @@ export const ChatHeader = ({
                   {groupDetails?.Chat?.participants?.map((participant: any) => (
                     <div
                       key={participant?.user?.userId}
-                      className="flex justify-between items-center hover:bg-slate-900 rounded-xl cursor-pointer p-2"
+                      className="flex justify-between items-center hover:bg-slate-900 rounded-xl cursor-pointer p-2 "
                     >
                       <Link
                         to={
@@ -80,6 +80,7 @@ export const ChatHeader = ({
                             {participant?.user?.username[0]}
                           </AvatarFallback>
                         </Avatar>
+
                         <p className="text-sm">{participant?.user?.username}</p>
                         {participant?.user?.userId ===
                           groupDetails?.adminId && (
@@ -93,15 +94,16 @@ export const ChatHeader = ({
                           </Badge>
                         )}
                       </Link>
-                      {user?.userId === groupDetails?.adminId && (
-                        <Button
-                          variant={"outline"}
-                          className="rounded-full ml-auto"
-                          size={"icon"}
-                        >
-                          <Trash2 color="red" className="w-5 h-5" />
-                        </Button>
-                      )}
+                      {user?.userId === groupDetails?.adminId &&
+                        participant?.user?.userId !== user?.userId && (
+                          <Button
+                            variant={"outline"}
+                            className="rounded-full"
+                            size={"icon"}
+                          >
+                            <Trash2 color="red" className="w-5 h-5" />
+                          </Button>
+                        )}
                     </div>
                   ))}
                 </div>
