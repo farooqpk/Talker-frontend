@@ -85,14 +85,7 @@ export const PersonalChat = (): ReactElement => {
   };
 
   const handleSendMessage = async (type: "TEXT" | "AUDIO") => {
-    if (
-      !socket ||
-      !recipient ||
-      !publicKey ||
-      !privateKey ||
-      (type === "TEXT" && typedText.trim().length === 0)
-    )
-      return;
+    if (!socket || !recipient || !publicKey || !privateKey) return;
 
     const isChatAlreadyExist = recipient?.chatId;
 
@@ -100,7 +93,7 @@ export const PersonalChat = (): ReactElement => {
       userId: string;
       encryptedKey: string;
     }> = [];
-    let ourOwnEncryptedChatKey;
+    let ourOwnEncryptedChatKey: string | undefined;
 
     if (!isChatAlreadyExist) {
       const chatKey = await createSymetricKey();
@@ -150,7 +143,7 @@ export const PersonalChat = (): ReactElement => {
   };
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !id || !encryptedChatKey || !privateKey) return;
 
     const handleIsOnline = (
       status: UserStatusEnum.OFFLINE | UserStatusEnum.ONLINE

@@ -67,7 +67,7 @@ export const GroupChat = (): ReactElement => {
   };
 
   const handleSendMessage = async (type: "TEXT" | "AUDIO") => {
-    if (!socket) return;
+    if (!socket || !encryptedChatKey || !privateKey) return;
 
     const encryptedMessage = await encryptMessage(
       type === "TEXT" ? typedText : recordingBlob!,
@@ -87,7 +87,11 @@ export const GroupChat = (): ReactElement => {
   useEffect(() => {
     if (!socket || !id || !encryptedChatKey || !privateKey) return;
 
-    const handleRecieveMessage = async (message: MessageType) => {
+    const handleRecieveMessage = async ({
+      message,
+    }: {
+      message: MessageType;
+    }) => {
       if (message.contentType === "TEXT") {
         message.content = await decryptMessage(
           message?.content!,

@@ -1,11 +1,10 @@
-import { Loader2, Plus } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "../ui/input";
 import MultipleSelector, { Option } from "@/components/ui/multiple-selector";
@@ -37,10 +36,15 @@ const formSchema = z.object({
   members: z.array(z.string()),
 });
 
-const CreateGroup = () => {
+const CreateGroup = ({
+  isCreateGroupModalOpen,
+  onClose,
+}: {
+  isCreateGroupModalOpen: boolean;
+  onClose: () => void;
+}) => {
   const [users, setUsers] = useState<Option[]>([]);
   const { user } = useGetUser();
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const { isLoading: isUsersLoading } = useQuery(
@@ -95,7 +99,7 @@ const CreateGroup = () => {
       {
         onSuccess(data) {
           if (data) {
-            setIsModalOpen(false);
+            onClose();
             toast({
               title: "Group Created",
               description: "Group created successfully.",
@@ -117,30 +121,15 @@ const CreateGroup = () => {
 
   return (
     <div className="w-full max-w-lg mx-auto p-4">
-      <Dialog
-        open={isModalOpen}
-        onOpenChange={(state) => setIsModalOpen(state)}
-      >
-        <DialogTrigger asChild>
-          <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6">
-            <Button
-              variant={"outline"}
-              className="rounded-full p-2 "
-              onClick={() => setIsModalOpen(true)}
-            >
-              <Plus className="h-5 md:h-7" />
-            </Button>
-          </div>
-        </DialogTrigger>
-
-        <DialogContent className="p-4 md:p-6 ">
+      <Dialog open={isCreateGroupModalOpen} onOpenChange={onClose}>
+        <DialogContent className="p-4 md:p-6">
           <DialogHeader>
             <DialogTitle>Create group</DialogTitle>
           </DialogHeader>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleCreateGroup)}>
-              <div className="flex flex-col gap-4 mt-3 md:mt-6">
+              <div className="flex flex-col gap-4 mt-3 md:mt-6 ">
                 <FormField
                   control={form.control}
                   name="groupName"
@@ -177,12 +166,13 @@ const CreateGroup = () => {
                       <FormLabel>Select members</FormLabel>
                       <FormControl>
                         <MultipleSelector
+                          creatable={false}
                           loadingIndicator={
                             isUsersLoading && (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             )
                           }
-                          defaultOptions={users}
+                          options={users}
                           onChange={(formValue) => {
                             let newArr = formValue?.map(
                               (option) => option.value
@@ -193,9 +183,7 @@ const CreateGroup = () => {
                             );
                           }}
                           emptyIndicator={
-                            <p className="text-center text-sm md:text-base leading-10 text-gray-600 dark:text-gray-400">
-                              no results found.
-                            </p>
+                            users.length === 0 && <p>No users found</p>
                           }
                           className="w-full"
                         />

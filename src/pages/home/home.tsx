@@ -8,7 +8,7 @@ import { getChatListApi } from "@/services/api/chat";
 import { useSocket } from "@/context/socketProvider";
 import { ReactElement, useEffect, useState } from "react";
 import { useQuery } from "react-query";
-import CreateGroup from "@/components/home/createGroup";
+import Options from "@/components/home/options";
 
 export const Home = (): ReactElement => {
   const [chatData, setChatData] = useState<any[]>([]);
@@ -76,7 +76,7 @@ export const Home = (): ReactElement => {
       }
 
       const chat = chatData?.find((item) => item?.chatId === message?.chatId);
-      const encryptedChatKey = chat?.Group[0]?.encryptedKey;
+      const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
 
       if (message.contentType === "TEXT") {
         message.content = await decryptMessage(
@@ -137,7 +137,7 @@ export const Home = (): ReactElement => {
             </section>
 
             <section>
-              <CreateGroup />
+              <Options />
             </section>
           </>
         )}

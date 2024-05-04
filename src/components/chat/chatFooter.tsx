@@ -71,7 +71,7 @@ export const ChatFooter = ({
         onKeyDown={handleKeyDown}
       />
 
-      {typedText.length > 0 ? (
+      {typedText.trim().length > 0 ? (
         <Button
           variant="ghost"
           size="icon"
