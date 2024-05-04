@@ -1,17 +1,15 @@
 import { useGetUser } from "@/hooks/user";
 import Container from "../Container";
-import { MessageType, User } from "../common/types";
+import { MessageType } from "../common/types";
 import { formateDate } from "@/lib/format-date";
 import { useEffect, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
 
 type Props = {
   messages: MessageType[];
-  recipient?: User;
-  isGroup: boolean;
 };
 
-export const ChatContent = ({ messages, recipient, isGroup }: Props) => {
+export const ChatContent = ({ messages }: Props) => {
   const { user } = useGetUser();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -86,20 +84,14 @@ export const ChatContent = ({ messages, recipient, isGroup }: Props) => {
             >
               <div className="border-b">
                 <h3 className="text-sm font-semibold">{`${
-                  msg.senderId === user?.userId
-                    ? "You"
-                    : msg?.sender?.username ?? ""
+                  msg.senderId === user?.userId ? "You" : msg?.sender?.username
                 }`}</h3>
               </div>
 
               <div>
                 {msg.contentType === "TEXT" ? (
                   <p className="text-sm text-muted-foreground font-semibold">
-                    {isGroup
-                      ? msg.contentForGroup
-                      : msg.senderId === recipient?.userId
-                      ? msg.contentForRecipient
-                      : msg.contentForSender}
+                    {msg.content}
                   </p>
                 ) : (
                   <div className="flex gap-3 p-3">
@@ -107,38 +99,18 @@ export const ChatContent = ({ messages, recipient, isGroup }: Props) => {
                       <Pause
                         className="cursor-pointer"
                         onClick={() =>
-                          isGroup
-                            ? handleAudio(
-                                msg?.messageId!!,
-                                msg.audioForGroup as Blob,
-                                false
-                              )
-                            : handleAudio(
-                                msg?.messageId!!,
-                                msg.senderId === recipient?.userId
-                                  ? (msg.audioForRecipient as Blob)
-                                  : (msg.audioForSender as Blob),
-                                false
-                              )
+                          handleAudio(
+                            msg?.messageId!!,
+                            msg.audio as Blob,
+                            false
+                          )
                         }
                       />
                     ) : (
                       <Play
                         className="cursor-pointer"
                         onClick={() =>
-                          isGroup
-                            ? handleAudio(
-                                msg?.messageId!!,
-                                msg.audioForGroup as Blob,
-                                true
-                              )
-                            : handleAudio(
-                                msg?.messageId!!,
-                                msg.senderId === recipient?.userId
-                                  ? (msg.audioForRecipient as Blob)
-                                  : (msg.audioForSender as Blob),
-                                true
-                              )
+                          handleAudio(msg?.messageId!!, msg.audio as Blob, true)
                         }
                       />
                     )}

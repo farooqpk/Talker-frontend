@@ -12,7 +12,7 @@ import CreateGroup from "@/components/home/createGroup";
 
 export const Home = (): ReactElement => {
   const [chatData, setChatData] = useState<any[]>([]);
-  const { user, privateKey } = useGetUser();
+  const { privateKey } = useGetUser();
   const socket = useSocket();
   const [isTyping, setIsTyping] = useState<string[]>([]);
   const [decryptLoading, setDecryptLoading] = useState<boolean>(false);
@@ -21,47 +21,23 @@ export const Home = (): ReactElement => {
     queryKey: ["chatlist"],
     queryFn: getChatListApi,
     onSuccess: async (data) => {
-      const personalChats = data.filter((item: any) => item?.isGroup === false);
-      const groupChats = data.filter((item: any) => item?.isGroup === true);
+      if (!data) return;
 
       setDecryptLoading(true);
-      const decryptedPersonalData = await Promise.all(
-        personalChats.map(async (chat: any) => {
-          if (user?.userId === chat?.messages[0]?.senderId) {
-            chat.messages[0]?.contentType === "TEXT"
-              ? (chat.messages[0].contentForSender = await decryptMessage(
-                  chat.messages[0].contentForSender,
-                  chat.messages[0].encryptedSymetricKeyForSender,
-                  localStorage.getItem("privateKey")!,
-                  false
-                ))
-              : (chat.messages[0].contentForSender = "AUDIO");
-          } else {
-            chat.messages[0]?.contentType === "TEXT"
-              ? (chat.messages[0].contentForRecipient = await decryptMessage(
-                  chat.messages[0].contentForRecipient,
-                  chat.messages[0].encryptedSymetricKeyForRecipient,
-                  localStorage.getItem("privateKey")!,
-                  false
-                ))
-              : (chat.messages[0].contentForRecipient = "AUDIO");
-          }
-          return chat;
-        })
-      );
+      const decryptedData = await Promise.all(
+        data?.map(async (chat: any) => {
+          const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
 
-      const decryptedGroupData = await Promise.all(
-        groupChats?.map(async (chat: any) => {
           if (chat?.messages?.[0]) {
             if (chat?.messages?.[0]?.contentType === "TEXT") {
-              chat.messages[0].contentForGroup = await decryptMessage(
-                chat.messages[0].contentForGroup,
-                chat.Group[0].GroupKey[0].encryptedGroupKey,
+              chat.messages[0].content = await decryptMessage(
+                chat.messages[0].content,
+                encryptedChatKey,
                 privateKey!,
                 false
               );
             } else {
-              chat.messages[0].contentForGroup = "AUDIO";
+              chat.messages[0].content = "AUDIO";
             }
           }
           return chat;
@@ -69,7 +45,7 @@ export const Home = (): ReactElement => {
       );
 
       setDecryptLoading(false);
-      setChatData([...decryptedPersonalData, ...decryptedGroupData]);
+      setChatData(decryptedData);
     },
   });
 
@@ -87,32 +63,6 @@ export const Home = (): ReactElement => {
       setIsTyping(isTyping.filter((id) => id !== userId));
     };
 
-    const handleRecieveMessageGroup = async (message: MessageType) => {
-      const encryptedGroupKey = chatData?.find(
-        (item) => item?.isGroup === true && item?.chatId === message?.chatId
-      )?.Group[0]?.GroupKey[0]?.encryptedGroupKey;
-
-      if (message.contentType === "TEXT") {
-        message.contentForGroup = await decryptMessage(
-          message?.contentForGroup!,
-          encryptedGroupKey!,
-          privateKey!,
-          false
-        );
-      } else {
-        message.contentForGroup = "AUDIO";
-      }
-
-      setChatData((prev) => {
-        const chat = prev?.find((item) => item.chatId === message.chatId);
-        if (chat) {
-          const index = prev?.indexOf(chat);
-          prev[index] = { ...chat, messages: [message] };
-        }
-        return [...prev];
-      });
-    };
-
     const handleRecieveMessage = async ({
       message,
       isRefetchChatList,
@@ -124,28 +74,22 @@ export const Home = (): ReactElement => {
         refetch();
         return;
       }
-      if (user?.userId === message.senderId) {
-        message.contentType === "TEXT"
-          ? (message.contentForSender = await decryptMessage(
-              message?.contentForSender!,
-              message?.encryptedSymetricKeyForSender!,
-              privateKey!,
-              false
-            ))
-          : (message.contentForSender = "AUDIO");
+
+      const chat = chatData?.find((item) => item?.chatId === message?.chatId);
+      const encryptedChatKey = chat?.Group[0]?.encryptedKey;
+
+      if (message.contentType === "TEXT") {
+        message.content = await decryptMessage(
+          message?.content!,
+          encryptedChatKey!,
+          privateKey!,
+          false
+        );
       } else {
-        message.contentType === "TEXT"
-          ? (message.contentForRecipient = await decryptMessage(
-              message?.contentForRecipient!,
-              message?.encryptedSymetricKeyForRecipient!,
-              localStorage.getItem("privateKey")!,
-              false
-            ))
-          : (message.contentForRecipient = "AUDIO");
+        message.content = "AUDIO";
       }
 
       setChatData((prev) => {
-        const chat = prev?.find((item) => item.chatId === message.chatId);
         if (chat) {
           const index = prev?.indexOf(chat);
           prev[index] = { ...chat, messages: [message] };
@@ -160,7 +104,7 @@ export const Home = (): ReactElement => {
 
     socket?.on("isNotTyping", handleIsNotTyping);
 
-    socket?.on("sendMessageForGroup", handleRecieveMessageGroup);
+    socket?.on("sendMessageForGroup", handleRecieveMessage);
 
     socket?.on("sendMessage", handleRecieveMessage);
 
@@ -169,13 +113,13 @@ export const Home = (): ReactElement => {
 
       socket?.off("isNotTyping", handleIsNotTyping);
 
-      socket?.off("sendMessageForGroup", handleRecieveMessageGroup);
+      socket?.off("sendMessageForGroup", handleRecieveMessage);
 
       socket?.off("sendMessage", handleRecieveMessage);
 
       socket?.emit("leaveGroup", { groupIds });
     };
-  }, [socket, chatData]);
+  }, [socket, chatData, privateKey]);
 
   return (
     <>
@@ -189,7 +133,7 @@ export const Home = (): ReactElement => {
             </section>
 
             <section>
-              <HomeList data={chatData} isTyping={isTyping} />
+              <HomeList chatData={chatData} isTyping={isTyping} />
             </section>
 
             <section>

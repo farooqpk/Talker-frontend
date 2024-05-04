@@ -89,36 +89,6 @@ export const decryptSymetricKey = async (
   }
 };
 
-export const encryptMessage = async (
-  message: string | Blob,
-  symetricKey: string,
-  publicKey: string
-): Promise<{ encryptedMessage: string; encryptedSymetricKey: string }> => {
-  let encodedMessage;
-
-  if (typeof message === "string") {
-    encodedMessage = CryptoJS.AES.encrypt(message, symetricKey).toString();
-  } else {
-    // Encrypt Blob message
-    const reader = new FileReader();
-    reader.readAsArrayBuffer(message);
-    await new Promise((resolve, reject) => {
-      reader.onload = resolve;
-      reader.onerror = reject;
-    });
-    encodedMessage = new Uint8Array(reader.result as ArrayBuffer);
-  }
-
-  const encryptedSymetricKey = await encryptSymetricKey(symetricKey, publicKey);
-  return {
-    encryptedMessage:
-      encodedMessage instanceof Uint8Array
-        ? btoa(String.fromCharCode(...new Uint8Array(encodedMessage)))
-        : encodedMessage,
-    encryptedSymetricKey,
-  };
-};
-
 export const decryptMessage = async (
   encryptedMessage: string,
   encryptedSymetricKey: string,
@@ -150,7 +120,7 @@ export const decryptMessage = async (
   }
 };
 
-export const encryptMessageForGroup = async (
+export const encryptMessage = async (
   message: string | Blob,
   encryptedSymetricKey: string,
   privateKey: string

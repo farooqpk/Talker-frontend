@@ -3,20 +3,17 @@ import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formateDate } from "@/lib/format-date";
 import { truncateMessage } from "@/lib/trunctuate";
-import { useGetUser } from "@/hooks/user";
 
 export const HomeList = ({
-  data,
+  chatData,
   isTyping,
 }: {
-  data: any;
+  chatData: any;
   isTyping: string[];
 }): ReactElement => {
-  const { user } = useGetUser();
-
   return (
     <>
-      {data?.map((chats: any, index: number) => {
+      {chatData?.map((chats: any, index: number) => {
         return (
           <div className="md:w-[60%] mx-auto" key={index}>
             {chats?.isGroup ? (
@@ -37,7 +34,7 @@ export const HomeList = ({
 
                   <span className="text-secondary text-xs md:text-lg">
                     {truncateMessage(
-                      chats?.messages[0]?.contentForGroup ||
+                      chats?.messages[0]?.content ||
                         chats?.Group?.[0]?.description
                     )}
                   </span>
@@ -70,11 +67,7 @@ export const HomeList = ({
                     </span>
                   ) : (
                     <span className="text-secondary text-xs md:text-lg">
-                      {truncateMessage(
-                        user?.userId === chats?.messages[0]?.senderId
-                          ? chats?.messages[0]?.contentForSender
-                          : chats?.messages[0]?.contentForRecipient
-                      )}
+                      {truncateMessage(chats?.messages[0]?.content)}
                     </span>
                   )}
                 </div>

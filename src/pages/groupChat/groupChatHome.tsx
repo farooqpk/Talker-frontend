@@ -5,7 +5,7 @@ import { ChatHeader } from "@/components/chat/chatHeader";
 import Loader from "@/components/loader";
 import { useSocket } from "@/context/socketProvider";
 import { useGetUser } from "@/hooks/user";
-import { decryptMessage, encryptMessageForGroup } from "@/lib/ecrypt_decrypt";
+import { decryptMessage, encryptMessage } from "@/lib/ecrypt_decrypt";
 import { getMessagesApi } from "@/services/api/chat";
 import { getGroupDetailsApi } from "@/services/api/group";
 import { ReactElement, useEffect, useState } from "react";
@@ -21,13 +21,13 @@ export const GroupChat = (): ReactElement => {
   const { isRecording, startRecording, stopRecording, recordingBlob } =
     useAudioRecorder();
   const { privateKey } = useGetUser();
-  const [encryptedGroupKey, setEncryptedGroupKey] = useState("");
+  const [encryptedChatKey, setEncryptedChatKey] = useState("");
 
   const { data: groupDetails, isLoading: groupDetailsLoading } = useQuery({
     queryKey: [id, "groupdetails"],
     queryFn: () => getGroupDetailsApi(id!),
     onSuccess: (data) => {
-      if (data) setEncryptedGroupKey(data?.GroupKey?.[0]?.encryptedGroupKey);
+      if (data) setEncryptedChatKey(data?.Chat?.ChatKey?.[0]?.encryptedKey);
     },
   });
 
@@ -39,16 +39,16 @@ export const GroupChat = (): ReactElement => {
       const decryptedData = await Promise.all(
         data?.map(async (message) => {
           if (message.contentType === "TEXT") {
-            message.contentForGroup = await decryptMessage(
-              message?.contentForGroup!,
-              encryptedGroupKey!,
+            message.content = await decryptMessage(
+              message?.content!,
+              encryptedChatKey!,
               privateKey!,
               false
             );
           } else {
-            message.audioForGroup = await decryptMessage(
-              message?.contentForGroup!,
-              encryptedGroupKey!,
+            message.audio = await decryptMessage(
+              message?.content!,
+              encryptedChatKey!,
               privateKey!,
               true
             );
@@ -66,39 +66,39 @@ export const GroupChat = (): ReactElement => {
     setTypedText(value);
   };
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = async (type: "TEXT" | "AUDIO") => {
     if (!socket) return;
 
-    const encryptedMessage = await encryptMessageForGroup(
-      typedText,
-      encryptedGroupKey,
+    const encryptedMessage = await encryptMessage(
+      type === "TEXT" ? typedText : recordingBlob!,
+      encryptedChatKey,
       privateKey!
     );
     socket.emit("sendMessageForGroup", {
       groupId: id,
       message: {
-        contentForGroup: encryptedMessage,
-        contentType: "TEXT",
+        content: encryptedMessage,
+        contentType: type,
       },
     });
     setTypedText("");
   };
 
   useEffect(() => {
-    if (!socket || !id || !encryptedGroupKey || !privateKey) return;
+    if (!socket || !id || !encryptedChatKey || !privateKey) return;
 
     const handleRecieveMessage = async (message: MessageType) => {
       if (message.contentType === "TEXT") {
-        message.contentForGroup = await decryptMessage(
-          message?.contentForGroup!,
-          encryptedGroupKey!,
+        message.content = await decryptMessage(
+          message?.content!,
+          encryptedChatKey!,
           privateKey!,
           false
         );
       } else {
-        message.audioForGroup = await decryptMessage(
-          message?.contentForGroup!,
-          encryptedGroupKey!,
+        message.audio = await decryptMessage(
+          message?.content!,
+          encryptedChatKey!,
           privateKey!,
           true
         );
@@ -115,29 +115,13 @@ export const GroupChat = (): ReactElement => {
       socket?.off("sendMessageForGroup", handleRecieveMessage);
       socket?.emit("leaveGroup", { groupIds: [id] });
     };
-  }, [id, socket, encryptedGroupKey, privateKey]);
-
-  const handleAudioMessage = async () => {
-    if (!socket || !recordingBlob) return;
-    const encryptedMessage = await encryptMessageForGroup(
-      recordingBlob,
-      encryptedGroupKey,
-      privateKey!
-    );
-    socket.emit("sendMessageForGroup", {
-      groupId: id,
-      message: {
-        contentForGroup: encryptedMessage,
-        contentType: "AUDIO",
-      },
-    });
-  };
+  }, [id, socket, encryptedChatKey, privateKey]);
 
   useEffect(() => {
     const sendAudioMessage = async () => {
       if (recordingBlob) {
         try {
-          await handleAudioMessage();
+          await handleSendMessage("AUDIO");
         } catch (error) {
           console.error("Error sending audio message:", error);
           // Handle the error (e.g., display an error message to the user)
@@ -150,15 +134,12 @@ export const GroupChat = (): ReactElement => {
   return (
     <>
       <main className="h-screen flex flex-col relative">
-        {groupDetailsLoading ||
-        messagesLoading ||
-        !socket ||
-        !encryptedGroupKey ? (
+        {groupDetailsLoading || messagesLoading || !socket ? (
           <Loader />
         ) : (
           <>
-            <ChatHeader groupDetails={groupDetails} isGroup />
-            <ChatContent messages={messages} isGroup key={id} />
+            <ChatHeader groupDetails={groupDetails} isGroup key={`${id}+4`} />
+            <ChatContent messages={messages} key={`${id}+5`} />
             <ChatFooter
               handleTyping={handleTyping}
               handleSendMessage={handleSendMessage}
@@ -166,6 +147,7 @@ export const GroupChat = (): ReactElement => {
               isRecording={isRecording}
               startRecoring={startRecording}
               stopRecording={stopRecording}
+              key={`${id}+6`}
             />
           </>
         )}

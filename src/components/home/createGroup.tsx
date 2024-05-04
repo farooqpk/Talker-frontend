@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "../ui/input";
 import MultipleSelector, { Option } from "@/components/ui/multiple-selector";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   createGroupApi,
   findUsersToCreateGroupApi,
@@ -27,7 +27,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createSymetricKey, encryptSymetricKey } from "@/lib/ecrypt_decrypt";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import { useGetUser } from "@/hooks/user";
 import { toast } from "../ui/use-toast";
 
@@ -43,11 +43,17 @@ const CreateGroup = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    findUsersToCreateGroupApi().then((res: Option[]) => {
-      setUsers(res);
-    });
-  }, []);
+  const { isLoading: isUsersLoading } = useQuery(
+    ["usersToCreateGroup"],
+    findUsersToCreateGroupApi,
+    {
+      onSuccess(data) {
+        if (data) {
+          setUsers(data);
+        }
+      },
+    }
+  );
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -56,26 +62,26 @@ const CreateGroup = () => {
   const { mutate, isLoading } = useMutation(createGroupApi);
 
   const handleCreateGroup = async (data: z.infer<typeof formSchema>) => {
-    let encryptedGroupKeyForMembers: Array<{
+    let encryptedChatKeyForUsers: Array<{
       userId: string;
-      encryptedGroupKey: string;
+      encryptedKey: string;
     }> = [];
 
-    const [membersPublicKeys, groupSymetricKey] = await Promise.all([
+    const [membersPublicKeys, chatKey] = await Promise.all([
       getPublicKeysApi([...data.members, user?.userId]),
       createSymetricKey(),
     ]);
 
     await Promise.all(
       membersPublicKeys.map(async (item) => {
-        const encryptedGroupKey = await encryptSymetricKey(
-          groupSymetricKey,
+        const encryptedChatKey = await encryptSymetricKey(
+          chatKey,
           item.publicKey
         );
 
-        encryptedGroupKeyForMembers.push({
+        encryptedChatKeyForUsers.push({
           userId: item.userId,
-          encryptedGroupKey,
+          encryptedKey: encryptedChatKey,
         });
       })
     );
@@ -84,7 +90,7 @@ const CreateGroup = () => {
       {
         groupName: data.groupName,
         description: data.description,
-        membersWithEncryptedGroupKey: encryptedGroupKeyForMembers,
+        encryptedChatKey: encryptedChatKeyForUsers,
       },
       {
         onSuccess(data) {
@@ -171,6 +177,11 @@ const CreateGroup = () => {
                       <FormLabel>Select members</FormLabel>
                       <FormControl>
                         <MultipleSelector
+                          loadingIndicator={
+                            isUsersLoading && (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            )
+                          }
                           defaultOptions={users}
                           onChange={(formValue) => {
                             let newArr = formValue?.map(

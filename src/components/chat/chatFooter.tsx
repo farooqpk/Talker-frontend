@@ -8,7 +8,7 @@ import { useRef } from "react";
 
 type Props = {
   handleTyping: (value: string) => void;
-  handleSendMessage: () => void;
+  handleSendMessage: (type: "TEXT" | "AUDIO") => void;
   typedText: string;
   isRecording: boolean;
   startRecoring: () => void;
@@ -16,7 +16,7 @@ type Props = {
 };
 
 export const ChatFooter = ({
-  handleTyping, 
+  handleTyping,
   handleSendMessage,
   typedText,
   isRecording,
@@ -37,7 +37,7 @@ export const ChatFooter = ({
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault(); // Prevents adding a new line
-      typedText.length > 0 && handleSendMessage();
+      typedText.length > 0 && handleSendMessage("TEXT");
     }
   };
 
@@ -76,7 +76,7 @@ export const ChatFooter = ({
           variant="ghost"
           size="icon"
           className="rounded-full p-2"
-          onClick={handleSendMessage}
+          onClick={() => handleSendMessage("TEXT")}
         >
           <SendHorizontal />
         </Button>

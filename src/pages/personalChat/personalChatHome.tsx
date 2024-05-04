@@ -9,15 +9,20 @@ import Loader from "@/components/loader";
 import { useSocket } from "@/context/socketProvider";
 import { useEffect, useState } from "react";
 import { MessageType, UserStatusEnum } from "@/components/common/types";
-import { getMessagesApi } from "@/services/api/chat";
-import { decryptMessage, encryptMessage } from "@/lib/ecrypt_decrypt";
+import { getChatKeyApi, getMessagesApi } from "@/services/api/chat";
+import {
+  createSymetricKey,
+  decryptMessage,
+  encryptMessage,
+  encryptSymetricKey,
+} from "@/lib/ecrypt_decrypt";
 import { useGetUser } from "@/hooks/user";
 import { useAudioRecorder } from "react-audio-voice-recorder";
 
 export const PersonalChat = (): ReactElement => {
   const { id } = useParams();
   const socket = useSocket();
-  const { user } = useGetUser();
+  const { privateKey, publicKey, user } = useGetUser();
   const [userStatus, setUserStatus] = useState<UserStatusEnum>(
     UserStatusEnum.OFFLINE
   );
@@ -25,48 +30,43 @@ export const PersonalChat = (): ReactElement => {
   const [messages, setMessages] = useState<MessageType[]>([]);
   const { isRecording, startRecording, stopRecording, recordingBlob } =
     useAudioRecorder();
+  const [encryptedChatKey, setEncryptedChatKey] = useState("");
 
   const { data: recipient, isLoading } = useQuery({
     queryKey: ["userquery", id],
     queryFn: () => findUserApi(id!),
   });
 
-  const { isLoading: messagesLoading } = useQuery({
-    queryKey: ["messagesquery", id],
-    queryFn: () => getMessagesApi(recipient.chatId!),
+  const { isLoading: chatKeyLoading } = useQuery({
+    queryKey: ["chatKeyquery", recipient?.chatId],
     enabled: !!recipient?.chatId,
+    queryFn: () => getChatKeyApi(recipient?.chatId!),
+    onSuccess: (data) => {
+      if (data) setEncryptedChatKey(data?.encryptedKey);
+    },
+  });
+
+  const { isLoading: messagesLoading } = useQuery({
+    queryKey: ["messagesquery", recipient?.chatId],
+    queryFn: () => getMessagesApi(recipient.chatId!),
+    enabled: !!recipient?.chatId && !!encryptedChatKey,
     onSuccess: async (data: MessageType[]) => {
       const decryptedData = await Promise.all(
-        data.map(async (message) => {
-          if (user?.userId === message.senderId) {
-            message.contentType === "TEXT"
-              ? (message.contentForSender = await decryptMessage(
-                  message?.contentForSender!,
-                  message?.encryptedSymetricKeyForSender!,
-                  localStorage.getItem("privateKey")!,
-                  false
-                ))
-              : (message.audioForSender = await decryptMessage(
-                  message?.contentForSender!,
-                  message?.encryptedSymetricKeyForSender!,
-                  localStorage.getItem("privateKey")!,
-                  true
-                ));
-          } else {
-            message.contentType === "TEXT"
-              ? (message.contentForRecipient = await decryptMessage(
-                  message?.contentForRecipient!,
-                  message?.encryptedSymetricKeyForRecipient!,
-                  localStorage.getItem("privateKey")!,
-                  false
-                ))
-              : (message.audioForRecipient = await decryptMessage(
-                  message?.contentForRecipient!,
-                  message?.encryptedSymetricKeyForRecipient!,
-                  localStorage.getItem("privateKey")!,
-                  true
-                ));
-          }
+        data?.map(async (message) => {
+          message.contentType === "TEXT"
+            ? (message.content = await decryptMessage(
+                message?.content!,
+                encryptedChatKey!,
+                privateKey!,
+                false
+              ))
+            : (message.audio = await decryptMessage(
+                message?.content!,
+                encryptedChatKey!,
+                privateKey!,
+                true
+              ));
+
           return message;
         })
       );
@@ -84,36 +84,67 @@ export const PersonalChat = (): ReactElement => {
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!socket || !recipient) return;
+  const handleSendMessage = async (type: "TEXT" | "AUDIO") => {
+    if (
+      !socket ||
+      !recipient ||
+      !publicKey ||
+      !privateKey ||
+      (type === "TEXT" && typedText.trim().length === 0)
+    )
+      return;
 
-    const {
-      encryptedMessage: encryptedMessageForRecipient,
-      encryptedSymetricKey: encryptedSymetricKeyForRecipient,
-    } = await encryptMessage(
-      typedText,
-      localStorage.getItem("symetricKey")!,
-      recipient.publicKey
-    );
-    const {
-      encryptedMessage: encryptedMessageForSender,
-      encryptedSymetricKey: encryptedSymetricKeyForSender,
-    } = await encryptMessage(
-      typedText,
-      localStorage.getItem("symetricKey")!,
-      localStorage.getItem("publicKey")!
+    const isChatAlreadyExist = recipient?.chatId;
+
+    let encryptedChatKeyForUsers: Array<{
+      userId: string;
+      encryptedKey: string;
+    }> = [];
+    let ourOwnEncryptedChatKey;
+
+    if (!isChatAlreadyExist) {
+      const chatKey = await createSymetricKey();
+
+      const usersWithPublicKey = [
+        { userId: user?.userId, publicKey },
+        { userId: recipient?.userId, publicKey: recipient?.publicKey },
+      ];
+
+      await Promise.all(
+        usersWithPublicKey.map(async (item) => {
+          const encryptedKey = await encryptSymetricKey(
+            chatKey,
+            item.publicKey
+          );
+
+          encryptedChatKeyForUsers.push({
+            userId: item.userId,
+            encryptedKey,
+          });
+        })
+      );
+
+      ourOwnEncryptedChatKey = encryptedChatKeyForUsers.find(
+        (item) => item.userId === user?.userId
+      )?.encryptedKey!;
+      setEncryptedChatKey(ourOwnEncryptedChatKey);
+    }
+
+    const encryptedMessage = await encryptMessage(
+      type === "TEXT" ? typedText : recordingBlob!,
+      isChatAlreadyExist ? encryptedChatKey : ourOwnEncryptedChatKey!,
+      privateKey!
     );
 
     socket.emit("sendMessage", {
-      userId: id,
+      recipientId: id,
       message: {
-        encryptedMessageForRecipient,
-        encryptedSymetricKeyForRecipient,
-        encryptedMessageForSender,
-        encryptedSymetricKeyForSender,
-        contentType: "TEXT",
+        content: encryptedMessage,
+        contentType: type,
       },
+      encryptedChatKey: !isChatAlreadyExist && encryptedChatKeyForUsers,
     });
+
     setTypedText("");
     socket.emit("isNotTyping", { toUserId: id });
   };
@@ -156,35 +187,19 @@ export const PersonalChat = (): ReactElement => {
     }: {
       message: MessageType;
     }) => {
-      if (user?.userId === message.senderId) {
-        message.contentType === "TEXT"
-          ? (message.contentForSender = await decryptMessage(
-              message?.contentForSender!,
-              message?.encryptedSymetricKeyForSender!,
-              localStorage.getItem("privateKey")!,
-              false
-            ))
-          : (message.audioForSender = await decryptMessage(
-              message?.contentForSender!,
-              message?.encryptedSymetricKeyForSender!,
-              localStorage.getItem("privateKey")!,
-              true
-            ));
-      } else {
-        message.contentType === "TEXT"
-          ? (message.contentForRecipient = await decryptMessage(
-              message?.contentForRecipient!,
-              message?.encryptedSymetricKeyForRecipient!,
-              localStorage.getItem("privateKey")!,
-              false
-            ))
-          : (message.audioForRecipient = await decryptMessage(
-              message?.contentForRecipient!,
-              message?.encryptedSymetricKeyForRecipient!,
-              localStorage.getItem("privateKey")!,
-              true
-            ));
-      }
+      message.contentType === "TEXT"
+        ? (message.content = await decryptMessage(
+            message?.content!,
+            encryptedChatKey!,
+            privateKey!,
+            false
+          ))
+        : (message.audio = await decryptMessage(
+            message?.content!,
+            encryptedChatKey!,
+            privateKey!,
+            true
+          ));
 
       setMessages((prev) => [...prev, message]);
     };
@@ -211,45 +226,13 @@ export const PersonalChat = (): ReactElement => {
       socket.off("isNotTyping", handleIsNotTyping);
       socket.off("sendMessage", handleRecieveMessage);
     };
-  }, [id, socket]);
-
-  const handleAudioMessage = async () => {
-    if (!socket || !recipient || !recordingBlob) return;
-
-    const {
-      encryptedMessage: encryptedMessageForRecipient,
-      encryptedSymetricKey: encryptedSymetricKeyForRecipient,
-    } = await encryptMessage(
-      recordingBlob,
-      localStorage.getItem("symetricKey")!,
-      recipient.publicKey
-    );
-    const {
-      encryptedMessage: encryptedMessageForSender,
-      encryptedSymetricKey: encryptedSymetricKeyForSender,
-    } = await encryptMessage(
-      recordingBlob,
-      localStorage.getItem("symetricKey")!,
-      localStorage.getItem("publicKey")!
-    );
-
-    socket.emit("sendMessage", {
-      userId: id,
-      message: {
-        encryptedMessageForRecipient,
-        encryptedSymetricKeyForRecipient,
-        encryptedMessageForSender,
-        encryptedSymetricKeyForSender,
-        contentType: "AUDIO",
-      },
-    });
-  };
+  }, [id, socket, encryptedChatKey, privateKey]);
 
   useEffect(() => {
     const sendAudioMessage = async () => {
       if (recordingBlob) {
         try {
-          await handleAudioMessage();
+          await handleSendMessage("AUDIO");
         } catch (error) {
           console.error("Error sending audio message:", error);
           // Handle the error (e.g., display an error message to the user)
@@ -263,23 +246,21 @@ export const PersonalChat = (): ReactElement => {
   return (
     <>
       <main className="h-screen flex flex-col relative">
-        {isLoading || !socket || (recipient?.chatId && messagesLoading) ? (
+        {isLoading ||
+        !socket ||
+        (recipient?.chatId && messagesLoading) ||
+        chatKeyLoading ? (
           <Loader />
         ) : (
           <>
             <ChatHeader
               recipient={recipient}
               userStatus={userStatus}
-              key={id}
+              key={`${id}+1`}
               isGroup={false}
             />
 
-            <ChatContent
-              recipient={recipient}
-              messages={messages}
-              isGroup={false}
-              key={id}
-            />
+            <ChatContent messages={messages} key={`${id}+2`} />
 
             <ChatFooter
               handleTyping={handleTyping}
@@ -288,7 +269,7 @@ export const PersonalChat = (): ReactElement => {
               isRecording={isRecording}
               startRecoring={startRecording}
               stopRecording={stopRecording}
-              key={id}
+              key={`${id}+3`}
             />
           </>
         )}
