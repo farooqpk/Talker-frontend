@@ -8,7 +8,7 @@ import { findUserApi } from "@/services/api/user";
 import Loader from "@/components/loader";
 import { useSocket } from "@/context/socketProvider";
 import { useEffect, useState } from "react";
-import { MessageType, UserStatusEnum } from "@/components/common/types";
+import { MessageType, UserStatusEnum } from "@/types/index";
 import { getChatKeyApi, getMessagesApi } from "@/services/api/chat";
 import {
   createSymetricKey,
@@ -19,7 +19,7 @@ import {
 import { useGetUser } from "@/hooks/user";
 import { useAudioRecorder } from "react-audio-voice-recorder";
 
-export const PersonalChat = (): ReactElement => {
+export const PrivateChat = (): ReactElement => {
   const { id } = useParams();
   const socket = useSocket();
   const { privateKey, publicKey, user } = useGetUser();
@@ -129,7 +129,7 @@ export const PersonalChat = (): ReactElement => {
       privateKey!
     );
 
-    socket.emit("sendMessage", {
+    socket.emit("sendPrivateMessage", {
       recipientId: id,
       message: {
         content: encryptedMessage,
@@ -209,7 +209,7 @@ export const PersonalChat = (): ReactElement => {
 
     socket.on("isNotTyping", handleIsNotTyping);
 
-    socket.on("sendMessage", handleRecieveMessage);
+    socket.on("sendPrivateMessage", handleRecieveMessage);
 
     return () => {
       socket.off("isOnline", handleIsOnline);
@@ -217,7 +217,7 @@ export const PersonalChat = (): ReactElement => {
       socket.off("isConnected", handleIsConnected);
       socket.off("isTyping", handleIsTyping);
       socket.off("isNotTyping", handleIsNotTyping);
-      socket.off("sendMessage", handleRecieveMessage);
+      socket.off("sendPrivateMessage", handleRecieveMessage);
     };
   }, [id, socket, encryptedChatKey, privateKey]);
 

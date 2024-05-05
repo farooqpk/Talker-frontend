@@ -2,7 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Auth from "./pages/auth/auth";
 import { Home } from "./pages/home/home";
 import { VerifyRoute } from "./components/auth/verifyRoute";
-import { PersonalChat } from "./pages/personalChat/personalChatHome";
+import { PrivateChat } from "./pages/privateChat/privateChatHome";
 import { SocketLayout } from "./components/socketLayout/socketLayout";
 import { GroupChat } from "./pages/groupChat/groupChatHome";
 
@@ -16,7 +16,7 @@ const Layout = () => {
             <Route path="/" element={<VerifyRoute children={<Home />} />} />
             <Route
               path="/chat/:id"
-              element={<VerifyRoute children={<PersonalChat />} />}
+              element={<VerifyRoute children={<PrivateChat />} />}
             />
             <Route
               path="/group/:id"

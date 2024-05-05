@@ -1,4 +1,4 @@
-import { User } from "@/components/common/types";
+import { User } from "@/types/index";
 
 export const useGetUser = () => {
   const user = localStorage.getItem("user");

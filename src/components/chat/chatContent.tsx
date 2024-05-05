@@ -1,6 +1,6 @@
 import { useGetUser } from "@/hooks/user";
 import Container from "../Container";
-import { MessageType } from "../common/types";
+import { MessageType } from "../../types";
 import { formateDate } from "@/lib/format-date";
 import { useEffect, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
@@ -75,6 +75,10 @@ export const ChatContent = ({ messages }: Props) => {
           ref={scrollRef}
           className="flex flex-col gap-4 h-[67vh] md:h-[65vh] overflow-y-scroll px-3 md:px-14 py-4"
         >
+          <p className="text-center text-xs md:text-sm font-light text-warning mb-5">
+            All messages are end to end encrypted
+          </p>
+
           {messages?.map((msg, index) => (
             <div
               key={index}

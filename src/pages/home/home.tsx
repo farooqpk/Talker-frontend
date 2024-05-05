@@ -106,7 +106,7 @@ export const Home = (): ReactElement => {
 
     socket?.on("sendMessageForGroup", handleRecieveMessage);
 
-    socket?.on("sendMessage", handleRecieveMessage);
+    socket?.on("sendPrivateMessage", handleRecieveMessage);
 
     return () => {
       socket?.off("isTyping", handleIsTyping);
@@ -115,7 +115,7 @@ export const Home = (): ReactElement => {
 
       socket?.off("sendMessageForGroup", handleRecieveMessage);
 
-      socket?.off("sendMessage", handleRecieveMessage);
+      socket?.off("sendPrivateMessage", handleRecieveMessage);
 
       socket?.emit("leaveGroup", { groupIds });
     };

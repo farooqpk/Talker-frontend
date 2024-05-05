@@ -21,20 +21,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import ChangeUsername from "../common/ChangeUsername";
 
 const Options = () => {
   const navigate = useNavigate();
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isChangeUsernameModalOpen, setIsChangeUsernameModalOpen] =
+    useState(false);
 
   const handleLogout = () => {
     Cookies.remove("accesstoken");
     Cookies.remove("refreshtoken");
     navigate("/auth");
-  };
-
-  const handleCreateGroup = () => {
-    setIsCreateGroupModalOpen(true);
   };
 
   return (
@@ -50,8 +49,13 @@ const Options = () => {
             <DropdownMenuLabel>Options</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>Export keys</DropdownMenuItem>
-            <DropdownMenuItem onClick={handleCreateGroup}>
+            <DropdownMenuItem onClick={() => setIsCreateGroupModalOpen(true)}>
               Create group
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setIsChangeUsernameModalOpen(true)}
+            >
+              Change username
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setIsLogoutModalOpen(true)}>
               Logout
@@ -81,6 +85,12 @@ const Options = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+      )}
+      {isChangeUsernameModalOpen && (
+        <ChangeUsername
+          onClose={() => setIsChangeUsernameModalOpen(false)}
+          isChangeUsernameModalOpen={isChangeUsernameModalOpen}
+        />
       )}
     </div>
   );

@@ -4,7 +4,7 @@ import { Disc, Mic, SendHorizontal, Smile } from "lucide-react";
 import { Theme } from "emoji-picker-react";
 import EmojiPicker from "emoji-picker-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 type Props = {
   handleTyping: (value: string) => void;
@@ -24,6 +24,12 @@ export const ChatFooter = ({
   stopRecording,
 }: Props) => {
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (chatInputRef.current) {
+      chatInputRef.current.focus();
+    }
+  }, []);
 
   const handleOnEmojiClick = (emojiData: any) => {
     if (chatInputRef.current) {

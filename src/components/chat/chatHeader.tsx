@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useGetUser } from "@/hooks/user";
-import { User, UserStatusEnum } from "../common/types";
+import { User, UserStatusEnum } from "../../types";
 import { truncateUsername } from "@/lib/trunctuate";
 
 export const ChatHeader = ({
@@ -118,7 +118,7 @@ export const ChatHeader = ({
           </Sheet>
         </div>
       ) : (
-        <div className="flex items-center p-3 border-b rounded-xl ">
+        <div className="flex items-center p-3 rounded-xl border-b ">
           <Link to={`/`} className="absolute">
             <Button variant={"outline"} size={"icon"}>
               <ArrowLeft />

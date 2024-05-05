@@ -1,4 +1,4 @@
-import { MessageType } from "@/components/common/types";
+import { MessageType } from "@/types/index";
 import { ChatContent } from "@/components/chat/chatContent";
 import { ChatFooter } from "@/components/chat/chatFooter";
 import { ChatHeader } from "@/components/chat/chatHeader";
