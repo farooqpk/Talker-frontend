@@ -11,11 +11,14 @@ export type MessageType = {
   contentType: string;
   content: string;
   audio?: Blob;
+  image?: Blob;
   createdAt: string;
-  sender?:User
+  sender?: User;
 };
 
 export type User = {
   userId: string;
   username: string;
 };
+
+export type ContentType = "TEXT" | "AUDIO" | "IMAGE";

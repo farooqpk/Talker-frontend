@@ -1,14 +1,16 @@
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "../ui/button";
-import { Disc, Mic, SendHorizontal, Smile } from "lucide-react";
+import { Disc, ImageUp, Mic, SendHorizontal, Smile } from "lucide-react";
 import { Theme } from "emoji-picker-react";
 import EmojiPicker from "emoji-picker-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useEffect, useRef } from "react";
+import { Input } from "../ui/input";
+import { convertToWebP } from "@/lib/convert-to-webp";
 
 type Props = {
   handleTyping: (value: string) => void;
-  handleSendMessage: (type: "TEXT" | "AUDIO") => void;
+  handleSendMessage: (type: "TEXT" | "AUDIO" | "IMAGE", imgBlob?: Blob) => void;
   typedText: string;
   isRecording: boolean;
   startRecoring: () => void;
@@ -24,6 +26,7 @@ export const ChatFooter = ({
   stopRecording,
 }: Props) => {
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (chatInputRef.current) {
@@ -47,6 +50,11 @@ export const ChatFooter = ({
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const blob: Blob = await convertToWebP(file!);
+    handleSendMessage("IMAGE", blob);
+  };
   return (
     <section className="flex gap-1 md:gap-4 items-center px-5 md:px-24 relative">
       <Dialog>
@@ -77,6 +85,23 @@ export const ChatFooter = ({
         onKeyDown={handleKeyDown}
       />
 
+      <Button
+        variant="ghost"
+        size="icon"
+        className="rounded-full p-2"
+        onClick={() => uploadInputRef.current?.click()}
+      >
+        <ImageUp />
+      </Button>
+
+      <Input
+        type="file"
+        className="hidden"
+        ref={uploadInputRef}
+        accept="image/*"
+        onChange={handleImageUpload}
+      />
+
       {typedText.trim().length > 0 ? (
         <Button
           variant="ghost"
@@ -89,7 +114,7 @@ export const ChatFooter = ({
       ) : (
         <Button variant="ghost" size="icon" className="rounded-full p-2">
           {isRecording ? (
-            <Disc onClick={stopRecording} />
+            <Disc onClick={stopRecording} color="red" />
           ) : (
             <Mic onClick={startRecoring} />
           )}

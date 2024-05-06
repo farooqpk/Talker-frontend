@@ -8,7 +8,7 @@ import { findUserApi } from "@/services/api/user";
 import Loader from "@/components/loader";
 import { useSocket } from "@/context/socketProvider";
 import { useEffect, useState } from "react";
-import { MessageType, UserStatusEnum } from "@/types/index";
+import { ContentType, MessageType, UserStatusEnum } from "@/types/index";
 import { getChatKeyApi, getMessagesApi } from "@/services/api/chat";
 import {
   createSymetricKey,
@@ -18,6 +18,7 @@ import {
 } from "@/lib/ecrypt_decrypt";
 import { useGetUser } from "@/hooks/user";
 import { useAudioRecorder } from "react-audio-voice-recorder";
+import {useToast } from "@/components/ui/use-toast";
 
 export const PrivateChat = (): ReactElement => {
   const { id } = useParams();
@@ -31,6 +32,7 @@ export const PrivateChat = (): ReactElement => {
   const { isRecording, startRecording, stopRecording, recordingBlob } =
     useAudioRecorder();
   const [encryptedChatKey, setEncryptedChatKey] = useState("");
+  const { toast } = useToast();
 
   const { data: recipient, isLoading } = useQuery({
     queryKey: ["userquery", id],
@@ -58,14 +60,23 @@ export const PrivateChat = (): ReactElement => {
                 message?.content!,
                 encryptedChatKey!,
                 privateKey!,
-                false
+                "TEXT"
               ))
-            : (message.audio = await decryptMessage(
+            : message.contentType === "AUDIO"
+            ? (message.audio = await decryptMessage(
                 message?.content!,
                 encryptedChatKey!,
                 privateKey!,
-                true
-              ));
+                "AUDIO"
+              ))
+            : message.contentType === "IMAGE"
+            ? (message.image = await decryptMessage(
+                message?.content!,
+                encryptedChatKey!,
+                privateKey!,
+                "IMAGE"
+              ))
+            : null;
 
           return message;
         })
@@ -84,7 +95,7 @@ export const PrivateChat = (): ReactElement => {
     }
   };
 
-  const handleSendMessage = async (type: "TEXT" | "AUDIO") => {
+  const handleSendMessage = async (type: ContentType, imgBlob?: Blob) => {
     if (!socket || !recipient || !publicKey || !privateKey) return;
 
     const isChatAlreadyExist = recipient?.chatId;
@@ -124,7 +135,13 @@ export const PrivateChat = (): ReactElement => {
     }
 
     const encryptedMessage = await encryptMessage(
-      type === "TEXT" ? typedText : recordingBlob!,
+      type === "TEXT"
+        ? typedText
+        : type === "AUDIO"
+        ? recordingBlob!
+        : type === "IMAGE"
+        ? imgBlob!
+        : "",
       isChatAlreadyExist ? encryptedChatKey : ourOwnEncryptedChatKey!,
       privateKey!
     );
@@ -185,14 +202,23 @@ export const PrivateChat = (): ReactElement => {
             message?.content!,
             encryptedChatKey!,
             privateKey!,
-            false
+            "TEXT"
           ))
-        : (message.audio = await decryptMessage(
+        : message.contentType === "AUDIO"
+        ? (message.audio = await decryptMessage(
             message?.content!,
             encryptedChatKey!,
             privateKey!,
-            true
-          ));
+            "AUDIO"
+          ))
+        : message.contentType === "IMAGE"
+        ? (message.image = await decryptMessage(
+            message?.content!,
+            encryptedChatKey!,
+            privateKey!,
+            "IMAGE"
+          ))
+        : null;
 
       setMessages((prev) => [...prev, message]);
     };
@@ -227,8 +253,10 @@ export const PrivateChat = (): ReactElement => {
         try {
           await handleSendMessage("AUDIO");
         } catch (error) {
-          console.error("Error sending audio message:", error);
-          // Handle the error (e.g., display an error message to the user)
+          toast({
+            title: "Error sending audio message",
+            variant: "destructive",
+          });
         }
       }
     };

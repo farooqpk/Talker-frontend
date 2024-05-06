@@ -79,57 +79,71 @@ export const ChatContent = ({ messages }: Props) => {
             All messages are end to end encrypted
           </p>
 
-          {messages?.map((msg, index) => (
-            <div
-              key={index}
-              className={`border rounded-3xl p-3 break-words flex flex-col flex-wrap gap-2 ${
-                msg.senderId === user?.userId ? "ml-auto" : "mr-auto"
-              }`}
-            >
-              <div className="border-b">
-                <h3 className="text-sm font-semibold">{`${
-                  msg.senderId === user?.userId ? "You" : msg?.sender?.username
-                }`}</h3>
-              </div>
+          {messages?.map((msg, index) => {
+            return (
+              <div
+                key={index}
+                className={`border rounded-3xl p-3 break-words flex flex-col flex-wrap gap-2 ${
+                  msg.senderId === user?.userId ? "ml-auto" : "mr-auto"
+                }`}
+              >
+                <div className="border-b">
+                  <h3 className="text-sm font-semibold">{`${
+                    msg.senderId === user?.userId
+                      ? "You"
+                      : msg?.sender?.username
+                  }`}</h3>
+                </div>
 
-              <div>
-                {msg.contentType === "TEXT" ? (
-                  <p className="text-sm text-muted-foreground font-semibold">
-                    {msg.content}
-                  </p>
-                ) : (
-                  <div className="flex gap-3 p-3">
-                    {isPlaying[msg?.messageId!!] ? (
-                      <Pause
-                        className="cursor-pointer"
-                        onClick={() =>
-                          handleAudio(
-                            msg?.messageId!!,
-                            msg.audio as Blob,
-                            false
-                          )
-                        }
-                      />
-                    ) : (
-                      <Play
-                        className="cursor-pointer"
-                        onClick={() =>
-                          handleAudio(msg?.messageId!!, msg.audio as Blob, true)
-                        }
-                      />
-                    )}
-                    <p>audio..</p>
-                  </div>
-                )}
-              </div>
+                <div>
+                  {msg.contentType === "TEXT" ? (
+                    <p className="text-sm text-muted-foreground font-semibold">
+                      {msg.content}
+                    </p>
+                  ) : msg.contentType === "AUDIO" ? (
+                    <div className="flex gap-3 p-3">
+                      {isPlaying[msg?.messageId!!] ? (
+                        <Pause
+                          className="cursor-pointer"
+                          onClick={() =>
+                            handleAudio(
+                              msg?.messageId!!,
+                              msg.audio as Blob,
+                              false
+                            )
+                          }
+                        />
+                      ) : (
+                        <Play
+                          className="cursor-pointer"
+                          onClick={() =>
+                            handleAudio(
+                              msg?.messageId!!,
+                              msg.audio as Blob,
+                              true
+                            )
+                          }
+                        />
+                      )}
+                      <p>audio..</p>
+                    </div>
+                  ) : msg.contentType === "IMAGE" ? (
+                    <img
+                      src={URL.createObjectURL(msg.image as Blob)}
+                      alt="Image"
+                      className="h-full w-72 object-contain rounded-md"
+                    />
+                  ) : null}
+                </div>
 
-              <div className="ml-auto">
-                <span className="text-xs text-muted-foreground">
-                  {formateDate(msg.createdAt)}
-                </span>
+                <div className="ml-auto">
+                  <span className="text-xs text-muted-foreground">
+                    {formateDate(msg.createdAt)}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </section>
       </Container>
     </>

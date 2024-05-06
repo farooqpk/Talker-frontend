@@ -1,3 +1,4 @@
+import { ContentType } from "@/types";
 import CryptoJS from "crypto-js";
 
 export const createAssymetricKeys = async () => {
@@ -93,26 +94,29 @@ export const decryptMessage = async (
   encryptedMessage: string,
   encryptedSymetricKey: string,
   privateKey: string,
-  isAudio?: boolean
+  contentType: ContentType
 ): Promise<any> => {
   const decryptedSymetricKey = await decryptSymetricKey(
     encryptedSymetricKey,
     privateKey
   );
 
-  if (isAudio) {
+  if (contentType === "AUDIO" || contentType === "IMAGE") {
     try {
       const decodedMessage = atob(encryptedMessage);
       const decodedArray = new Uint8Array(decodedMessage.length);
       for (let i = 0; i < decodedMessage.length; i++) {
         decodedArray[i] = decodedMessage.charCodeAt(i);
       }
-      return new Blob([decodedArray], { type: "audio/webm;codecs=opus" });
+
+      return new Blob([decodedArray], {
+        type: contentType === "AUDIO" ? "audio/webm;codecs=opus" : "image/webp",
+      });
     } catch (error) {
       console.log(error);
       throw new Error("Error decrypting message: " + error);
     }
-  } else {
+  } else if (contentType === "TEXT") {
     return CryptoJS.AES.decrypt(
       encryptedMessage,
       decryptedSymetricKey

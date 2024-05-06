@@ -1,4 +1,4 @@
-import { MessageType } from "@/components/common/types";
+import { MessageType } from "@/types/index";
 import HomeHeader from "@/components/home/header";
 import { HomeList } from "@/components/home/homeList";
 import Loader from "@/components/loader";
@@ -34,10 +34,12 @@ export const Home = (): ReactElement => {
                 chat.messages[0].content,
                 encryptedChatKey,
                 privateKey!,
-                false
+                "TEXT"
               );
-            } else {
-              chat.messages[0].content = "AUDIO";
+            } else if (chat?.messages?.[0]?.contentType === "AUDIO") {
+              chat.messages[0].content = "audio...";
+            } else if (chat?.messages?.[0]?.contentType === "IMAGE") {
+              chat.messages[0].content = "image...";
             }
           }
           return chat;
@@ -83,10 +85,12 @@ export const Home = (): ReactElement => {
           message?.content!,
           encryptedChatKey!,
           privateKey!,
-          false
+          "TEXT"
         );
-      } else {
-        message.content = "AUDIO";
+      } else if (message.contentType === "AUDIO") {
+        message.content = "audio...";
+      } else if (message.contentType === "IMAGE") {
+        message.content = "image...";
       }
 
       setChatData((prev) => {
