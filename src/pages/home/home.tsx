@@ -29,6 +29,8 @@ export const Home = (): ReactElement => {
           const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
 
           if (chat?.messages?.[0]) {
+            if (chat.messages[0].isDeleted) return chat;
+
             if (chat?.messages?.[0]?.contentType === "TEXT") {
               chat.messages[0].content = await decryptMessage(
                 chat.messages[0].content,
@@ -102,6 +104,23 @@ export const Home = (): ReactElement => {
       });
     };
 
+    const handleDeleteMessage = (messageId: string) => {
+      const chat = chatData?.find(
+        (item) => item?.messages?.[0]?.messageId === messageId
+      );
+
+      if (!chat) return;
+      setChatData((prev) => {
+        const index = prev?.indexOf(chat);
+        prev[index] = {
+          ...chat,
+          messages: [{ ...chat?.messages[0], isDeleted: true }],
+        };
+
+        return [...prev];
+      });
+    };
+
     socket?.emit("joinGroup", { groupIds });
 
     socket?.on("isTyping", handleIsTyping);
@@ -111,6 +130,8 @@ export const Home = (): ReactElement => {
     socket?.on("sendMessageForGroup", handleRecieveMessage);
 
     socket?.on("sendPrivateMessage", handleRecieveMessage);
+
+    socket?.on("deleteMessage", handleDeleteMessage);
 
     return () => {
       socket?.off("isTyping", handleIsTyping);
@@ -122,6 +143,8 @@ export const Home = (): ReactElement => {
       socket?.off("sendPrivateMessage", handleRecieveMessage);
 
       socket?.emit("leaveGroup", { groupIds });
+
+      socket?.off("deleteMessage", handleDeleteMessage);
     };
   }, [socket, chatData, privateKey]);
 

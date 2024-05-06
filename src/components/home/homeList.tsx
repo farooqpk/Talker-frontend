@@ -33,10 +33,12 @@ export const HomeList = ({
                   </h2>
 
                   <span className="text-secondary text-xs md:text-lg">
-                    {truncateMessage(
-                      chats?.messages[0]?.content ||
-                        chats?.Group?.[0]?.description
-                    )}
+                    {chats?.messages[0]?.isDeleted
+                      ? "This message was deleted"
+                      : truncateMessage(
+                          chats?.messages[0]?.content ||
+                            chats?.Group?.[0]?.description
+                        )}
                   </span>
                 </div>
 
@@ -67,7 +69,9 @@ export const HomeList = ({
                     </span>
                   ) : (
                     <span className="text-secondary text-xs md:text-lg">
-                      {truncateMessage(chats?.messages[0]?.content)}
+                      {chats?.messages[0]?.isDeleted
+                        ? "This message was deleted"
+                        : truncateMessage(chats?.messages[0]?.content)}
                     </span>
                   )}
                 </div>

@@ -40,6 +40,8 @@ export const GroupChat = (): ReactElement => {
     onSuccess: async (data: MessageType[]) => {
       const decryptedData = await Promise.all(
         data?.map(async (message) => {
+          if (message.isDeleted) return message;
+
           if (message.contentType === "TEXT") {
             message.content = await decryptMessage(
               message?.content!,
@@ -133,13 +135,22 @@ export const GroupChat = (): ReactElement => {
       setMessages((prev) => [...prev, message]);
     };
 
-    socket?.on("sendMessageForGroup", handleRecieveMessage);
+    const handleDeleteMessage = (messageId: string) => {
+      setMessages((prev) =>
+        prev.map((item) =>
+          item.messageId === messageId ? { ...item, isDeleted: true } : item
+        )
+      );
+    };
 
+    socket?.on("sendMessageForGroup", handleRecieveMessage);
     socket?.emit("joinGroup", { groupIds: [id] });
+    socket.on("deleteMessage", handleDeleteMessage);
 
     return () => {
       socket?.off("sendMessageForGroup", handleRecieveMessage);
       socket?.emit("leaveGroup", { groupIds: [id] });
+      socket.off("deleteMessage", handleDeleteMessage);
     };
   }, [id, socket, encryptedChatKey, privateKey]);
 
@@ -159,6 +170,15 @@ export const GroupChat = (): ReactElement => {
     sendAudioMessage();
   }, [recordingBlob]);
 
+  const handleDeleteMsg = (msgId: string) => {
+    if (!socket) return;
+    socket.emit("deleteMessage", {
+      messageId: msgId,
+      groupId: id,
+      isGroup: true,
+    });
+  };
+
   return (
     <>
       <main className="h-screen flex flex-col relative">
@@ -167,7 +187,11 @@ export const GroupChat = (): ReactElement => {
         ) : (
           <>
             <ChatHeader groupDetails={groupDetails} isGroup key={`${id}+4`} />
-            <ChatContent messages={messages} key={`${id}+5`} />
+            <ChatContent
+              messages={messages}
+              key={`${id}+5`}
+              handleDeleteMsg={handleDeleteMsg}
+            />
             <ChatFooter
               handleTyping={handleTyping}
               handleSendMessage={handleSendMessage}

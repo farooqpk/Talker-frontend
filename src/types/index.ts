@@ -5,7 +5,7 @@ export enum UserStatusEnum {
 }
 
 export type MessageType = {
-  messageId?: string;
+  messageId: string;
   chatId: string;
   senderId: string;
   contentType: string;
@@ -14,6 +14,7 @@ export type MessageType = {
   image?: Blob;
   createdAt: string;
   sender?: User;
+  isDeleted: boolean;
 };
 
 export type User = {

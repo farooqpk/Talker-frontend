@@ -18,7 +18,7 @@ import {
 } from "@/lib/ecrypt_decrypt";
 import { useGetUser } from "@/hooks/user";
 import { useAudioRecorder } from "react-audio-voice-recorder";
-import {useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 
 export const PrivateChat = (): ReactElement => {
   const { id } = useParams();
@@ -55,6 +55,8 @@ export const PrivateChat = (): ReactElement => {
     onSuccess: async (data: MessageType[]) => {
       const decryptedData = await Promise.all(
         data?.map(async (message) => {
+          if (message.isDeleted) return message;
+
           message.contentType === "TEXT"
             ? (message.content = await decryptMessage(
                 message?.content!,
@@ -223,6 +225,15 @@ export const PrivateChat = (): ReactElement => {
       setMessages((prev) => [...prev, message]);
     };
 
+    const handleDeleteMessage = (messageId: string) => {
+      // update that message as isDeleted:true
+      setMessages((prev) =>
+        prev.map((item) =>
+          item.messageId === messageId ? { ...item, isDeleted: true } : item
+        )
+      );
+    };
+
     socket.emit("isOnline", id);
 
     socket.on("isOnline", handleIsOnline);
@@ -237,6 +248,8 @@ export const PrivateChat = (): ReactElement => {
 
     socket.on("sendPrivateMessage", handleRecieveMessage);
 
+    socket.on("deleteMessage", handleDeleteMessage);
+
     return () => {
       socket.off("isOnline", handleIsOnline);
       socket.off("isDisconnected", handleIsDisconnected);
@@ -244,6 +257,7 @@ export const PrivateChat = (): ReactElement => {
       socket.off("isTyping", handleIsTyping);
       socket.off("isNotTyping", handleIsNotTyping);
       socket.off("sendPrivateMessage", handleRecieveMessage);
+      socket.off("deleteMessage", handleDeleteMessage);
     };
   }, [id, socket, encryptedChatKey, privateKey]);
 
@@ -264,6 +278,11 @@ export const PrivateChat = (): ReactElement => {
     sendAudioMessage();
   }, [recordingBlob]);
 
+  const handleDeleteMsg = (msgId: string) => {
+    if (!socket) return;
+    socket.emit("deleteMessage", { messageId: msgId, recipientId: id });
+  };
+
   return (
     <>
       <main className="h-screen flex flex-col relative">
@@ -281,7 +300,11 @@ export const PrivateChat = (): ReactElement => {
               isGroup={false}
             />
 
-            <ChatContent messages={messages} key={`${id}+2`} />
+            <ChatContent
+              messages={messages}
+              key={`${id}+2`}
+              handleDeleteMsg={handleDeleteMsg}
+            />
 
             <ChatFooter
               handleTyping={handleTyping}
