@@ -11,7 +11,6 @@ import MultipleSelector, { Option } from "@/components/ui/multiple-selector";
 import { useState } from "react";
 import {
   createGroupApi,
-  findUsersToCreateGroupApi,
   getPublicKeysApi,
 } from "@/services/api/group";
 import {
@@ -29,6 +28,7 @@ import { createSymetricKey, encryptSymetricKey } from "@/lib/ecrypt_decrypt";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { useGetUser } from "@/hooks/user";
 import { toast } from "../ui/use-toast";
+import { getUsersForSearch } from "@/services/api/search";
 
 const formSchema = z.object({
   groupName: z.string(),
@@ -49,7 +49,7 @@ const CreateGroup = ({
 
   const { isLoading: isUsersLoading } = useQuery(
     ["usersToCreateGroup"],
-    findUsersToCreateGroupApi,
+    getUsersForSearch,
     {
       onSuccess(data) {
         if (data) {

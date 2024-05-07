@@ -11,7 +11,7 @@ import { getGroupDetailsApi } from "@/services/api/group";
 import { ReactElement, useEffect, useState } from "react";
 import { useAudioRecorder } from "react-audio-voice-recorder";
 import { useQuery } from "react-query";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 
 export const GroupChat = (): ReactElement => {
@@ -24,6 +24,8 @@ export const GroupChat = (): ReactElement => {
   const { privateKey } = useGetUser();
   const [encryptedChatKey, setEncryptedChatKey] = useState("");
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user } = useGetUser();
 
   const { data: groupDetails, isLoading: groupDetailsLoading } = useQuery({
     queryKey: [id, "groupdetails"],
@@ -143,14 +145,39 @@ export const GroupChat = (): ReactElement => {
       );
     };
 
+    const handleExitGroup = ({
+      isExitByAdmin,
+      exitedUserId,
+    }: {
+      isExitByAdmin: boolean;
+      exitedUserId: string;
+    }) => {
+      if (isExitByAdmin || exitedUserId === user?.userId) {
+        navigate("/");
+        toast({
+          title: "Group left",
+          description:
+            isExitByAdmin && groupDetails?.adminId !== user?.userId
+              ? "Group has been deleted by admin."
+              : "Group left successfully.",
+          variant:
+            isExitByAdmin && groupDetails?.adminId !== user?.userId
+              ? "destructive"
+              : "default",
+        });
+      }
+    };
+
     socket?.on("sendMessageForGroup", handleRecieveMessage);
     socket?.emit("joinGroup", { groupIds: [id] });
     socket.on("deleteMessage", handleDeleteMessage);
+    socket.on("exitGroup", handleExitGroup);
 
     return () => {
       socket?.off("sendMessageForGroup", handleRecieveMessage);
       socket?.emit("leaveGroup", { groupIds: [id] });
       socket.off("deleteMessage", handleDeleteMessage);
+      socket.off("exitGroup", handleExitGroup);
     };
   }, [id, socket, encryptedChatKey, privateKey]);
 
@@ -179,6 +206,13 @@ export const GroupChat = (): ReactElement => {
     });
   };
 
+  const handleExitGroup = () => {
+    if (!socket) return;
+    socket.emit("exitGroup", {
+      groupId: id,
+    });
+  };
+
   return (
     <>
       <main className="h-screen flex flex-col relative">
@@ -186,7 +220,12 @@ export const GroupChat = (): ReactElement => {
           <Loader />
         ) : (
           <>
-            <ChatHeader groupDetails={groupDetails} isGroup key={`${id}+4`} />
+            <ChatHeader
+              groupDetails={groupDetails}
+              isGroup
+              key={`${id}+4`}
+              handleExitGroup={handleExitGroup}
+            />
             <ChatContent
               messages={messages}
               key={`${id}+5`}

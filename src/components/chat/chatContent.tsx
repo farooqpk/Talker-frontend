@@ -13,6 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type Props = {
   messages: MessageType[];
@@ -86,9 +87,13 @@ export const ChatContent = ({ messages, handleDeleteMsg }: Props) => {
         ref={scrollRef}
         className="flex flex-col gap-4 h-[67vh] md:h-[65vh] overflow-y-scroll px-3 md:px-14 py-4"
       >
-        <p className="text-center text-xs md:text-sm font-light text-warning mb-5">
-          All messages are end to end encrypted
-        </p>
+        <Alert>
+          <AlertDescription className="text-warning">
+            All messages are secured using <strong>hybrid encryption</strong>,
+            combining the strengths of both RSA and AES algorithms for
+            end-to-end encryption.
+          </AlertDescription>
+        </Alert>
 
         {messages?.map((msg, index) => {
           return (

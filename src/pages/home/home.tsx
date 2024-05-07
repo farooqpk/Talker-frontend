@@ -9,6 +9,7 @@ import { useSocket } from "@/context/socketProvider";
 import { ReactElement, useEffect, useState } from "react";
 import { useQuery } from "react-query";
 import Options from "@/components/home/options";
+import { useToast } from "@/components/ui/use-toast";
 
 export const Home = (): ReactElement => {
   const [chatData, setChatData] = useState<any[]>([]);
@@ -16,6 +17,7 @@ export const Home = (): ReactElement => {
   const socket = useSocket();
   const [isTyping, setIsTyping] = useState<string[]>([]);
   const [decryptLoading, setDecryptLoading] = useState<boolean>(false);
+  const { toast } = useToast();
 
   const { isLoading, refetch } = useQuery({
     queryKey: ["chatlist"],
@@ -121,6 +123,13 @@ export const Home = (): ReactElement => {
       });
     };
 
+    const handleGroupCreated = () => {
+      refetch();
+      toast({
+        title: "You were added to a new group",
+      });
+    };
+
     socket?.emit("joinGroup", { groupIds });
 
     socket?.on("isTyping", handleIsTyping);
@@ -132,6 +141,8 @@ export const Home = (): ReactElement => {
     socket?.on("sendPrivateMessage", handleRecieveMessage);
 
     socket?.on("deleteMessage", handleDeleteMessage);
+
+    socket?.on("groupCreated", handleGroupCreated);
 
     return () => {
       socket?.off("isTyping", handleIsTyping);
@@ -145,6 +156,8 @@ export const Home = (): ReactElement => {
       socket?.emit("leaveGroup", { groupIds });
 
       socket?.off("deleteMessage", handleDeleteMessage);
+
+      socket?.off("groupCreated", handleGroupCreated);
     };
   }, [socket, chatData, privateKey]);
 

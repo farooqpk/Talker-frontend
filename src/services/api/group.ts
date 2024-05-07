@@ -1,9 +1,5 @@
 import _axios from "@/lib/_axios";
 
-export const findUsersToCreateGroupApi = async () => {
-  return (await _axios.get(`/find-users-for-create-group`)).data;
-};
-
 export const getPublicKeysApi = async (
   data: any
 ): Promise<Array<{ userId: string; publicKey: string }>> => {

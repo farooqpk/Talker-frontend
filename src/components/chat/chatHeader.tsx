@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "../ui/button";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -14,19 +14,54 @@ import { Badge } from "@/components/ui/badge";
 import { useGetUser } from "@/hooks/user";
 import { User, UserStatusEnum } from "../../types";
 import { truncateUsername } from "@/lib/trunctuate";
+import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useQuery } from "react-query";
+import MultipleSelector, { Option } from "@/components/ui/multiple-selector";
+import { getUsersForSearch } from "@/services/api/search";
 
 export const ChatHeader = ({
   groupDetails,
   recipient,
   userStatus,
   isGroup,
+  handleExitGroup,
 }: {
   groupDetails?: any;
   recipient?: User;
   userStatus?: UserStatusEnum;
   isGroup: boolean;
+  handleExitGroup?: () => void;
 }) => {
   const { user } = useGetUser();
+  const [isExitGroupModalOpen, setIsExitGroupModalOpen] = useState(false);
+  const [users, setUsers] = useState<Option[]>([]);
+
+  const { isLoading: isUsersLoading } = useQuery(
+    ["usersToCreateGroup"],
+    getUsersForSearch,
+    {
+      onSuccess(data) {
+        if (data) {
+          const currentUsers = groupDetails?.Chat?.participants?.map(
+            (participant: any) => participant?.user.userId
+          );
+          const updatedData = data?.filter(
+            (item: any) => !currentUsers?.includes(item?.value)
+          );
+          setUsers(updatedData);
+        }
+      },
+    }
+  );
 
   return (
     <>
@@ -54,6 +89,42 @@ export const ChatHeader = ({
               </SheetHeader>
               <div className="border my-3" />
               <div className="flex flex-col gap-3">
+                {groupDetails?.adminId === user?.userId && (
+                  <>
+                    <div className="flex flex-col gap-1">
+                      <MultipleSelector
+                        creatable={false}
+                        placeholder="Add members"
+                        loadingIndicator={
+                          isUsersLoading && (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          )
+                        }
+                        options={users}
+                        onChange={(formValue) => {
+                          console.log(formValue);
+                        }}
+                        emptyIndicator={
+                          users.length === 0 && <p>No users found</p>
+                        }
+                        className="w-full"
+                      />
+                      <Button
+                        variant={"secondary"}
+                        size={"sm"}
+                        disabled={users.length === 0}
+                        className="w-full md:w-auto"
+                      >
+                        {/* {isLoading && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )} */}
+                        Save
+                      </Button>
+                    </div>
+                    <div className="border my-3" />
+                  </>
+                )}
+
                 <div className="flex flex-col gap-1">
                   <h1>Members</h1>
                   <p className="text-muted-foreground text-xs">
@@ -110,7 +181,12 @@ export const ChatHeader = ({
 
                 <div className="border my-3" />
 
-                <Button variant={"destructive"} size={"sm"}>
+                <Button
+                  variant={"destructive"}
+                  size={"sm"}
+                  onClick={() => setIsExitGroupModalOpen(true)}
+                  disabled={isExitGroupModalOpen}
+                >
                   Exit Group
                 </Button>
               </div>
@@ -137,6 +213,24 @@ export const ChatHeader = ({
             ) : null}
           </div>
         </div>
+      )}
+
+      {isExitGroupModalOpen && (
+        <AlertDialog open={isExitGroupModalOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure to exit?</AlertDialogTitle>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setIsExitGroupModalOpen(false)}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={() => handleExitGroup?.()}>
+                Continue
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </>
   );
