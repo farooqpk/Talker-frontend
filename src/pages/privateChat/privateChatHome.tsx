@@ -1,4 +1,4 @@
-import { ReactElement } from "react";
+import { ReactElement, useRef } from "react";
 import { ChatContent } from "../../components/chat/chatContent";
 import { ChatFooter } from "../../components/chat/chatFooter";
 import { ChatHeader } from "../../components/chat/chatHeader";
@@ -31,7 +31,7 @@ export const PrivateChat = (): ReactElement => {
   const [messages, setMessages] = useState<MessageType[]>([]);
   const { isRecording, startRecording, stopRecording, recordingBlob } =
     useAudioRecorder();
-  const [encryptedChatKey, setEncryptedChatKey] = useState("");
+  const encryptedChatKeyRef = useRef<string>("");
   const { toast } = useToast();
 
   const { data: recipient, isLoading } = useQuery({
@@ -44,14 +44,14 @@ export const PrivateChat = (): ReactElement => {
     enabled: !!recipient?.chatId,
     queryFn: () => getChatKeyApi(recipient?.chatId!),
     onSuccess: (data) => {
-      if (data) setEncryptedChatKey(data?.encryptedKey);
+      if (data) encryptedChatKeyRef.current = data?.encryptedKey;
     },
   });
 
   const { isLoading: messagesLoading } = useQuery({
     queryKey: ["messagesquery", recipient?.chatId],
     queryFn: () => getMessagesApi(recipient.chatId!),
-    enabled: !!recipient?.chatId && !!encryptedChatKey,
+    enabled: !!recipient?.chatId && !!encryptedChatKeyRef.current,
     onSuccess: async (data: MessageType[]) => {
       const decryptedData = await Promise.all(
         data?.map(async (message) => {
@@ -60,21 +60,21 @@ export const PrivateChat = (): ReactElement => {
           message.contentType === "TEXT"
             ? (message.content = await decryptMessage(
                 message?.content!,
-                encryptedChatKey!,
+                encryptedChatKeyRef.current!,
                 privateKey!,
                 "TEXT"
               ))
             : message.contentType === "AUDIO"
             ? (message.audio = await decryptMessage(
                 message?.content!,
-                encryptedChatKey!,
+                encryptedChatKeyRef.current!,
                 privateKey!,
                 "AUDIO"
               ))
             : message.contentType === "IMAGE"
             ? (message.image = await decryptMessage(
                 message?.content!,
-                encryptedChatKey!,
+                encryptedChatKeyRef.current!,
                 privateKey!,
                 "IMAGE"
               ))
@@ -133,7 +133,7 @@ export const PrivateChat = (): ReactElement => {
       ourOwnEncryptedChatKey = encryptedChatKeyForUsers.find(
         (item) => item.userId === user?.userId
       )?.encryptedKey!;
-      setEncryptedChatKey(ourOwnEncryptedChatKey);
+      encryptedChatKeyRef.current = ourOwnEncryptedChatKey;
     }
 
     const encryptedMessage = await encryptMessage(
@@ -144,7 +144,9 @@ export const PrivateChat = (): ReactElement => {
         : type === "IMAGE"
         ? imgBlob!
         : "",
-      isChatAlreadyExist ? encryptedChatKey : ourOwnEncryptedChatKey!,
+      isChatAlreadyExist
+        ? encryptedChatKeyRef.current
+        : ourOwnEncryptedChatKey!,
       privateKey!
     );
 
@@ -162,7 +164,13 @@ export const PrivateChat = (): ReactElement => {
   };
 
   useEffect(() => {
-    if (!socket || !id || !encryptedChatKey || !privateKey) return;
+    if (
+      !socket ||
+      !id ||
+      !privateKey ||
+      (messages.length > 0 && !encryptedChatKeyRef.current)
+    )
+      return;
 
     const handleIsOnline = (
       status: UserStatusEnum.OFFLINE | UserStatusEnum.ONLINE
@@ -197,26 +205,35 @@ export const PrivateChat = (): ReactElement => {
     const handleRecieveMessage = async ({
       message,
     }: {
-      message: MessageType;
+      message: MessageType & {
+        encryptedChatKeys?: Array<{ userId: string; encryptedKey: string }>;
+      };
     }) => {
+      if (message.encryptedChatKeys) {
+        const encryptedKey = message.encryptedChatKeys.find(
+          (item) => item.userId === user?.userId
+        )?.encryptedKey;
+        encryptedChatKeyRef.current = encryptedKey!;
+      }
+
       message.contentType === "TEXT"
         ? (message.content = await decryptMessage(
             message?.content!,
-            encryptedChatKey!,
+            encryptedChatKeyRef.current!,
             privateKey!,
             "TEXT"
           ))
         : message.contentType === "AUDIO"
         ? (message.audio = await decryptMessage(
             message?.content!,
-            encryptedChatKey!,
+            encryptedChatKeyRef.current!,
             privateKey!,
             "AUDIO"
           ))
         : message.contentType === "IMAGE"
         ? (message.image = await decryptMessage(
             message?.content!,
-            encryptedChatKey!,
+            encryptedChatKeyRef.current!,
             privateKey!,
             "IMAGE"
           ))
@@ -226,7 +243,6 @@ export const PrivateChat = (): ReactElement => {
     };
 
     const handleDeleteMessage = (messageId: string) => {
-      // update that message as isDeleted:true
       setMessages((prev) =>
         prev.map((item) =>
           item.messageId === messageId ? { ...item, isDeleted: true } : item
@@ -259,7 +275,7 @@ export const PrivateChat = (): ReactElement => {
       socket.off("sendPrivateMessage", handleRecieveMessage);
       socket.off("deleteMessage", handleDeleteMessage);
     };
-  }, [id, socket, encryptedChatKey, privateKey]);
+  }, [id, socket, encryptedChatKeyRef.current, privateKey]);
 
   useEffect(() => {
     const sendAudioMessage = async () => {

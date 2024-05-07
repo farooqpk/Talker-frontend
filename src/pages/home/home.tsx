@@ -57,6 +57,8 @@ export const Home = (): ReactElement => {
 
   // to update latest message in the home
   useEffect(() => {
+    if (!socket) return;
+
     const groupIds = chatData
       ?.filter((item: any) => item?.isGroup === true)
       ?.map((item: any) => item?.Group[0]?.groupId);
@@ -130,6 +132,21 @@ export const Home = (): ReactElement => {
       });
     };
 
+    const handleExitGroup = ({
+      groupId,
+      isExitByAdmin,
+    }: {
+      groupId: string;
+      isExitByAdmin: boolean;
+    }) => {
+      if (isExitByAdmin) {
+        socket?.emit("leaveGroup", { groupIds: [groupId] });
+        setChatData((prev) =>
+          prev.filter((item) => item?.Group?.[0]?.groupId !== groupId)
+        );
+      }
+    };
+
     socket?.emit("joinGroup", { groupIds });
 
     socket?.on("isTyping", handleIsTyping);
@@ -143,6 +160,8 @@ export const Home = (): ReactElement => {
     socket?.on("deleteMessage", handleDeleteMessage);
 
     socket?.on("groupCreated", handleGroupCreated);
+
+    socket.on("exitGroup", handleExitGroup);
 
     return () => {
       socket?.off("isTyping", handleIsTyping);
@@ -158,6 +177,8 @@ export const Home = (): ReactElement => {
       socket?.off("deleteMessage", handleDeleteMessage);
 
       socket?.off("groupCreated", handleGroupCreated);
+
+      socket.off("exitGroup", handleExitGroup);
     };
   }, [socket, chatData, privateKey]);
 

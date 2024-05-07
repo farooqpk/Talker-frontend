@@ -8,7 +8,7 @@ import { useGetUser } from "@/hooks/user";
 import { decryptMessage, encryptMessage } from "@/lib/ecrypt_decrypt";
 import { getMessagesApi } from "@/services/api/chat";
 import { getGroupDetailsApi } from "@/services/api/group";
-import { ReactElement, useEffect, useState } from "react";
+import { ReactElement, useEffect, useRef, useState } from "react";
 import { useAudioRecorder } from "react-audio-voice-recorder";
 import { useQuery } from "react-query";
 import { useNavigate, useParams } from "react-router-dom";
@@ -22,7 +22,7 @@ export const GroupChat = (): ReactElement => {
   const { isRecording, startRecording, stopRecording, recordingBlob } =
     useAudioRecorder();
   const { privateKey } = useGetUser();
-  const [encryptedChatKey, setEncryptedChatKey] = useState("");
+  const encryptedChatKeyRef = useRef<string>("");
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useGetUser();
@@ -31,7 +31,8 @@ export const GroupChat = (): ReactElement => {
     queryKey: [id, "groupdetails"],
     queryFn: () => getGroupDetailsApi(id!),
     onSuccess: (data) => {
-      if (data) setEncryptedChatKey(data?.Chat?.ChatKey?.[0]?.encryptedKey);
+      if (data)
+        encryptedChatKeyRef.current = data?.Chat?.ChatKey?.[0]?.encryptedKey;
     },
   });
 
@@ -47,21 +48,21 @@ export const GroupChat = (): ReactElement => {
           if (message.contentType === "TEXT") {
             message.content = await decryptMessage(
               message?.content!,
-              encryptedChatKey!,
+              encryptedChatKeyRef.current!,
               privateKey!,
               "TEXT"
             );
           } else if (message.contentType === "AUDIO") {
             message.audio = await decryptMessage(
               message?.content!,
-              encryptedChatKey!,
+              encryptedChatKeyRef.current!,
               privateKey!,
               "AUDIO"
             );
           } else if (message.contentType === "IMAGE") {
             message.image = await decryptMessage(
               message?.content!,
-              encryptedChatKey!,
+              encryptedChatKeyRef.current!,
               privateKey!,
               "IMAGE"
             );
@@ -80,7 +81,7 @@ export const GroupChat = (): ReactElement => {
   };
 
   const handleSendMessage = async (type: ContentType, imgBlob?: Blob) => {
-    if (!socket || !encryptedChatKey || !privateKey) return;
+    if (!socket || !encryptedChatKeyRef.current || !privateKey) return;
 
     const encryptedMessage = await encryptMessage(
       type === "TEXT"
@@ -90,7 +91,7 @@ export const GroupChat = (): ReactElement => {
         : type === "IMAGE"
         ? imgBlob!
         : "",
-      encryptedChatKey,
+      encryptedChatKeyRef.current!,
       privateKey!
     );
     socket.emit("sendMessageForGroup", {
@@ -104,7 +105,7 @@ export const GroupChat = (): ReactElement => {
   };
 
   useEffect(() => {
-    if (!socket || !id || !encryptedChatKey || !privateKey) return;
+    if (!socket || !id || !encryptedChatKeyRef.current || !privateKey) return;
 
     const handleRecieveMessage = async ({
       message,
@@ -114,21 +115,21 @@ export const GroupChat = (): ReactElement => {
       if (message.contentType === "TEXT") {
         message.content = await decryptMessage(
           message?.content!,
-          encryptedChatKey!,
+          encryptedChatKeyRef.current!,
           privateKey!,
           "TEXT"
         );
       } else if (message.contentType === "AUDIO") {
         message.audio = await decryptMessage(
           message?.content!,
-          encryptedChatKey!,
+          encryptedChatKeyRef.current!,
           privateKey!,
           "AUDIO"
         );
       } else if (message.contentType === "IMAGE") {
         message.image = await decryptMessage(
           message?.content!,
-          encryptedChatKey!,
+          encryptedChatKeyRef.current!,
           privateKey!,
           "IMAGE"
         );
@@ -148,22 +149,20 @@ export const GroupChat = (): ReactElement => {
     const handleExitGroup = ({
       isExitByAdmin,
       exitedUserId,
+      groupId,
     }: {
       isExitByAdmin: boolean;
       exitedUserId: string;
+      groupId: string;
     }) => {
       if (isExitByAdmin || exitedUserId === user?.userId) {
+        socket?.emit("leaveGroup", { groupIds: [groupId] });
         navigate("/");
         toast({
-          title: "Group left",
           description:
             isExitByAdmin && groupDetails?.adminId !== user?.userId
               ? "Group has been deleted by admin."
               : "Group left successfully.",
-          variant:
-            isExitByAdmin && groupDetails?.adminId !== user?.userId
-              ? "destructive"
-              : "default",
         });
       }
     };
@@ -179,7 +178,7 @@ export const GroupChat = (): ReactElement => {
       socket.off("deleteMessage", handleDeleteMessage);
       socket.off("exitGroup", handleExitGroup);
     };
-  }, [id, socket, encryptedChatKey, privateKey]);
+  }, [id, socket, encryptedChatKeyRef.current, privateKey]);
 
   useEffect(() => {
     const sendAudioMessage = async () => {
