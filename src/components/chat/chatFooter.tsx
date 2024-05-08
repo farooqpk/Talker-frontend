@@ -6,8 +6,8 @@ import EmojiPicker from "emoji-picker-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useRef } from "react";
 import { Input } from "../ui/input";
-import { convertToWebP } from "@/lib/convert-to-webp";
 import { useToast } from "../ui/use-toast";
+import imageCompression from "browser-image-compression";
 
 type Props = {
   handleTyping: (value: string) => void;
@@ -50,20 +50,32 @@ export const ChatFooter = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const size = file.size / 1024; // File size in KB
-    const maxSize = 400; // Maximum file size in KB
-    console.log(size);
-
-    if (size > maxSize) {
+    // if greater than 1MB then return
+    if (file.size > 1024 * 1024) {
       toast({
-        description: "File size is too large. Please choose a smaller file.",
+        description: "File size is too large",
         variant: "destructive",
       });
       return;
     }
 
-    const blob: Blob = await convertToWebP(file!);
-    handleSendMessage("IMAGE", blob);
+    try {
+      // compress under 100kb
+      const compressedFile = await imageCompression(file, {
+        maxSizeMB: 100 / 1024,
+        useWebWorker: true,
+        fileType: "image/webp",
+        maxWidthOrHeight: 1000,
+      });
+
+      handleSendMessage("IMAGE", compressedFile);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Error compressing image",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

@@ -3,7 +3,7 @@ import Container from "../Container";
 import { MessageType } from "../../types";
 import { formateDate } from "@/lib/format-date";
 import { useEffect, useRef, useState } from "react";
-import { Pause, Play, Trash2 } from "lucide-react";
+import { Pause, Play, Trash2, X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "../ui/button";
 
 type Props = {
   messages: MessageType[];
@@ -25,6 +26,7 @@ export const ChatContent = ({ messages, handleDeleteMsg }: Props) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDeleteMsg, setIsDeleteMsg] = useState<boolean>(false);
   const [deleteMsgId, setDeleteMsgId] = useState<string | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -157,7 +159,10 @@ export const ChatContent = ({ messages, handleDeleteMsg }: Props) => {
                   <img
                     src={URL.createObjectURL(msg.image as Blob)}
                     alt="Image"
-                    className="w-72 h-72 object-cover rounded-md"
+                    className="object-contain w-72 h-56  cursor-pointer"
+                    onClick={() =>
+                      setLightboxImage(URL.createObjectURL(msg.image as Blob))
+                    }
                   />
                 ) : null}
               </div>
@@ -171,6 +176,26 @@ export const ChatContent = ({ messages, handleDeleteMsg }: Props) => {
           );
         })}
       </section>
+
+      {/* Lightbox */}
+      {lightboxImage && (
+        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 flex justify-center items-center z-20">
+          <img
+            src={lightboxImage}
+            alt="Lightbox Image"
+            className="max-w-full max-h-full"
+          />
+          <Button
+            className="absolute top-4 right-4 rounded-full"
+            size={"icon"}
+            variant={"outline"}
+            onClick={() => setLightboxImage(null)}
+          >
+            <X />
+          </Button>
+        </div>
+      )}
+
       {isDeleteMsg && (
         <AlertDialog open={isDeleteMsg}>
           <AlertDialogContent>
