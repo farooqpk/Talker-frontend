@@ -47,7 +47,7 @@ export const ChatHeader = ({
 
   const { isLoading: isUsersLoading } = useQuery(
     ["usersToCreateGroup"],
-    getUsersForSearch,
+    () => getUsersForSearch(),
     {
       onSuccess(data) {
         if (data) {

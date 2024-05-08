@@ -9,10 +9,7 @@ import {
 import { Input } from "../ui/input";
 import MultipleSelector, { Option } from "@/components/ui/multiple-selector";
 import { useState } from "react";
-import {
-  createGroupApi,
-  getPublicKeysApi,
-} from "@/services/api/group";
+import { createGroupApi, getPublicKeysApi } from "@/services/api/group";
 import {
   Form,
   FormControl,
@@ -49,7 +46,7 @@ const CreateGroup = ({
 
   const { isLoading: isUsersLoading } = useQuery(
     ["usersToCreateGroup"],
-    getUsersForSearch,
+    () => getUsersForSearch(),
     {
       onSuccess(data) {
         if (data) {
