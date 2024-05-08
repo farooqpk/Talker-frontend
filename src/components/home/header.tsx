@@ -15,14 +15,21 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
+import { useState } from "react";
+import { debounce } from "@/lib/debounce";
 
 const HomeHeader = () => {
   const navigate = useNavigate();
+  const [search, setSearch] = useState("");
 
   const { data } = useQuery({
-    queryKey: ["randomusersforsearch"],
-    queryFn: getUsersForSearch,
+    queryKey: ["randomusersforsearch", search],
+    queryFn: () => getUsersForSearch(search),
   });
+
+  const handleSearch = (value: string) => {
+    debounce(() => setSearch(value), 500)();
+  };
 
   return (
     <Popover>
@@ -30,25 +37,25 @@ const HomeHeader = () => {
         <Button
           variant="outline"
           role="searchbox"
-          className="w-[200px] justify-between rounded-xl"
+          className="w-[250px] md:w-[300px] justify-between rounded-xl"
         >
           Search for users...
           <SearchIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0 max-h-[300px] overflow-y-auto">
+      <PopoverContent className="w-[250px] md:w-[300px] p-0">
         <Command>
-          <CommandInput />
+          <CommandInput onValueChange={handleSearch} />
           <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup>
-            {data?.map((item:any, i: number) => (
+          <CommandGroup className="max-h-[200px] overflow-y-auto">
+            {data?.map((item: any, i: number) => (
               <CommandItem
                 key={i}
-                value={item.value}
+                value={item}
                 onSelect={() => {
                   navigate(`/chat/${item.value}`);
                 }}
-                className="cursor-pointer"
+                className="cursor-pointer my-2"
               >
                 {item.label}
               </CommandItem>

@@ -12,8 +12,11 @@ export const createAssymetricKeys = async () => {
     true,
     ["encrypt", "decrypt"]
   );
-  const publicKey = await crypto.subtle.exportKey("jwk", keys.publicKey);
-  const privateKey = await crypto.subtle.exportKey("jwk", keys.privateKey);
+
+  const [publicKey, privateKey] = await Promise.all([
+    crypto.subtle.exportKey("jwk", keys.publicKey),
+    crypto.subtle.exportKey("jwk", keys.privateKey),
+  ]);
 
   return { privateKey, publicKey };
 };

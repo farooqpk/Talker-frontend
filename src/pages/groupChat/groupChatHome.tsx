@@ -214,7 +214,7 @@ export const GroupChat = (): ReactElement => {
 
   return (
     <>
-      <main className="h-screen flex flex-col relative">
+      <main className="flex flex-col relative">
         {groupDetailsLoading || messagesLoading || !socket ? (
           <Loader />
         ) : (

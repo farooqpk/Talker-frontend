@@ -4,9 +4,10 @@ import { Disc, ImageUp, Mic, SendHorizontal, Smile } from "lucide-react";
 import { Theme } from "emoji-picker-react";
 import EmojiPicker from "emoji-picker-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { Input } from "../ui/input";
 import { convertToWebP } from "@/lib/convert-to-webp";
+import { useToast } from "../ui/use-toast";
 
 type Props = {
   handleTyping: (value: string) => void;
@@ -27,12 +28,7 @@ export const ChatFooter = ({
 }: Props) => {
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (chatInputRef.current) {
-      chatInputRef.current.focus();
-    }
-  }, []);
+  const { toast } = useToast();
 
   const handleOnEmojiClick = (emojiData: any) => {
     if (chatInputRef.current) {
@@ -52,9 +48,24 @@ export const ChatFooter = ({
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    if (!file) return;
+
+    const size = file.size / 1024; // File size in KB
+    const maxSize = 400; // Maximum file size in KB
+    console.log(size);
+
+    if (size > maxSize) {
+      toast({
+        description: "File size is too large. Please choose a smaller file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const blob: Blob = await convertToWebP(file!);
     handleSendMessage("IMAGE", blob);
   };
+
   return (
     <section className="flex gap-1 md:gap-4 items-center px-5 md:px-24 relative">
       <Dialog>
@@ -63,7 +74,7 @@ export const ChatFooter = ({
             <Smile />
           </Button>
         </DialogTrigger>
-        <DialogContent className="bg-transparent border-none">
+        <DialogContent className="bg-background border-none">
           <EmojiPicker
             onEmojiClick={handleOnEmojiClick}
             theme={Theme.DARK}

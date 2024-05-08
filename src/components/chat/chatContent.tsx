@@ -157,7 +157,7 @@ export const ChatContent = ({ messages, handleDeleteMsg }: Props) => {
                   <img
                     src={URL.createObjectURL(msg.image as Blob)}
                     alt="Image"
-                    className="h-full w-72 object-contain rounded-md"
+                    className="w-72 h-72 object-cover rounded-md"
                   />
                 ) : null}
               </div>

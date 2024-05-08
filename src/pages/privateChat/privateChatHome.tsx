@@ -301,7 +301,7 @@ export const PrivateChat = (): ReactElement => {
 
   return (
     <>
-      <main className="h-screen flex flex-col relative">
+      <main className="flex flex-col relative">
         {isLoading ||
         !socket ||
         (recipient?.chatId && messagesLoading) ||

@@ -38,28 +38,43 @@ const Options = () => {
 
   return (
     <div className="w-full max-w-lg mx-auto p-4">
-      <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6">
+      <div className="fixed bottom-7 right-5 md:bottom-6 md:right-6">
         <DropdownMenu>
           <DropdownMenuTrigger>
-            <Button variant={"outline"} className="rounded-full p-2 ">
-              <Plus className="h-5 md:h-7" />
+            <Button
+              variant={"outline"}
+              size={"icon"}
+              className="rounded-full h-12 w-12 hover:bg-muted focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <Plus className="h-5 w-5" strokeWidth={3} />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="mr-3">
             <DropdownMenuLabel>Options</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Export keys</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setIsCreateGroupModalOpen(true)}>
-              Create group
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setIsChangeUsernameModalOpen(true)}
-            >
-              Change username
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setIsLogoutModalOpen(true)}>
-              Logout
-            </DropdownMenuItem>
+            <div className="grid gap-2">
+              <DropdownMenuItem className="cursor-pointer hover:bg-muted">
+                Export keys
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer hover:bg-muted"
+                onClick={() => setIsCreateGroupModalOpen(true)}
+              >
+                Create group
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer hover:bg-muted"
+                onClick={() => setIsChangeUsernameModalOpen(true)}
+              >
+                Change username
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer hover:bg-muted"
+                onClick={() => setIsLogoutModalOpen(true)}
+              >
+                Logout
+              </DropdownMenuItem>
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
