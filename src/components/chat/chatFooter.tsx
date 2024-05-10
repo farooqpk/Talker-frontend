@@ -4,7 +4,7 @@ import { Disc, ImageUp, Mic, SendHorizontal, Smile } from "lucide-react";
 import { Theme } from "emoji-picker-react";
 import EmojiPicker from "emoji-picker-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Input } from "../ui/input";
 import { useToast } from "../ui/use-toast";
 import imageCompression from "browser-image-compression";
@@ -16,6 +16,7 @@ type Props = {
   isRecording: boolean;
   startRecoring: () => void;
   stopRecording: () => void;
+  recordingTime: number;
 };
 
 export const ChatFooter = ({
@@ -25,6 +26,7 @@ export const ChatFooter = ({
   isRecording,
   startRecoring,
   stopRecording,
+  recordingTime,
 }: Props) => {
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
@@ -76,7 +78,11 @@ export const ChatFooter = ({
         variant: "destructive",
       });
     }
-  };
+  }; 
+
+  useEffect(() => {
+    console.log(recordingTime);
+  }, [recordingTime]);
 
   return (
     <section className="flex gap-1 md:gap-4 items-center px-5 md:px-24 relative">
@@ -137,7 +143,13 @@ export const ChatFooter = ({
       ) : (
         <Button variant="ghost" size="icon" className="rounded-full p-2">
           {isRecording ? (
-            <Disc onClick={stopRecording} color="red" />
+            <>
+              <Disc
+                onClick={stopRecording}
+                className="animate-pulse"
+                color="red"
+              />
+            </>
           ) : (
             <Mic onClick={startRecoring} />
           )}

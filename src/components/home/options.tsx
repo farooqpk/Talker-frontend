@@ -42,9 +42,9 @@ const Options = () => {
         <DropdownMenu>
           <DropdownMenuTrigger>
             <Button
-              variant={"outline"}
+              variant={"secondary"}
               size={"icon"}
-              className="rounded-full h-12 w-12 hover:bg-muted focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              className="rounded-full h-12 w-12"
             >
               <Plus className="h-5 w-5" strokeWidth={3} />
             </Button>

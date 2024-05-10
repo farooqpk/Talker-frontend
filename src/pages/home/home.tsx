@@ -2,7 +2,7 @@ import { MessageType } from "@/types/index";
 import HomeHeader from "@/components/home/header";
 import { HomeList } from "@/components/home/homeList";
 import Loader from "@/components/loader";
-import { useGetUser } from "@/hooks/user";
+import { useGetUser } from "@/hooks/useGetUser";
 import { decryptMessage } from "@/lib/ecrypt_decrypt";
 import { getChatListApi } from "@/services/api/chat";
 import { useSocket } from "@/context/socketProvider";

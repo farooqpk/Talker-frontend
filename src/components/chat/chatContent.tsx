@@ -1,4 +1,4 @@
-import { useGetUser } from "@/hooks/user";
+import { useGetUser } from "@/hooks/useGetUser";
 import Container from "../Container";
 import { MessageType } from "../../types";
 import { formateDate } from "@/lib/format-date";
@@ -156,14 +156,16 @@ export const ChatContent = ({ messages, handleDeleteMsg }: Props) => {
                     <p>audio..</p>
                   </div>
                 ) : msg.contentType === "IMAGE" ? (
-                  <img
-                    src={URL.createObjectURL(msg.image as Blob)}
-                    alt="Image"
-                    className="object-contain w-72 h-56  cursor-pointer"
-                    onClick={() =>
-                      setLightboxImage(URL.createObjectURL(msg.image as Blob))
-                    }
-                  />
+                  <div className="md:h-48 ">
+                    <img
+                      src={URL.createObjectURL(msg.image as Blob)}
+                      alt="Image"
+                      className="object-contain w-full h-full cursor-pointer"
+                      onClick={() =>
+                        setLightboxImage(URL.createObjectURL(msg.image as Blob))
+                      }
+                    />
+                  </div>
                 ) : null}
               </div>
 

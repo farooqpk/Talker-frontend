@@ -23,7 +23,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createSymetricKey, encryptSymetricKey } from "@/lib/ecrypt_decrypt";
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { useGetUser } from "@/hooks/user";
+import { useGetUser } from "@/hooks/useGetUser";
 import { toast } from "../ui/use-toast";
 import { getUsersForSearch } from "@/services/api/search";
 

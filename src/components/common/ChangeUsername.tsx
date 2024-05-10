@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
-import { useGetUser } from "@/hooks/user";
+import { useGetUser } from "@/hooks/useGetUser";
 import { useMutation } from "react-query";
 import { changeUsernameApi } from "@/services/api/auth";
 import { Loader2 } from "lucide-react";

@@ -99,31 +99,41 @@ export const decryptMessage = async (
   privateKey: string,
   contentType: ContentType
 ): Promise<any> => {
-  const decryptedSymetricKey = await decryptSymetricKey(
-    encryptedSymetricKey,
-    privateKey
-  );
+  try {
+    const decryptedSymetricKey = await decryptSymetricKey(
+      encryptedSymetricKey,
+      privateKey
+    );
 
-  if (contentType === "AUDIO" || contentType === "IMAGE") {
-    try {
-      const decodedMessage = atob(encryptedMessage);
-      const decodedArray = new Uint8Array(decodedMessage.length);
-      for (let i = 0; i < decodedMessage.length; i++) {
-        decodedArray[i] = decodedMessage.charCodeAt(i);
-      }
-
-      return new Blob([decodedArray], {
-        type: contentType === "AUDIO" ? "audio/webm;codecs=opus" : "image/webp",
-      });
-    } catch (error) {
-      console.log(error);
-      throw new Error("Error decrypting message: " + error);
-    }
-  } else if (contentType === "TEXT") {
-    return CryptoJS.AES.decrypt(
+    // decrypt encrypted message to WordArray
+    const decryptedData = CryptoJS.AES.decrypt(
       encryptedMessage,
       decryptedSymetricKey
-    ).toString(CryptoJS.enc.Utf8) as string;
+    );
+
+    if (contentType === "AUDIO" || contentType === "IMAGE") {
+      // Convert WordArray to Uint8Array
+      const uint8Array = new Uint8Array(decryptedData.words.length * 4);
+      let offset = 0;
+      for (let i = 0; i < decryptedData.words.length; i++) {
+        const word = decryptedData.words[i];
+        uint8Array[offset++] = word >> 24;
+        uint8Array[offset++] = (word >> 16) & 0xff;
+        uint8Array[offset++] = (word >> 8) & 0xff;
+        uint8Array[offset++] = word & 0xff;
+      }
+
+      // Create Blob from Uint8Array
+      return new Blob([uint8Array], {
+        type: contentType === "AUDIO" ? "audio/webm;codecs=opus" : "image/webp",
+      });
+    } else if (contentType === "TEXT") {
+      //convert WordArray to string
+      return decryptedData.toString(CryptoJS.enc.Utf8) as string;
+    }
+  } catch (error) {
+    console.log(error);
+    throw new Error("Error decrypting message: " + error);
   }
 };
 
@@ -134,28 +144,41 @@ export const encryptMessage = async (
 ): Promise<string> => {
   let encodedMessage;
 
-  const decryptedSymetricKey = await decryptSymetricKey(
-    encryptedSymetricKey!,
-    privateKey!
-  );
+  try {
+    const decryptedSymetricKey = await decryptSymetricKey(
+      encryptedSymetricKey!,
+      privateKey!
+    );
 
-  if (typeof message === "string") {
-    encodedMessage = CryptoJS.AES.encrypt(
-      message,
-      decryptedSymetricKey
-    ).toString();
-  } else {
-    // Encrypt Blob message
-    const reader = new FileReader();
-    reader.readAsArrayBuffer(message);
-    await new Promise((resolve, reject) => {
-      reader.onload = resolve;
-      reader.onerror = reject;
-    });
-    encodedMessage = new Uint8Array(reader.result as ArrayBuffer);
+    if (typeof message === "string") {
+      // Encrypt string message
+      encodedMessage = CryptoJS.AES.encrypt(
+        message,
+        decryptedSymetricKey
+      ).toString();
+    } else {
+      // Encrypt Blob message
+      const reader = new FileReader();
+      reader.readAsArrayBuffer(message);
+
+      // Wait for FileReader to load
+      await new Promise<void>((resolve, reject) => {
+        reader.onload = () => resolve();
+        reader.onerror = reject;
+      });
+
+      const wordArray = CryptoJS.lib.WordArray.create(
+        reader.result as ArrayBuffer
+      );
+      encodedMessage = CryptoJS.AES.encrypt(
+        wordArray,
+        decryptedSymetricKey
+      ).toString();
+    }
+
+    return encodedMessage;
+  } catch (error) {
+    console.log(error);
+    throw new Error("Error encrypting message: " + error);
   }
-
-  return encodedMessage instanceof Uint8Array
-    ? btoa(String.fromCharCode(...new Uint8Array(encodedMessage)))
-    : encodedMessage;
 };

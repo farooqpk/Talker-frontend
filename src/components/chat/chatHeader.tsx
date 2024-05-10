@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useGetUser } from "@/hooks/user";
+import { useGetUser } from "@/hooks/useGetUser";
 import { User, UserStatusEnum } from "../../types";
 import { truncateUsername } from "@/lib/trunctuate";
 import { useState } from "react";

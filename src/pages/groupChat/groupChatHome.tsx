@@ -4,7 +4,7 @@ import { ChatFooter } from "@/components/chat/chatFooter";
 import { ChatHeader } from "@/components/chat/chatHeader";
 import Loader from "@/components/loader";
 import { useSocket } from "@/context/socketProvider";
-import { useGetUser } from "@/hooks/user";
+import { useGetUser } from "@/hooks/useGetUser";
 import { decryptMessage, encryptMessage } from "@/lib/ecrypt_decrypt";
 import { getMessagesApi } from "@/services/api/chat";
 import { getGroupDetailsApi } from "@/services/api/group";
@@ -19,8 +19,13 @@ export const GroupChat = (): ReactElement => {
   const socket = useSocket();
   const [typedText, setTypedText] = useState<string>("");
   const [messages, setMessages] = useState<MessageType[]>([]);
-  const { isRecording, startRecording, stopRecording, recordingBlob } =
-    useAudioRecorder();
+  const {
+    isRecording,
+    startRecording,
+    stopRecording,
+    recordingBlob,
+    recordingTime,
+  } = useAudioRecorder();
   const { privateKey } = useGetUser();
   const encryptedChatKeyRef = useRef<string>("");
   const { toast } = useToast();
@@ -181,16 +186,15 @@ export const GroupChat = (): ReactElement => {
   }, [id, socket, encryptedChatKeyRef.current, privateKey]);
 
   useEffect(() => {
+    if (!recordingBlob) return;
     const sendAudioMessage = async () => {
-      if (recordingBlob) {
-        try {
-          await handleSendMessage("AUDIO");
-        } catch (error) {
-          toast({
-            title: "Error sending audio message",
-            variant: "destructive",
-          });
-        }
+      try {
+        await handleSendMessage("AUDIO");
+      } catch (error) {
+        toast({
+          title: "Error sending audio message",
+          variant: "destructive",
+        });
       }
     };
     sendAudioMessage();
@@ -237,6 +241,7 @@ export const GroupChat = (): ReactElement => {
               isRecording={isRecording}
               startRecoring={startRecording}
               stopRecording={stopRecording}
+              recordingTime={recordingTime}
               key={`${id}+6`}
             />
           </>

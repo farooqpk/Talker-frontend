@@ -16,9 +16,11 @@ import {
   encryptMessage,
   encryptSymetricKey,
 } from "@/lib/ecrypt_decrypt";
-import { useGetUser } from "@/hooks/user";
+import { useGetUser } from "@/hooks/useGetUser";
 import { useAudioRecorder } from "react-audio-voice-recorder";
 import { useToast } from "@/components/ui/use-toast";
+import msgRecieveSound from "../../assets/Pocket.mp3";
+import msgSendSound from "../../assets/Solo.mp3";
 
 export const PrivateChat = (): ReactElement => {
   const { id } = useParams();
@@ -29,8 +31,13 @@ export const PrivateChat = (): ReactElement => {
   );
   const [typedText, setTypedText] = useState<string>("");
   const [messages, setMessages] = useState<MessageType[]>([]);
-  const { isRecording, startRecording, stopRecording, recordingBlob } =
-    useAudioRecorder();
+  const {
+    isRecording,
+    startRecording,
+    stopRecording,
+    recordingBlob,
+    recordingTime,
+  } = useAudioRecorder();
   const encryptedChatKeyRef = useRef<string>("");
   const { toast } = useToast();
 
@@ -99,6 +106,9 @@ export const PrivateChat = (): ReactElement => {
 
   const handleSendMessage = async (type: ContentType, imgBlob?: Blob) => {
     if (!socket || !recipient || !publicKey || !privateKey) return;
+
+    const audio = new Audio(msgSendSound);
+    await audio.play();
 
     const isChatAlreadyExist = recipient?.chatId;
 
@@ -240,6 +250,11 @@ export const PrivateChat = (): ReactElement => {
         : null;
 
       setMessages((prev) => [...prev, message]);
+
+      if (message.senderId !== user?.userId) {
+        const audio = new Audio(msgRecieveSound);
+        await audio.play();
+      }
     };
 
     const handleDeleteMessage = (messageId: string) => {
@@ -278,16 +293,16 @@ export const PrivateChat = (): ReactElement => {
   }, [id, socket, encryptedChatKeyRef.current, privateKey]);
 
   useEffect(() => {
+    if (!recordingBlob) return;
     const sendAudioMessage = async () => {
-      if (recordingBlob) {
-        try {
-          await handleSendMessage("AUDIO");
-        } catch (error) {
-          toast({
-            title: "Error sending audio message",
-            variant: "destructive",
-          });
-        }
+      try {
+        await handleSendMessage("AUDIO");
+      } catch (error) {
+        console.log(error);
+        toast({
+          title: "Error sending audio message",
+          variant: "destructive",
+        });
       }
     };
 
@@ -329,6 +344,7 @@ export const PrivateChat = (): ReactElement => {
               isRecording={isRecording}
               startRecoring={startRecording}
               stopRecording={stopRecording}
+              recordingTime={recordingTime}
               key={`${id}+3`}
             />
           </>
