@@ -13,6 +13,8 @@ import { useAudioRecorder } from "react-audio-voice-recorder";
 import { useQuery } from "react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import msgRecieveSound from "../../assets/Pocket.mp3";
+import msgSendSound from "../../assets/Solo.mp3";
 
 export const GroupChat = (): ReactElement => {
   const { id } = useParams();
@@ -31,6 +33,7 @@ export const GroupChat = (): ReactElement => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useGetUser();
+  const sendMessageLoadingRef = useRef<boolean>(false);
 
   const { data: groupDetails, isLoading: groupDetailsLoading } = useQuery({
     queryKey: [id, "groupdetails"],
@@ -88,6 +91,8 @@ export const GroupChat = (): ReactElement => {
   const handleSendMessage = async (type: ContentType, imgBlob?: Blob) => {
     if (!socket || !encryptedChatKeyRef.current || !privateKey) return;
 
+    sendMessageLoadingRef.current = true;
+
     const encryptedMessage = await encryptMessage(
       type === "TEXT"
         ? typedText
@@ -106,6 +111,7 @@ export const GroupChat = (): ReactElement => {
         contentType: type,
       },
     });
+
     setTypedText("");
   };
 
@@ -141,6 +147,14 @@ export const GroupChat = (): ReactElement => {
       }
 
       setMessages((prev) => [...prev, message]);
+
+      if (message.senderId === user?.userId) {
+        sendMessageLoadingRef.current = false;
+      }
+
+      await new Audio(
+        message.senderId === user?.userId ? msgSendSound : msgRecieveSound
+      ).play();
     };
 
     const handleDeleteMessage = (messageId: string) => {
@@ -233,6 +247,7 @@ export const GroupChat = (): ReactElement => {
               messages={messages}
               key={`${id}+5`}
               handleDeleteMsg={handleDeleteMsg}
+              sendMessageLoadingRef={sendMessageLoadingRef}
             />
             <ChatFooter
               handleTyping={handleTyping}

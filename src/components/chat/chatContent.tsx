@@ -15,13 +15,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "../ui/button";
+import { ThreeDots } from "react-loader-spinner";
 
 type Props = {
   messages: MessageType[];
   handleDeleteMsg: (id: string) => void;
+  sendMessageLoadingRef: React.MutableRefObject<boolean>;
 };
 
-export const ChatContent = ({ messages, handleDeleteMsg }: Props) => {
+export const ChatContent = ({
+  messages,
+  handleDeleteMsg,
+  sendMessageLoadingRef,
+}: Props) => {
   const { user } = useGetUser();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDeleteMsg, setIsDeleteMsg] = useState<boolean>(false);
@@ -32,7 +38,7 @@ export const ChatContent = ({ messages, handleDeleteMsg }: Props) => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, sendMessageLoadingRef.current]);
 
   const [audioPlayers, setAudioPlayers] = useState<
     Record<string, HTMLAudioElement>
@@ -177,6 +183,12 @@ export const ChatContent = ({ messages, handleDeleteMsg }: Props) => {
             </div>
           );
         })}
+
+        {sendMessageLoadingRef.current && (
+          <div className="ml-auto border rounded-3xl p-3" key={-1}>
+            <ThreeDots color="#E5E7EB" width={50} />
+          </div>
+        )}
       </section>
 
       {/* Lightbox */}

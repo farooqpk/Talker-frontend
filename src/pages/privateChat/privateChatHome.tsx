@@ -40,6 +40,7 @@ export const PrivateChat = (): ReactElement => {
   } = useAudioRecorder();
   const encryptedChatKeyRef = useRef<string>("");
   const { toast } = useToast();
+  const sendMessageLoadingRef = useRef<boolean>(false);
 
   const { data: recipient, isLoading } = useQuery({
     queryKey: ["userquery", id],
@@ -107,8 +108,7 @@ export const PrivateChat = (): ReactElement => {
   const handleSendMessage = async (type: ContentType, imgBlob?: Blob) => {
     if (!socket || !recipient || !publicKey || !privateKey) return;
 
-    const audio = new Audio(msgSendSound);
-    await audio.play();
+    sendMessageLoadingRef.current = true;
 
     const isChatAlreadyExist = recipient?.chatId;
 
@@ -251,10 +251,13 @@ export const PrivateChat = (): ReactElement => {
 
       setMessages((prev) => [...prev, message]);
 
-      if (message.senderId !== user?.userId) {
-        const audio = new Audio(msgRecieveSound);
-        await audio.play();
+      if (message.senderId === user?.userId) {
+        sendMessageLoadingRef.current = false;
       }
+
+      await new Audio(
+        message.senderId === user?.userId ? msgSendSound : msgRecieveSound
+      ).play();
     };
 
     const handleDeleteMessage = (messageId: string) => {
@@ -335,6 +338,7 @@ export const PrivateChat = (): ReactElement => {
               messages={messages}
               key={`${id}+2`}
               handleDeleteMsg={handleDeleteMsg}
+              sendMessageLoadingRef={sendMessageLoadingRef}
             />
 
             <ChatFooter
