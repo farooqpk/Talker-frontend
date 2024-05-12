@@ -104,7 +104,6 @@ export const decryptMessage = async (
       encryptedSymetricKey,
       privateKey
     );
-
     // decrypt encrypted message to WordArray
     const decryptedData = CryptoJS.AES.decrypt(
       encryptedMessage,

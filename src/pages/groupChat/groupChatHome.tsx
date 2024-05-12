@@ -38,19 +38,23 @@ export const GroupChat = (): ReactElement => {
   const { data: groupDetails, isLoading: groupDetailsLoading } = useQuery({
     queryKey: [id, "groupdetails"],
     queryFn: () => getGroupDetailsApi(id!),
+    enabled: !!id,
     onSuccess: (data) => {
-      if (data)
+      if (data) {
         encryptedChatKeyRef.current = data?.Chat?.ChatKey?.[0]?.encryptedKey;
+      }
     },
   });
 
   const { isLoading: messagesLoading } = useQuery({
     queryKey: ["messagesqueryforgroup", id],
     queryFn: () => getMessagesApi(groupDetails?.chatId!),
-    enabled: !!groupDetails?.chatId,
+    enabled: !!groupDetails?.chatId && !!encryptedChatKeyRef.current,
     onSuccess: async (data: MessageType[]) => {
+      if (!data) return;
+
       const decryptedData = await Promise.all(
-        data?.map(async (message) => {
+        data.map(async (message) => {
           if (message.isDeleted) return message;
 
           if (message.contentType === "TEXT") {

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "../ui/button";
-import { ArrowLeft, Loader2, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -24,7 +24,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useQuery } from "react-query";
 import MultipleSelector, { Option } from "@/components/ui/multiple-selector";
 import { getUsersForSearch } from "@/services/api/search";
 
@@ -44,24 +43,6 @@ export const ChatHeader = ({
   const { user } = useGetUser();
   const [isExitGroupModalOpen, setIsExitGroupModalOpen] = useState(false);
   const [users, setUsers] = useState<Option[]>([]);
-
-  const { isLoading: isUsersLoading } = useQuery(
-    ["usersToCreateGroup"],
-    () => getUsersForSearch(),
-    {
-      onSuccess(data) {
-        if (data) {
-          const currentUsers = groupDetails?.Chat?.participants?.map(
-            (participant: any) => participant?.user.userId
-          );
-          const updatedData = data?.filter(
-            (item: any) => !currentUsers?.includes(item?.value)
-          );
-          setUsers(updatedData);
-        }
-      },
-    }
-  );
 
   return (
     <>
@@ -87,27 +68,35 @@ export const ChatHeader = ({
                 <SheetTitle>{groupDetails?.name}</SheetTitle>
                 <SheetDescription>{groupDetails?.description}</SheetDescription>
               </SheetHeader>
-              <div className="border my-3" />
+              <div className="border my-5" />
               <div className="flex flex-col gap-3">
                 {groupDetails?.adminId === user?.userId && (
                   <>
                     <div className="flex flex-col gap-1">
                       <MultipleSelector
-                        creatable={false}
                         placeholder="Add members"
-                        loadingIndicator={
-                          isUsersLoading && (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          )
-                        }
                         options={users}
+                        onSearch={async (val) => {
+                          const options = await getUsersForSearch(val || "");
+                          const currentUsers =
+                            groupDetails?.Chat?.participants?.map(
+                              (participant: any) => participant?.user.userId
+                            );
+                          const updatedData = options?.filter(
+                            (item: any) => !currentUsers?.includes(item?.value)
+                          );
+                          setUsers(updatedData);
+                          return updatedData;
+                        }}
+                        triggerSearchOnFocus
                         onChange={(formValue) => {
                           console.log(formValue);
                         }}
                         emptyIndicator={
                           users.length === 0 && <p>No users found</p>
                         }
-                        className="w-full"
+                        className="w-full max-h-[100px] overflow-y-auto"
+                        commandProps={{ inputMode: "none" }}
                       />
                       <Button
                         variant={"secondary"}
@@ -115,9 +104,6 @@ export const ChatHeader = ({
                         disabled={users.length === 0}
                         className="w-full md:w-auto"
                       >
-                        {/* {isLoading && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )} */}
                         Save
                       </Button>
                     </div>
@@ -132,7 +118,7 @@ export const ChatHeader = ({
                   </p>
                 </div>
 
-                <div className="max-h-[300px] overflow-y-auto flex flex-col gap-3">
+                <div className="max-h-[120px] overflow-y-auto flex flex-col gap-3">
                   {groupDetails?.Chat?.participants?.map((participant: any) => (
                     <div
                       key={participant?.user?.userId}

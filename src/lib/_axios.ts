@@ -47,7 +47,7 @@ _axios.interceptors.response.use(
           if (!isRefreshing) {
             isRefreshing = true;
             const refreshResponse = await axios.post(
-              `${import.meta.env.VITE_API_URL}/auth/refresh`,
+              `${import.meta.env.VITE_API_URL}/api/auth/refresh`,
               {},
               {
                 headers: {
