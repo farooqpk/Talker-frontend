@@ -5,17 +5,17 @@ export const signup = async (data: {
   password: string;
   publicKey: string;
 }) => {
-  return (await _axios.post(`/auth/signup`, data)).data;
+  return (await _axios.post(`/api/auth/signup`, data)).data;
 };
 
 export const login = async (data: { username: string; password: string }) => {
-  return (await _axios.post(`/auth/login`, data)).data;
+  return (await _axios.post(`/api/auth/login`, data)).data;
 };
 
 export const verifyRouteApiReq = async (): Promise<any> => {
-  return await _axios.get(`/auth/verifyRoute`);
+  return await _axios.get(`/api/auth/verifyRoute`);
 };
 
 export const changeUsernameApi = async (data: { username: string }) => {
-  return (await _axios.post(`/auth/update-username`, data)).data;
+  return (await _axios.post(`/api/auth/update-username`, data)).data;
 };

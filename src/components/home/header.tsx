@@ -21,10 +21,12 @@ import { debounce } from "@/lib/debounce";
 const HomeHeader = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [isSearchClicked, setIsSearchClicked] = useState(false);
 
   const { data } = useQuery({
     queryKey: ["randomusersforsearch", search],
     queryFn: () => getUsersForSearch(search),
+    enabled: !!isSearchClicked,
   });
 
   const handleSearch = (value: string) => {
@@ -32,12 +34,16 @@ const HomeHeader = () => {
   };
 
   return (
-    <Popover>
+    <Popover
+      open={isSearchClicked}
+      onOpenChange={(val) => setIsSearchClicked(val)}
+    >
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="searchbox"
           className="w-[250px] md:w-[300px] justify-between rounded-xl"
+          onClick={() => setIsSearchClicked(true)}
         >
           Search for users...
           <SearchIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
