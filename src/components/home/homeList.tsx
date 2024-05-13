@@ -28,11 +28,11 @@ export const HomeList = ({
                 </Avatar>
 
                 <div className="flex flex-col items-center gap-2">
-                  <h2 className="text-sm md:text-xl font-semibold">
+                  <h2 className="text-lg md:text-xl font-semibold">
                     {chats?.Group?.[0]?.name}
                   </h2>
 
-                  <span className="text-secondary text-xs md:text-lg">
+                  <span className="text-muted-foreground text-sm md:text-lg">
                     {chats?.messages[0]?.isDeleted
                       ? "This message was deleted"
                       : truncateMessage(
@@ -42,7 +42,7 @@ export const HomeList = ({
                   </span>
                 </div>
 
-                <span className="text-secondary text-xs md:text-lg">
+                <span className="text-muted-foreground text-sm md:text-lg">
                   {formateDate(
                     chats?.messages[0]?.createdAt || chats?.createdAt
                   )}
@@ -60,15 +60,15 @@ export const HomeList = ({
                 </Avatar>
 
                 <div className="flex flex-col items-center gap-2">
-                  <h2 className="text-sm md:text-xl font-semibold ">
+                  <h2 className="text-lg md:text-xl font-semibold ">
                     {chats?.participants[0]?.user?.username}
                   </h2>
                   {isTyping.includes(chats?.participants[0]?.user?.userId) ? (
-                    <span className="text-xs md:text-sm text-warning">
+                    <span className="text-sm text-warning">
                       Typing...
                     </span>
                   ) : (
-                    <span className="text-secondary text-xs md:text-lg">
+                    <span className="text-muted-foreground text-sm md:text-lg">
                       {chats?.messages[0]?.isDeleted
                         ? "This message was deleted"
                         : truncateMessage(chats?.messages[0]?.content)}
@@ -76,7 +76,7 @@ export const HomeList = ({
                   )}
                 </div>
 
-                <span className="text-secondary text-xs md:text-lg">
+                <span className="text-muted-foreground text-sm md:text-lg">
                   {formateDate(chats?.messages[0]?.createdAt)}
                 </span>
               </Link>

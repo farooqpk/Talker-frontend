@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "../ui/button";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Save, Trash2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import MultipleSelector, { Option } from "@/components/ui/multiple-selector";
 import { getUsersForSearch } from "@/services/api/search";
+import { Input } from "@/components/ui/input";
 
 export const ChatHeader = ({
   groupDetails,
@@ -33,16 +34,27 @@ export const ChatHeader = ({
   userStatus,
   isGroup,
   handleExitGroup,
+  handleUpdateGroupDetails,
 }: {
   groupDetails?: any;
   recipient?: User;
   userStatus?: UserStatusEnum;
   isGroup: boolean;
   handleExitGroup?: () => void;
+  handleUpdateGroupDetails?: (data: {
+    name?: string;
+    description?: string;
+  }) => void;
 }) => {
   const { user } = useGetUser();
   const [isExitGroupModalOpen, setIsExitGroupModalOpen] = useState(false);
   const [users, setUsers] = useState<Option[]>([]);
+  const [isGroupNameEdit, setIsGroupNameEdit] = useState(false);
+  const [isGroupDiscEdit, setIsGroupDiscEdit] = useState(false);
+  const [groupName, setGroupName] = useState<string>(groupDetails?.name);
+  const [groupDescription, setGroupDescription] = useState<string>(
+    groupDetails?.description
+  );
 
   return (
     <>
@@ -54,7 +66,14 @@ export const ChatHeader = ({
             </Button>
           </Link>
 
-          <Sheet>
+          <Sheet
+            onOpenChange={() => {
+              setIsGroupNameEdit(false);
+              setIsGroupDiscEdit(false);
+              setGroupName(groupDetails?.name);
+              setGroupDescription(groupDetails?.description);
+            }}
+          >
             <SheetTrigger className="flex flex-col md:gap-2 mx-auto items-center cursor-pointer hover:bg-slate-900 px-3 py-1 rounded-md">
               <p className="text-lg truncate font-semibold">
                 {groupDetails?.name}
@@ -63,11 +82,78 @@ export const ChatHeader = ({
                 Tap here for group details
               </span>
             </SheetTrigger>
-            <SheetContent side={"right"}>
-              <SheetHeader>
-                <SheetTitle>{groupDetails?.name}</SheetTitle>
-                <SheetDescription>{groupDetails?.description}</SheetDescription>
+            <SheetContent side={"right"} className="max-h-full overflow-y-auto">
+              <SheetHeader className="pt-5">
+                {user?.userId === groupDetails?.adminId ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={groupName}
+                        disabled={!isGroupNameEdit}
+                        placeholder="Group Name"
+                        onChange={(e) => setGroupName(e.target.value)}
+                      />
+
+                      <Button
+                        variant={"ghost"}
+                        size={"icon"}
+                        disabled={groupName.trim()?.length < 3}
+                        onClick={() => {
+                          setIsGroupNameEdit(!isGroupNameEdit);
+                          if (isGroupNameEdit ) {
+                            handleUpdateGroupDetails?.({ name: groupName });
+                          }
+                        }}
+                      >
+                        {isGroupNameEdit ? (
+                          <Save size={17} />
+                        ) : (
+                          <Pencil size={17} />
+                        )}
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={groupDescription}
+                        disabled={!isGroupDiscEdit}
+                        placeholder="Group Description"
+                        onChange={(e) =>
+                          setGroupDescription(e.target.value)
+                        }
+                      />
+
+                      <Button
+                        variant={"ghost"}
+                        size={"icon"}
+                        disabled={groupDescription.trim()?.length < 1}
+                        onClick={() => {
+                          setIsGroupDiscEdit(!isGroupDiscEdit);
+                          if (isGroupDiscEdit) {
+                            handleUpdateGroupDetails?.({
+                              description: groupDescription,
+                            });
+                          }
+                        }}
+                      >
+                        {isGroupDiscEdit ? (
+                          <Save size={17} />
+                        ) : (
+                          <Pencil size={17} />
+                        )}
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <SheetTitle>{groupDetails?.name}</SheetTitle>
+                    <SheetDescription>
+                      {groupDetails?.description}
+                    </SheetDescription>
+                  </>
+                )}
               </SheetHeader>
+
               <div className="border my-5" />
               <div className="flex flex-col gap-3">
                 {groupDetails?.adminId === user?.userId && (
@@ -118,7 +204,7 @@ export const ChatHeader = ({
                   </p>
                 </div>
 
-                <div className="max-h-[120px] overflow-y-auto flex flex-col gap-3">
+                <div className="max-h-[120px] overflow-y-auto flex flex-col gap-3 px-2">
                   {groupDetails?.Chat?.participants?.map((participant: any) => (
                     <div
                       key={participant?.user?.userId}
@@ -138,16 +224,15 @@ export const ChatHeader = ({
                           </AvatarFallback>
                         </Avatar>
 
-                        <p className="text-sm">{participant?.user?.username}</p>
+                        <p className="text-sm">
+                          {user?.userId === participant?.user?.userId
+                            ? "You"
+                            : participant?.user?.username}
+                        </p>
                         {participant?.user?.userId ===
                           groupDetails?.adminId && (
                           <Badge className="text-xs" variant={"outline"}>
                             Admin
-                          </Badge>
-                        )}
-                        {user?.userId === participant?.user?.userId && (
-                          <Badge className="text-xs" variant={"outline"}>
-                            You
                           </Badge>
                         )}
                       </Link>

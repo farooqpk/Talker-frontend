@@ -35,7 +35,11 @@ export const GroupChat = (): ReactElement => {
   const { user } = useGetUser();
   const sendMessageLoadingRef = useRef<boolean>(false);
 
-  const { data: groupDetails, isLoading: groupDetailsLoading } = useQuery({
+  const {
+    data: groupDetails,
+    isLoading: groupDetailsLoading,
+    refetch: refetchGroup,
+  } = useQuery({
     queryKey: [id, "groupdetails"],
     queryFn: () => getGroupDetailsApi(id!),
     enabled: !!id,
@@ -122,11 +126,7 @@ export const GroupChat = (): ReactElement => {
   useEffect(() => {
     if (!socket || !id || !encryptedChatKeyRef.current || !privateKey) return;
 
-    const handleRecieveMessage = async ({
-      message,
-    }: {
-      message: MessageType;
-    }) => {
+    const recieveMessage = async ({ message }: { message: MessageType }) => {
       if (message.contentType === "TEXT") {
         message.content = await decryptMessage(
           message?.content!,
@@ -161,7 +161,7 @@ export const GroupChat = (): ReactElement => {
       ).play();
     };
 
-    const handleDeleteMessage = (messageId: string) => {
+    const deleteMessageReceiver = (messageId: string) => {
       setMessages((prev) =>
         prev.map((item) =>
           item.messageId === messageId ? { ...item, isDeleted: true } : item
@@ -169,7 +169,7 @@ export const GroupChat = (): ReactElement => {
       );
     };
 
-    const handleExitGroup = ({
+    const exitGroupReceiver = ({
       isExitByAdmin,
       exitedUserId,
       groupId,
@@ -190,16 +190,22 @@ export const GroupChat = (): ReactElement => {
       }
     };
 
-    socket?.on("sendMessageForGroup", handleRecieveMessage);
+    const updateGroupDetailsReceiver = () => {
+      refetchGroup();
+    };
+
+    socket?.on("sendMessageForGroup", recieveMessage);
     socket?.emit("joinGroup", { groupIds: [id] });
-    socket.on("deleteMessage", handleDeleteMessage);
-    socket.on("exitGroup", handleExitGroup);
+    socket.on("deleteMessage", deleteMessageReceiver);
+    socket.on("exitGroup", exitGroupReceiver);
+    socket.on("updateGroupDetails", updateGroupDetailsReceiver);
 
     return () => {
-      socket?.off("sendMessageForGroup", handleRecieveMessage);
+      socket?.off("sendMessageForGroup", recieveMessage);
       socket?.emit("leaveGroup", { groupIds: [id] });
-      socket.off("deleteMessage", handleDeleteMessage);
-      socket.off("exitGroup", handleExitGroup);
+      socket.off("deleteMessage", recieveMessage);
+      socket.off("exitGroup", exitGroupReceiver);
+      socket.off("updateGroupDetails", updateGroupDetailsReceiver);
     };
   }, [id, socket, encryptedChatKeyRef.current, privateKey]);
 
@@ -234,6 +240,13 @@ export const GroupChat = (): ReactElement => {
     });
   };
 
+  const handleUpdateGroupDetails = (data: {
+    name?: string;
+    description?: string;
+  }) => {
+    socket?.emit("updateGroupDetails", { groupId: id, ...data });
+  };
+
   return (
     <>
       <main className="flex flex-col relative">
@@ -246,6 +259,7 @@ export const GroupChat = (): ReactElement => {
               isGroup
               key={`${id}+4`}
               handleExitGroup={handleExitGroup}
+              handleUpdateGroupDetails={handleUpdateGroupDetails}
             />
             <ChatContent
               messages={messages}
