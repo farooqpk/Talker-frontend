@@ -19,7 +19,7 @@ export const Home = (): ReactElement => {
   const [decryptLoading, setDecryptLoading] = useState<boolean>(false);
   const { toast } = useToast();
 
-  const { isLoading, refetch } = useQuery({
+  const { isLoading, refetch, isFetching } = useQuery({
     queryKey: ["chatlist"],
     queryFn: getChatListApi,
     onSuccess: async (data) => {
@@ -185,7 +185,7 @@ export const Home = (): ReactElement => {
   return (
     <>
       <main className="absolute inset-0 flex flex-col py-6 px-4 gap-8">
-        {isLoading || decryptLoading ? (
+        {isLoading || decryptLoading || !chatData || isFetching ? (
           <Loader />
         ) : (
           <>

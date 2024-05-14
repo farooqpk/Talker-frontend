@@ -249,7 +249,7 @@ export const GroupChat = (): ReactElement => {
 
   return (
     <>
-      <main className="flex flex-col relative">
+      <main className="flex flex-col h-full">
         {groupDetailsLoading || messagesLoading || !socket ? (
           <Loader />
         ) : (

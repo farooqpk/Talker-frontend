@@ -28,7 +28,7 @@ export const HomeList = ({
                 </Avatar>
 
                 <div className="flex flex-col items-center gap-2">
-                  <h2 className="text-lg md:text-xl font-semibold">
+                  <h2 className="text-lg md:text-xl font-medium">
                     {chats?.Group?.[0]?.name}
                   </h2>
 
@@ -60,13 +60,11 @@ export const HomeList = ({
                 </Avatar>
 
                 <div className="flex flex-col items-center gap-2">
-                  <h2 className="text-lg md:text-xl font-semibold ">
+                  <h2 className="text-lg md:text-xl font-medium ">
                     {chats?.participants[0]?.user?.username}
                   </h2>
                   {isTyping.includes(chats?.participants[0]?.user?.userId) ? (
-                    <span className="text-sm text-warning">
-                      Typing...
-                    </span>
+                    <span className="text-sm text-warning">Typing...</span>
                   ) : (
                     <span className="text-muted-foreground text-sm md:text-lg">
                       {chats?.messages[0]?.isDeleted

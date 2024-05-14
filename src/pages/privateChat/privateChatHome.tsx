@@ -255,9 +255,11 @@ export const PrivateChat = (): ReactElement => {
         sendMessageLoadingRef.current = false;
       }
 
-      await new Audio(
-        message.senderId === user?.userId ? msgSendSound : msgRecieveSound
-      ).play();
+      if (message.senderId === user?.userId) {
+        await new Audio(msgSendSound).play();
+      } else if (message.senderId !== user?.userId) {
+        await new Audio(msgRecieveSound).play();
+      }
     };
 
     const handleDeleteMessage = (messageId: string) => {
@@ -319,11 +321,13 @@ export const PrivateChat = (): ReactElement => {
 
   return (
     <>
-      <main className="flex flex-col relative">
+      <main className="flex flex-col h-full">
         {isLoading ||
         !socket ||
         (recipient?.chatId && messagesLoading) ||
-        chatKeyLoading ? (
+        chatKeyLoading ||
+        !messages ||
+        !recipient ? (
           <Loader />
         ) : (
           <>
