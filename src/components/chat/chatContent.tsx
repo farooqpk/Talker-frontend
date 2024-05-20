@@ -185,7 +185,7 @@ export const ChatContent = ({
         })}
 
         {sendMessageLoadingRef.current && (
-          <div className="ml-auto border rounded-3xl p-3" key={-1}>
+          <div className="ml-auto border rounded-3xl p-3">
             <ThreeDots color="#E5E7EB" width={50} />
           </div>
         )}

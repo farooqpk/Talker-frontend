@@ -34,7 +34,7 @@ const HomeHeader = () => {
   };
 
   return (
-    <>
+    <section className="mx-auto">
       <Popover
         open={isSearchClicked}
         onOpenChange={(val) => setIsSearchClicked(val)}
@@ -71,7 +71,7 @@ const HomeHeader = () => {
           </Command>
         </PopoverContent>
       </Popover>
-    </>
+      </section>
   );
 };
 

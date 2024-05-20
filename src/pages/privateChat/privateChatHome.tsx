@@ -146,17 +146,22 @@ export const PrivateChat = (): ReactElement => {
       encryptedChatKeyRef.current = ourOwnEncryptedChatKey;
     }
 
-    const encryptedMessage = await encryptMessage(
+    const chatContent =
       type === "TEXT"
         ? typedText
-        : type === "AUDIO"
-        ? recordingBlob!
         : type === "IMAGE"
         ? imgBlob!
-        : "",
-      isChatAlreadyExist
-        ? encryptedChatKeyRef.current
-        : ourOwnEncryptedChatKey!,
+        : type === "AUDIO"
+        ? recordingBlob!
+        : "";
+
+    const chatKey = isChatAlreadyExist
+      ? encryptedChatKeyRef.current
+      : ourOwnEncryptedChatKey!;
+
+    const encryptedMessage = await encryptMessage(
+      chatContent,
+      chatKey,
       privateKey!
     );
 

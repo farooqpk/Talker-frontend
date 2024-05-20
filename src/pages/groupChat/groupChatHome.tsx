@@ -100,15 +100,18 @@ export const GroupChat = (): ReactElement => {
     if (!socket || !encryptedChatKeyRef.current || !privateKey) return;
 
     sendMessageLoadingRef.current = true;
-
-    const encryptedMessage = await encryptMessage(
+    
+    const chatContent =
       type === "TEXT"
         ? typedText
-        : type === "AUDIO"
-        ? recordingBlob!
         : type === "IMAGE"
         ? imgBlob!
-        : "",
+        : type === "AUDIO"
+        ? recordingBlob!
+        : "";
+
+    const encryptedMessage = await encryptMessage(
+      chatContent,
       encryptedChatKeyRef.current!,
       privateKey!
     );

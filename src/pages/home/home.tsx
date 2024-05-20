@@ -1,13 +1,12 @@
 import { MessageType } from "@/types/index";
 import HomeHeader from "@/components/home/header";
 import { HomeList } from "@/components/home/homeList";
-import Loader from "@/components/loader";
 import { useGetUser } from "@/hooks/useGetUser";
 import { decryptMessage } from "@/lib/ecrypt_decrypt";
 import { getChatListApi } from "@/services/api/chat";
 import { useSocket } from "@/context/socketProvider";
 import { ReactElement, useEffect, useState } from "react";
-import { useQuery } from "react-query";
+import { useInfiniteQuery } from "react-query";
 import Options from "@/components/home/options";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -16,44 +15,50 @@ export const Home = (): ReactElement => {
   const { privateKey } = useGetUser();
   const socket = useSocket();
   const [isTyping, setIsTyping] = useState<string[]>([]);
-  const [decryptLoading, setDecryptLoading] = useState<boolean>(false);
   const { toast } = useToast();
 
-  const { isLoading, refetch, isFetching } = useQuery({
-    queryKey: ["chatlist"],
-    queryFn: getChatListApi,
-    onSuccess: async (data) => {
-      if (!data) return;
+  const { isLoading, refetch, isFetchingNextPage, fetchNextPage, hasNextPage } =
+    useInfiniteQuery({
+      queryKey: ["chatlist"],
+      queryFn: ({ pageParam = 1 }) => getChatListApi(pageParam),
+      getNextPageParam: (lastPage, allPage) => {
+        const nextPage =
+          lastPage?.length === 10 ? allPage.length + 1 : undefined;
+        return nextPage;
+      },
+      keepPreviousData: true,
+      onSuccess: async (data) => {
+        if (!data) return;
 
-      setDecryptLoading(true);
-      const decryptedData = await Promise.all(
-        data?.map(async (chat: any) => {
-          const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
+        const decryptedData = await Promise.all(
+          data.pages.flatMap((page) => {
+            return page?.map(async (chat: any) => {
+              const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
 
-          if (chat?.messages?.[0]) {
-            if (chat.messages[0].isDeleted) return chat;
+              if (chat?.messages?.[0]) {
+                if (chat.messages[0].isDeleted) return chat;
 
-            if (chat?.messages?.[0]?.contentType === "TEXT") {
-              chat.messages[0].content = await decryptMessage(
-                chat.messages[0].content,
-                encryptedChatKey,
-                privateKey!,
-                "TEXT"
-              );
-            } else if (chat?.messages?.[0]?.contentType === "AUDIO") {
-              chat.messages[0].content = "audio...";
-            } else if (chat?.messages?.[0]?.contentType === "IMAGE") {
-              chat.messages[0].content = "image...";
-            }
-          }
-          return chat;
-        })
-      );
+                if (chat?.messages?.[0]?.contentType === "TEXT") {
+                  chat.messages[0].content = await decryptMessage(
+                    chat.messages[0].content,
+                    encryptedChatKey,
+                    privateKey!,
+                    "TEXT"
+                  );
+                } else if (chat?.messages?.[0]?.contentType === "AUDIO") {
+                  chat.messages[0].content = "audio...";
+                } else if (chat?.messages?.[0]?.contentType === "IMAGE") {
+                  chat.messages[0].content = "image...";
+                }
+              }
+              return chat;
+            });
+          })
+        );
 
-      setDecryptLoading(false);
-      setChatData(decryptedData);
-    },
-  });
+        setChatData(decryptedData);
+      },
+    });
 
   // to update latest message in the home
   useEffect(() => {
@@ -183,26 +188,17 @@ export const Home = (): ReactElement => {
   }, [socket, chatData, privateKey]);
 
   return (
-    <>
-      <main className="absolute inset-0 flex flex-col py-6 px-4 gap-8">
-        {isLoading || decryptLoading || !chatData || isFetching ? (
-          <Loader />
-        ) : (
-          <>
-            <section className="mx-auto">
-              <HomeHeader />
-            </section>
-
-            <section>
-              <HomeList chatData={chatData} isTyping={isTyping} />
-            </section>
-
-            <section>
-              <Options />
-            </section>
-          </>
-        )}
-      </main>
-    </>
+    <main className="h-[calc(100dvh)] flex flex-col py-6 px-4 gap-8">
+      <HomeHeader />
+      <HomeList
+        chatData={chatData}
+        isTyping={isTyping}
+        fetchNextPage={fetchNextPage}
+        isFetchingNextPage={isFetchingNextPage}
+        hasNextPage={hasNextPage}
+        isLoading={isLoading}
+      />
+      <Options />
+    </main>
   );
 };

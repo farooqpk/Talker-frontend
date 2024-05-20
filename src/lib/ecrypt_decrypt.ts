@@ -140,9 +140,7 @@ export const encryptMessage = async (
   message: string | Blob,
   encryptedSymetricKey: string,
   privateKey: string
-): Promise<string> => {
-  let encodedMessage;
-
+): Promise<string | Object> => {
   try {
     const decryptedSymetricKey = await decryptSymetricKey(
       encryptedSymetricKey!,
@@ -151,10 +149,7 @@ export const encryptMessage = async (
 
     if (typeof message === "string") {
       // Encrypt string message
-      encodedMessage = CryptoJS.AES.encrypt(
-        message,
-        decryptedSymetricKey
-      ).toString();
+      return CryptoJS.AES.encrypt(message, decryptedSymetricKey).toString();
     } else {
       // Encrypt Blob message
       const reader = new FileReader();
@@ -169,15 +164,26 @@ export const encryptMessage = async (
       const wordArray = CryptoJS.lib.WordArray.create(
         reader.result as ArrayBuffer
       );
-      encodedMessage = CryptoJS.AES.encrypt(
+      const cipherParams = CryptoJS.AES.encrypt(
         wordArray,
         decryptedSymetricKey
-      ).toString();
-    }
+      );
 
-    return encodedMessage;
+      return extractEncryptionData(cipherParams);
+      // return JSON.stringify(extractEncryptionData(cipherParams));
+    }
   } catch (error) {
     console.log(error);
     throw new Error("Error encrypting message: " + error);
   }
 };
+
+function extractEncryptionData(cipherParams: any) {
+  const necessaryData = {
+    ciphertext: cipherParams.ciphertext.words,
+    key: cipherParams.key.words,
+    iv: cipherParams.iv.words,
+    keySize: cipherParams.algorithm.keySize,
+  };
+  return necessaryData;
+}

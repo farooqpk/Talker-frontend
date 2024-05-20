@@ -1,18 +1,41 @@
-import { ReactElement } from "react";
+import { ReactElement, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formateDate } from "@/lib/format-date";
 import { truncateMessage } from "@/lib/trunctuate";
+import { useInView } from "react-intersection-observer";
+import Loader from "../loader";
+import { ThreeDots } from "react-loader-spinner";
 
 export const HomeList = ({
   chatData,
   isTyping,
+  isFetchingNextPage,
+  isLoading,
+  fetchNextPage,
+  hasNextPage,
 }: {
   chatData: any;
   isTyping: string[];
+  isFetchingNextPage: boolean;
+  isLoading: boolean;
+  fetchNextPage: () => void;
+  hasNextPage: boolean | undefined;
 }): ReactElement => {
+  const { ref, inView } = useInView();
+
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, fetchNextPage, isFetchingNextPage]);
+
+  if (isLoading && !isFetchingNextPage) {
+    return <Loader />;
+  }
+
   return (
-    <>
+    <section className="overflow-auto">
       {chatData?.map((chats: any, index: number) => {
         return (
           <div className="md:w-[60%] mx-auto" key={index}>
@@ -28,13 +51,13 @@ export const HomeList = ({
                 </Avatar>
 
                 <div className="flex flex-col items-center gap-2">
-                  <h2 className="text-lg md:text-xl font-medium">
+                  <h2 className="text-lg font-medium">
                     {chats?.Group?.[0]?.name}
                   </h2>
 
-                  <span className="text-muted-foreground text-sm md:text-lg">
+                  <span className="text-muted-foreground text-sm">
                     {chats?.messages[0]?.isDeleted
-                      ? "This message was deleted"
+                      ? truncateMessage("This message was deleted")
                       : truncateMessage(
                           chats?.messages[0]?.content ||
                             chats?.Group?.[0]?.description
@@ -42,7 +65,7 @@ export const HomeList = ({
                   </span>
                 </div>
 
-                <span className="text-muted-foreground text-sm md:text-lg">
+                <span className="text-muted-foreground text-sm">
                   {formateDate(
                     chats?.messages[0]?.createdAt || chats?.createdAt
                   )}
@@ -60,21 +83,21 @@ export const HomeList = ({
                 </Avatar>
 
                 <div className="flex flex-col items-center gap-2">
-                  <h2 className="text-lg md:text-xl font-medium ">
+                  <h2 className="text-lg font-medium ">
                     {chats?.participants[0]?.user?.username}
                   </h2>
                   {isTyping.includes(chats?.participants[0]?.user?.userId) ? (
                     <span className="text-sm text-warning">Typing...</span>
                   ) : (
-                    <span className="text-muted-foreground text-sm md:text-lg">
+                    <span className="text-muted-foreground text-sm">
                       {chats?.messages[0]?.isDeleted
-                        ? "This message was deleted"
+                        ? truncateMessage("This message was deleted")
                         : truncateMessage(chats?.messages[0]?.content)}
                     </span>
                   )}
                 </div>
 
-                <span className="text-muted-foreground text-sm md:text-lg">
+                <span className="text-muted-foreground text-sm">
                   {formateDate(chats?.messages[0]?.createdAt)}
                 </span>
               </Link>
@@ -82,6 +105,14 @@ export const HomeList = ({
           </div>
         );
       })}
-    </>
+
+      {chatData.length > 0 && <div ref={ref} />}
+
+      {isFetchingNextPage && (
+        <div className="flex justify-center">
+          <ThreeDots color="#E5E7EB" width={50} />
+        </div>
+      )}
+    </section>
   );
 };

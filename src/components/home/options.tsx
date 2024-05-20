@@ -37,7 +37,7 @@ const Options = () => {
   };
 
   return (
-    <div className="w-full max-w-lg mx-auto p-4">
+    <div className="w-full max-w-lg mx-auto p-4 ">
       <div className="fixed bottom-7 right-5 md:bottom-6 md:right-6">
         <DropdownMenu>
           <DropdownMenuTrigger>
