@@ -163,7 +163,7 @@ export const ChatHeader = ({
                         placeholder="Add members"
                         options={users}
                         onSearch={async (val) => {
-                          const options = await getUsersForSearch(val || "");
+                          const options = await getUsersForSearch(val || "",1);
                           const currentUsers =
                             groupDetails?.Chat?.participants?.map(
                               (participant: any) => participant?.user.userId

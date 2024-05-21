@@ -5,7 +5,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "../ui/button";
-import { useQuery } from "react-query";
+import { useInfiniteQuery } from "react-query";
 import { getUsersForSearch } from "@/services/api/search";
 import { useNavigate } from "react-router-dom";
 import {
@@ -15,23 +15,39 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { debounce } from "@/lib/debounce";
+import { useInView } from "react-intersection-observer";
+import { ThreeDots } from "react-loader-spinner";
 
 const HomeHeader = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [isSearchClicked, setIsSearchClicked] = useState(false);
+  const { inView, ref } = useInView();
 
-  const { data } = useQuery({
-    queryKey: ["randomusersforsearch", search],
-    queryFn: () => getUsersForSearch(search),
-    enabled: !!isSearchClicked,
-  });
+  const { data, isFetchingNextPage, fetchNextPage, hasNextPage } =
+    useInfiniteQuery({
+      queryKey: ["randomusersforsearch", search],
+      queryFn: ({ pageParam = 1 }) => getUsersForSearch(search, pageParam),
+      getNextPageParam: (lastPage, allPage) => {
+        const nextPage =
+          lastPage?.length === 6 ? allPage.length + 1 : undefined;
+        return nextPage;
+      },
+      keepPreviousData: true,
+      enabled: !!isSearchClicked,
+    });
 
   const handleSearch = (value: string) => {
     debounce(() => setSearch(value), 500)();
   };
+
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, isFetchingNextPage, fetchNextPage, hasNextPage]);
 
   return (
     <section className="mx-auto">
@@ -55,23 +71,32 @@ const HomeHeader = () => {
             <CommandInput onValueChange={handleSearch} />
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup className="max-h-[200px] overflow-y-auto">
-              {data?.map((item: any, i: number) => (
-                <CommandItem
-                  key={i}
-                  value={item}
-                  onSelect={() => {
-                    navigate(`/chat/${item.value}`);
-                  }}
-                  className="cursor-pointer my-2"
-                >
-                  {item.label}
-                </CommandItem>
-              ))}
+              {data?.pages.flatMap((page) => {
+                return page?.map((item: any, i: number) => (
+                  <CommandItem
+                    key={i}
+                    value={item}
+                    onSelect={() => {
+                      navigate(`/chat/${item.value}`);
+                    }}
+                    className="cursor-pointer my-2"
+                  >
+                    {item.label}
+                  </CommandItem>
+                ));
+              })}
+
+              {data?.pages?.[0]?.length > 0 && <div ref={ref} />}
+              {isFetchingNextPage && (
+                <div className="flex justify-center">
+                  <ThreeDots color="#E5E7EB" height={30} width={40} />
+                </div>
+              )}
             </CommandGroup>
           </Command>
         </PopoverContent>
       </Popover>
-      </section>
+    </section>
   );
 };
 

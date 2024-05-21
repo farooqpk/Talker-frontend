@@ -6,7 +6,7 @@ import { decryptMessage } from "@/lib/ecrypt_decrypt";
 import { getChatListApi } from "@/services/api/chat";
 import { useSocket } from "@/context/socketProvider";
 import { ReactElement, useEffect, useState } from "react";
-import { useInfiniteQuery } from "react-query";
+import { useQuery } from "react-query";
 import Options from "@/components/home/options";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -17,48 +17,36 @@ export const Home = (): ReactElement => {
   const [isTyping, setIsTyping] = useState<string[]>([]);
   const { toast } = useToast();
 
-  const { isLoading, refetch, isFetchingNextPage, fetchNextPage, hasNextPage } =
-    useInfiniteQuery({
-      queryKey: ["chatlist"],
-      queryFn: ({ pageParam = 1 }) => getChatListApi(pageParam),
-      getNextPageParam: (lastPage, allPage) => {
-        const nextPage =
-          lastPage?.length === 10 ? allPage.length + 1 : undefined;
-        return nextPage;
-      },
-      keepPreviousData: true,
-      onSuccess: async (data) => {
-        if (!data) return;
+  const { isLoading, refetch } = useQuery({
+    queryKey: ["chatlist"],
+    queryFn: getChatListApi,
+    keepPreviousData: true,
+    onSuccess: async (data) => {
+      if (!data) return;
 
-        const decryptedData = await Promise.all(
-          data.pages.flatMap((page) => {
-            return page?.map(async (chat: any) => {
-              const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
+      const decryptedDataPromises = data?.map(async (chat: any) => {
+        const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
+        if (chat?.messages?.[0] && !chat.messages[0].isDeleted) {
+          if (chat.messages[0].contentType === "TEXT") {
+            chat.messages[0].content = await decryptMessage(
+              chat.messages[0].content,
+              encryptedChatKey,
+              privateKey!,
+              "TEXT"
+            );
+          } else if (chat.messages[0].contentType === "AUDIO") {
+            chat.messages[0].content = "audio...";
+          } else if (chat.messages[0].contentType === "IMAGE") {
+            chat.messages[0].content = "image...";
+          }
+        }
+        return chat;
+      });
 
-              if (chat?.messages?.[0]) {
-                if (chat.messages[0].isDeleted) return chat;
-
-                if (chat?.messages?.[0]?.contentType === "TEXT") {
-                  chat.messages[0].content = await decryptMessage(
-                    chat.messages[0].content,
-                    encryptedChatKey,
-                    privateKey!,
-                    "TEXT"
-                  );
-                } else if (chat?.messages?.[0]?.contentType === "AUDIO") {
-                  chat.messages[0].content = "audio...";
-                } else if (chat?.messages?.[0]?.contentType === "IMAGE") {
-                  chat.messages[0].content = "image...";
-                }
-              }
-              return chat;
-            });
-          })
-        );
-
-        setChatData(decryptedData);
-      },
-    });
+      const decryptedData = await Promise.all(decryptedDataPromises);
+      setChatData(decryptedData);
+    },
+  });
 
   // to update latest message in the home
   useEffect(() => {
@@ -190,14 +178,7 @@ export const Home = (): ReactElement => {
   return (
     <main className="h-[calc(100dvh)] flex flex-col py-6 px-4 gap-8">
       <HomeHeader />
-      <HomeList
-        chatData={chatData}
-        isTyping={isTyping}
-        fetchNextPage={fetchNextPage}
-        isFetchingNextPage={isFetchingNextPage}
-        hasNextPage={hasNextPage}
-        isLoading={isLoading}
-      />
+      <HomeList chatData={chatData} isTyping={isTyping} isLoading={isLoading} />
       <Options />
     </main>
   );

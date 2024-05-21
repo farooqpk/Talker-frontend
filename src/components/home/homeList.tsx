@@ -1,36 +1,20 @@
-import { ReactElement, useEffect } from "react";
+import { ReactElement } from "react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formateDate } from "@/lib/format-date";
 import { truncateMessage } from "@/lib/trunctuate";
-import { useInView } from "react-intersection-observer";
 import Loader from "../loader";
-import { ThreeDots } from "react-loader-spinner";
 
 export const HomeList = ({
   chatData,
   isTyping,
-  isFetchingNextPage,
   isLoading,
-  fetchNextPage,
-  hasNextPage,
 }: {
   chatData: any;
   isTyping: string[];
-  isFetchingNextPage: boolean;
   isLoading: boolean;
-  fetchNextPage: () => void;
-  hasNextPage: boolean | undefined;
 }): ReactElement => {
-  const { ref, inView } = useInView();
-
-  useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [inView, hasNextPage, fetchNextPage, isFetchingNextPage]);
-
-  if (isLoading && !isFetchingNextPage) {
+  if (isLoading) {
     return <Loader />;
   }
 
@@ -105,14 +89,6 @@ export const HomeList = ({
           </div>
         );
       })}
-
-      {chatData.length > 0 && <div ref={ref} />}
-
-      {isFetchingNextPage && (
-        <div className="flex justify-center">
-          <ThreeDots color="#E5E7EB" width={50} />
-        </div>
-      )}
     </section>
   );
 };

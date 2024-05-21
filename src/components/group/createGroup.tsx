@@ -169,7 +169,7 @@ const CreateGroup = ({
                           <MultipleSelector
                             onSearch={async (val) => {
                               const options = await getUsersForSearch(
-                                val || ""
+                                val || "",1
                               );
                               setUsers(options);
                               return options;
