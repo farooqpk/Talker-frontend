@@ -29,7 +29,11 @@ const HomeHeader = () => {
   const { data, isFetchingNextPage, fetchNextPage, hasNextPage } =
     useInfiniteQuery({
       queryKey: ["randomusersforsearch", search],
-      queryFn: ({ pageParam = 1 }) => getUsersForSearch(search, pageParam),
+      queryFn: ({ pageParam = 1 }) =>
+        getUsersForSearch({
+          search,
+          page: pageParam,
+        }),
       getNextPageParam: (lastPage, allPage) => {
         const nextPage =
           lastPage?.length === 6 ? allPage.length + 1 : undefined;

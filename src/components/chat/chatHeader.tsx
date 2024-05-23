@@ -24,9 +24,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import MultipleSelector, { Option } from "@/components/ui/multiple-selector";
+import {
+  MultiSelector,
+  MultiSelectorContent,
+  MultiSelectorInput,
+  MultiSelectorItem,
+  MultiSelectorList,
+  MultiSelectorTrigger,
+} from "@/components/ui/multiple-selector";
 import { getUsersForSearch } from "@/services/api/search";
 import { Input } from "@/components/ui/input";
+import { Option } from "../../types/index";
+import { useQuery } from "react-query";
 
 export const ChatHeader = ({
   groupDetails,
@@ -48,13 +57,32 @@ export const ChatHeader = ({
 }) => {
   const { user } = useGetUser();
   const [isExitGroupModalOpen, setIsExitGroupModalOpen] = useState(false);
-  const [users, setUsers] = useState<Option[]>([]);
   const [isGroupNameEdit, setIsGroupNameEdit] = useState(false);
   const [isGroupDiscEdit, setIsGroupDiscEdit] = useState(false);
   const [groupName, setGroupName] = useState<string>(groupDetails?.name);
   const [groupDescription, setGroupDescription] = useState<string>(
     groupDetails?.description
   );
+  const [isAddNewMemberInputClicked, setIsAddNewMemberInputClicked] =
+    useState(false);
+  const [addNewMembers, setAddNewMembers] = useState<string[]>([]);
+  const [users, setUsers] = useState([] as Option[]);
+
+  useQuery<Option[]>({
+    queryKey: ["addnewmemberstogroupu"],
+    queryFn: () => getUsersForSearch({ isInfiniteScroll: false }),
+    enabled: !!isAddNewMemberInputClicked,
+    onSuccess: (data) => {
+      if (!data) return;
+      const existingMembers = groupDetails?.Chat?.participants?.map(
+        (member: { user: User }) => member?.user?.userId
+      );
+      const filteredData: Option[] = data.filter(
+        (item) => !existingMembers.includes(item.value)
+      );
+      setUsers(filteredData);
+    },
+  });
 
   return (
     <>
@@ -100,7 +128,7 @@ export const ChatHeader = ({
                         disabled={groupName.trim()?.length < 3}
                         onClick={() => {
                           setIsGroupNameEdit(!isGroupNameEdit);
-                          if (isGroupNameEdit ) {
+                          if (isGroupNameEdit) {
                             handleUpdateGroupDetails?.({ name: groupName });
                           }
                         }}
@@ -118,9 +146,7 @@ export const ChatHeader = ({
                         value={groupDescription}
                         disabled={!isGroupDiscEdit}
                         placeholder="Group Description"
-                        onChange={(e) =>
-                          setGroupDescription(e.target.value)
-                        }
+                        onChange={(e) => setGroupDescription(e.target.value)}
                       />
 
                       <Button
@@ -159,31 +185,41 @@ export const ChatHeader = ({
                 {groupDetails?.adminId === user?.userId && (
                   <>
                     <div className="flex flex-col gap-1">
-                      <MultipleSelector
-                        placeholder="Add members"
-                        options={users}
-                        onSearch={async (val) => {
-                          const options = await getUsersForSearch(val || "",1);
-                          const currentUsers =
-                            groupDetails?.Chat?.participants?.map(
-                              (participant: any) => participant?.user.userId
-                            );
-                          const updatedData = options?.filter(
-                            (item: any) => !currentUsers?.includes(item?.value)
+                      <MultiSelector
+                        values={addNewMembers}
+                        onValuesChange={(formValue) => {
+                          let newArr = formValue?.map(
+                            (option: string) => option
                           );
-                          setUsers(updatedData);
-                          return updatedData;
+                          setAddNewMembers(newArr);
                         }}
-                        triggerSearchOnFocus
-                        onChange={(formValue) => {
-                          console.log(formValue);
-                        }}
-                        emptyIndicator={
-                          users.length === 0 && <p>No users found</p>
-                        }
-                        className="w-full max-h-[100px] overflow-y-auto"
-                        commandProps={{ inputMode: "none" }}
-                      />
+                        loop
+                        className="w-full"
+                      >
+                        <MultiSelectorTrigger
+                          onClick={() => setIsAddNewMemberInputClicked(true)}
+                        >
+                          <MultiSelectorInput
+                            placeholder="Add members"
+                            className="text-sm"
+                          />
+                        </MultiSelectorTrigger>
+                        <MultiSelectorContent>
+                          <MultiSelectorList className="max-h-[100px]">
+                            {users?.map((item: Option) => {
+                              return (
+                                <MultiSelectorItem
+                                  key={item.value}
+                                  value={item.label}
+                                >
+                                  {item.label}
+                                </MultiSelectorItem>
+                              );
+                            })}
+                          </MultiSelectorList>
+                        </MultiSelectorContent>
+                      </MultiSelector>
+
                       <Button
                         variant={"secondary"}
                         size={"sm"}

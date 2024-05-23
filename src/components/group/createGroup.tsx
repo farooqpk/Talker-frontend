@@ -7,7 +7,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "../ui/input";
-import MultipleSelector, { Option } from "@/components/ui/multiple-selector";
+import {
+  MultiSelector,
+  MultiSelectorContent,
+  MultiSelectorInput,
+  MultiSelectorItem,
+  MultiSelectorList,
+  MultiSelectorTrigger,
+} from "@/components/ui/multiple-selector";
 import { createGroupApi, getPublicKeysApi } from "@/services/api/group";
 import {
   Form,
@@ -21,23 +28,23 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createSymetricKey, encryptSymetricKey } from "@/lib/ecrypt_decrypt";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import { useGetUser } from "@/hooks/useGetUser";
 import { toast } from "../ui/use-toast";
 import { getUsersForSearch } from "@/services/api/search";
-import { useState } from "react";
+import { Option } from "../../types/index";
 
 const formSchema = z.object({
   groupName: z
     .string()
-    .min(3, "group name must be at least 3 characters")
-    .max(15, "group name must be at most 15 characters"),
+    .min(3, "Group name must be at least 3 characters")
+    .max(15, "Group name must be at most 15 characters"),
   description: z.string(),
   members: z
     .array(z.string())
-    .min(2, "at least three members including you is required")
-    .max(9, "at most 10 members including you are allowed")
-    .nonempty("members is required"),
+    .min(2, "At least three members including you are required")
+    .max(9, "At most 10 members including you are allowed")
+    .nonempty("Members are required"),
 });
 
 const CreateGroup = ({
@@ -49,8 +56,11 @@ const CreateGroup = ({
 }) => {
   const { user } = useGetUser();
   const queryClient = useQueryClient();
-  const [users, setUsers] = useState<Option[]>([]);
 
+  const { data: users } = useQuery<Option[]>({
+    queryKey: ["creategroupusers"],
+    queryFn: () => getUsersForSearch({ isInfiniteScroll: false }),
+  });
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
   });
@@ -58,9 +68,13 @@ const CreateGroup = ({
   const { mutate, isLoading } = useMutation(createGroupApi);
 
   const handleCreateGroup = async (data: z.infer<typeof formSchema>) => {
-    if (data.members.length < 2) {
+    const members = data.members.map(
+      (item) => users?.find?.((user) => user.label === item)?.value as string
+    );
+
+    if (members.length < 2) {
       form.setError("members", {
-        message: "at least three members including you is required",
+        message: "At least three members including you are required",
       });
       return;
     }
@@ -72,7 +86,7 @@ const CreateGroup = ({
     }> = [];
 
     const [membersPublicKeys, chatKey] = await Promise.all([
-      getPublicKeysApi([...data.members, user?.userId]),
+      getPublicKeysApi([...members, user?.userId]),
       createSymetricKey(),
     ]);
 
@@ -166,31 +180,38 @@ const CreateGroup = ({
                       <FormItem>
                         <FormLabel>Select members</FormLabel>
                         <FormControl>
-                          <MultipleSelector
-                            onSearch={async (val) => {
-                              const options = await getUsersForSearch(
-                                val || "",1
-                              );
-                              setUsers(options);
-                              return options;
-                            }}
-                            triggerSearchOnFocus
-                            options={users}
-                            commandProps={{ inputMode: "none" }}
-                            onChange={(formValue) => {
+                          <MultiSelector
+                            values={form.watch("members") || []}
+                            onValuesChange={(formValue) => {
                               let newArr = formValue?.map(
-                                (option) => option.value
+                                (option: string) => option
                               );
                               form.setValue(
                                 "members",
                                 newArr as z.infer<typeof formSchema>["members"]
                               );
                             }}
-                            emptyIndicator={
-                              users?.length === 0 && <p>No users found</p>
-                            }
+                            loop
                             className="w-full"
-                          />
+                          >
+                            <MultiSelectorTrigger>
+                              <MultiSelectorInput />
+                            </MultiSelectorTrigger>
+                            <MultiSelectorContent>
+                              <MultiSelectorList className="max-h-[130px]">
+                                {users?.map((item: Option) => {
+                                  return (
+                                    <MultiSelectorItem
+                                      key={item.value}
+                                      value={item.label}
+                                    >
+                                      {item.label}
+                                    </MultiSelectorItem>
+                                  );
+                                })}
+                              </MultiSelectorList>
+                            </MultiSelectorContent>
+                          </MultiSelector>
                         </FormControl>
                         <FormMessage />
                       </FormItem>

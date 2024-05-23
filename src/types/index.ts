@@ -23,3 +23,9 @@ export type User = {
 };
 
 export type ContentType = "TEXT" | "AUDIO" | "IMAGE";
+
+
+export type Option = {
+  label: string;
+  value: string;
+};
