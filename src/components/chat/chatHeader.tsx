@@ -37,7 +37,7 @@ import { Input } from "@/components/ui/input";
 import { Option } from "../../types/index";
 import { useQuery } from "react-query";
 
-export const ChatHeader = ({
+export default function ChatHeader({
   groupDetails,
   recipient,
   userStatus,
@@ -54,7 +54,7 @@ export const ChatHeader = ({
     name?: string;
     description?: string;
   }) => void;
-}) => {
+}){
   const { user } = useGetUser();
   const [isExitGroupModalOpen, setIsExitGroupModalOpen] = useState(false);
   const [isGroupNameEdit, setIsGroupNameEdit] = useState(false);
@@ -223,7 +223,9 @@ export const ChatHeader = ({
                       <Button
                         variant={"secondary"}
                         size={"sm"}
-                        disabled={users.length === 0}
+                        disabled={
+                          users.length === 0 || addNewMembers.length === 0
+                        }
                         className="w-full md:w-auto"
                       >
                         Save

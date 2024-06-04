@@ -1,11 +1,7 @@
-import { ReactElement, useRef } from "react";
-import { ChatContent } from "../../components/chat/chatContent";
-import { ChatFooter } from "../../components/chat/chatFooter";
-import { ChatHeader } from "../../components/chat/chatHeader";
+import { ReactElement, lazy, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "react-query";
 import { findUserApi } from "@/services/api/user";
-import Loader from "@/components/loader";
 import { useSocket } from "@/context/socketProvider";
 import { useEffect, useState } from "react";
 import { ContentType, MessageType, UserStatusEnum } from "@/types/index";
@@ -14,15 +10,19 @@ import {
   createSymetricKey,
   decryptMessage,
   encryptMessage,
-  encryptSymetricKey,
+  encryptSymetricKeyWithPublicKey,
 } from "@/lib/ecrypt_decrypt";
 import { useGetUser } from "@/hooks/useGetUser";
 import { useAudioRecorder } from "react-audio-voice-recorder";
 import { useToast } from "@/components/ui/use-toast";
 import msgRecieveSound from "../../assets/Pocket.mp3";
 import msgSendSound from "../../assets/Solo.mp3";
+const ChatContent = lazy(() => import("@/components/chat/chatContent"));
+const ChatFooter = lazy(() => import("@/components/chat/chatFooter"));
+const ChatHeader = lazy(() => import("@/components/chat/chatHeader"));
+const Loader = lazy(() => import("@/components/loader"));
 
-export const PrivateChat = (): ReactElement => {
+export default function PrivateChat(): ReactElement {
   const { id } = useParams();
   const socket = useSocket();
   const { privateKey, publicKey, user } = useGetUser();
@@ -128,7 +128,7 @@ export const PrivateChat = (): ReactElement => {
 
       await Promise.all(
         usersWithPublicKey.map(async (item) => {
-          const encryptedKey = await encryptSymetricKey(
+          const encryptedKey = await encryptSymetricKeyWithPublicKey(
             chatKey,
             item.publicKey
           );
@@ -339,13 +339,11 @@ export const PrivateChat = (): ReactElement => {
             <ChatHeader
               recipient={recipient}
               userStatus={userStatus}
-              key={`${id}+1`}
               isGroup={false}
             />
 
             <ChatContent
               messages={messages}
-              key={`${id}+2`}
               handleDeleteMsg={handleDeleteMsg}
               sendMessageLoadingRef={sendMessageLoadingRef}
             />
@@ -358,11 +356,10 @@ export const PrivateChat = (): ReactElement => {
               startRecoring={startRecording}
               stopRecording={stopRecording}
               recordingTime={recordingTime}
-              key={`${id}+3`}
             />
           </>
         )}
       </main>
     </>
   );
-};
+}

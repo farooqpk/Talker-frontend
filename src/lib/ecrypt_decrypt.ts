@@ -1,7 +1,11 @@
 import { ContentType } from "@/types";
 import CryptoJS from "crypto-js";
 
-export const createAssymetricKeys = async () => {
+export const createAsymmetricKeys = async (): Promise<{
+  publicKey: JsonWebKey;
+  privateKey: JsonWebKey;
+}> => {
+  // Generate a new key pair
   const keys = await crypto.subtle.generateKey(
     {
       name: "RSA-OAEP",
@@ -9,10 +13,11 @@ export const createAssymetricKeys = async () => {
       publicExponent: new Uint8Array([1, 0, 1]),
       hash: "SHA-256",
     },
-    true,
+    true, // Extractable
     ["encrypt", "decrypt"]
   );
 
+  // Export both the public and private keys to JWK format
   const [publicKey, privateKey] = await Promise.all([
     crypto.subtle.exportKey("jwk", keys.publicKey),
     crypto.subtle.exportKey("jwk", keys.privateKey),
@@ -22,21 +27,26 @@ export const createAssymetricKeys = async () => {
 };
 
 export const createSymetricKey = async () => {
-  const key = CryptoJS.lib.WordArray.random(128 / 8);
-  // Convert the key to a Base64 string for storage or transmission
-  const base64Key = CryptoJS.enc.Base64.stringify(key);
+  const key = await crypto.subtle.generateKey(
+    {
+      name: "AES-GCM",
+      length: 128,
+    },
+    true,
+    ["encrypt", "decrypt"]
+  );
 
-  return base64Key;
+  return await crypto.subtle.exportKey("raw", key);
 };
 
-export const encryptSymetricKey = async (
-  symetricKey: string,
+export const encryptSymetricKeyWithPublicKey = async (
+  symetricKey: ArrayBuffer,
   publicKey: string
 ): Promise<string> => {
   try {
     const importedPublicKey = await crypto.subtle.importKey(
       "jwk",
-      JSON.parse(publicKey),
+      JSON.parse(publicKey) as JsonWebKey,
       {
         name: "RSA-OAEP",
         hash: "SHA-256",
@@ -45,44 +55,30 @@ export const encryptSymetricKey = async (
       ["encrypt"]
     );
 
-    const encoder = new TextEncoder();
-    const encodedSymetricKey = encoder.encode(symetricKey);
     const encryptedSymetricKey = await crypto.subtle.encrypt(
       {
         name: "RSA-OAEP",
       },
       importedPublicKey,
-      encodedSymetricKey
+      symetricKey
     );
 
     return btoa(String.fromCharCode(...new Uint8Array(encryptedSymetricKey)));
   } catch (error: any) {
-    console.log(error.message);
     throw new Error("Error encrypting message: " + error);
   }
 };
 
-export const decryptSymetricKey = async (
+export const decryptSymetricKeyWithPrivateKey = async (
   encryptedSymetricKey: string,
-  privateKey: string
+  privateKey: CryptoKey
 ): Promise<string> => {
   try {
-    const importedPrivateKey = await crypto.subtle.importKey(
-      "jwk",
-      JSON.parse(privateKey),
-      {
-        name: "RSA-OAEP",
-        hash: "SHA-256",
-      },
-      true,
-      ["decrypt"]
-    );
-
     const decryptedSymetricKey = await crypto.subtle.decrypt(
       {
         name: "RSA-OAEP",
       },
-      importedPrivateKey,
+      privateKey,
       Uint8Array.from(atob(encryptedSymetricKey), (c) => c.charCodeAt(0))
     );
 
@@ -96,11 +92,11 @@ export const decryptSymetricKey = async (
 export const decryptMessage = async (
   encryptedMessage: string,
   encryptedSymetricKey: string,
-  privateKey: string,
+  privateKey: CryptoKey,
   contentType: ContentType
 ): Promise<any> => {
   try {
-    const decryptedSymetricKey = await decryptSymetricKey(
+    const decryptedSymetricKey = await decryptSymetricKeyWithPrivateKey(
       encryptedSymetricKey,
       privateKey
     );
@@ -139,10 +135,10 @@ export const decryptMessage = async (
 export const encryptMessage = async (
   message: string | Blob,
   encryptedSymetricKey: string,
-  privateKey: string
+  privateKey: CryptoKey
 ): Promise<string | Object> => {
   try {
-    const decryptedSymetricKey = await decryptSymetricKey(
+    const decryptedSymetricKey = await decryptSymetricKeyWithPrivateKey(
       encryptedSymetricKey!,
       privateKey!
     );
@@ -187,3 +183,153 @@ function extractEncryptionData(cipherParams: any) {
   };
   return necessaryData;
 }
+
+export const encryptPrivateKeyWithPassword = async ({
+  privateKey,
+  password,
+}: {
+  privateKey: JsonWebKey;
+  password: string;
+}): Promise<ArrayBuffer> => {
+  try {
+    // Convert the password string to an ArrayBuffer/Uint8Array
+    const passwordBuffer = new TextEncoder().encode(password);
+
+    // Hash the password to derive a fixed salt and IV
+    const hashBuffer = await crypto.subtle.digest("SHA-256", passwordBuffer);
+    const hashArray = new Uint8Array(hashBuffer);
+
+    // Use the first 16 bytes as the salt
+    const salt = hashArray.slice(0, 16);
+    // Use the next 12 bytes as the IV
+    const iv = hashArray.slice(16, 28);
+
+    // Derive a key from the password using PBKDF2 (password based key derivation function 2)
+    const importedKey = await crypto.subtle.importKey(
+      "raw",
+      passwordBuffer,
+      { name: "PBKDF2" },
+      false,
+      ["deriveBits", "deriveKey"]
+    );
+
+    const derivedKey = await crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt,
+        iterations: 100000,
+        hash: "SHA-256",
+      },
+      importedKey,
+      {
+        name: "AES-GCM",
+        length: 256,
+      },
+      true,
+      ["encrypt", "decrypt"]
+    );
+
+    // Convert jwk to string
+    const privateKeyString = JSON.stringify(privateKey);
+
+    // Convert string to ArrayBuffer/Uint8Array
+    const privateKeyBuffer = new TextEncoder().encode(privateKeyString);
+
+    const encryptedPrivateKey = await crypto.subtle.encrypt(
+      {
+        name: "AES-GCM",
+        length: 256,
+        iv,
+      },
+      derivedKey,
+      privateKeyBuffer
+    );
+
+    return encryptedPrivateKey;
+  } catch (error) {
+    throw new Error("Error encrypting private key: " + error);
+  }
+};
+
+export const decryptPrivateKeyWithPassword = async ({
+  encryptedPrivateKey,
+  password,
+}: {
+  encryptedPrivateKey: ArrayBuffer;
+  password: string;
+}): Promise<JsonWebKey | null> => {
+  try {
+    const passwordBuffer = new TextEncoder().encode(password);
+
+    // Hash the password to derive a fixed salt and IV
+    const hashBuffer = await crypto.subtle.digest("SHA-256", passwordBuffer);
+    const hashArray = new Uint8Array(hashBuffer);
+
+    // Use the first 16 bytes as the salt
+    const salt = hashArray.slice(0, 16);
+    // Use the next 12 bytes as the IV
+    const iv = hashArray.slice(16, 28);
+
+    const importedKey = await crypto.subtle.importKey(
+      "raw",
+      passwordBuffer,
+      { name: "PBKDF2" },
+      false,
+      ["deriveBits", "deriveKey"]
+    );
+
+    const derivedKey = await crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt,
+        iterations: 100000,
+        hash: "SHA-256",
+      },
+      importedKey,
+      {
+        name: "AES-GCM",
+        length: 256,
+      },
+      true,
+      ["encrypt", "decrypt"]
+    );
+
+    const privateKeyBuffer = await crypto.subtle.decrypt(
+      {
+        name: "AES-GCM",
+        length: 256,
+        iv,
+      },
+      derivedKey,
+      encryptedPrivateKey
+    );
+
+    // Decode the ArrayBuffer as UTF-8
+    const privateKeyString = new TextDecoder().decode(privateKeyBuffer);
+
+    // Parse the JSON string to get the original JWK
+    const privateKey: JsonWebKey = JSON.parse(privateKeyString);
+
+    return privateKey;
+  } catch (error) {
+    console.log("Error decrypting private key: " + error);
+    return null;
+  }
+};
+
+export const importPrivateKeyAsNonExtractable = async (
+  privateKey: JsonWebKey
+): Promise<CryptoKey> => {
+  const newPrivateKey = await crypto.subtle.importKey(
+    "jwk",
+    privateKey,
+    {
+      name: "RSA-OAEP",
+      hash: "SHA-256",
+    },
+    false, // Private key should be non-extractable
+    ["decrypt"]
+  );
+
+  return newPrivateKey;
+};

@@ -19,7 +19,7 @@ type Props = {
   recordingTime: number;
 };
 
-export const ChatFooter = ({
+export default function ChatFooter ({
   handleTyping,
   handleSendMessage,
   typedText,
@@ -27,7 +27,7 @@ export const ChatFooter = ({
   startRecoring,
   stopRecording,
   recordingTime,
-}: Props) => {
+}: Props) {
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();

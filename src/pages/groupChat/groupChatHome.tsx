@@ -1,22 +1,22 @@
 import { ContentType, MessageType } from "@/types/index";
-import { ChatContent } from "@/components/chat/chatContent";
-import { ChatFooter } from "@/components/chat/chatFooter";
-import { ChatHeader } from "@/components/chat/chatHeader";
-import Loader from "@/components/loader";
 import { useSocket } from "@/context/socketProvider";
 import { useGetUser } from "@/hooks/useGetUser";
 import { decryptMessage, encryptMessage } from "@/lib/ecrypt_decrypt";
 import { getMessagesApi } from "@/services/api/chat";
 import { getGroupDetailsApi } from "@/services/api/group";
-import { ReactElement, useEffect, useRef, useState } from "react";
+import { ReactElement, lazy, useEffect, useRef, useState } from "react";
 import { useAudioRecorder } from "react-audio-voice-recorder";
 import { useQuery } from "react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import msgRecieveSound from "../../assets/Pocket.mp3";
 import msgSendSound from "../../assets/Solo.mp3";
+const ChatContent = lazy(() => import("@/components/chat/chatContent"));
+const ChatFooter = lazy(()=> import("@/components/chat/chatFooter"));
+const ChatHeader = lazy(() => import("@/components/chat/chatHeader"));
+const Loader = lazy(() => import("@/components/loader"));
 
-export const GroupChat = (): ReactElement => {
+export default function GroupChat(): ReactElement {
   const { id } = useParams();
   const socket = useSocket();
   const [typedText, setTypedText] = useState<string>("");
@@ -100,7 +100,7 @@ export const GroupChat = (): ReactElement => {
     if (!socket || !encryptedChatKeyRef.current || !privateKey) return;
 
     sendMessageLoadingRef.current = true;
-    
+
     const chatContent =
       type === "TEXT"
         ? typedText
@@ -285,4 +285,4 @@ export const GroupChat = (): ReactElement => {
       </main>
     </>
   );
-};
+}

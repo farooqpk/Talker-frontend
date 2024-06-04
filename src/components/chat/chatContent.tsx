@@ -2,7 +2,7 @@ import { useGetUser } from "@/hooks/useGetUser";
 import Container from "../Container";
 import { MessageType } from "../../types";
 import { formateDate } from "@/lib/format-date";
-import { useEffect, useRef, useState } from "react";
+import { ReactElement, useEffect, useRef, useState } from "react";
 import { Pause, Play, Trash2, X } from "lucide-react";
 import {
   AlertDialog,
@@ -23,11 +23,11 @@ type Props = {
   sendMessageLoadingRef: React.MutableRefObject<boolean>;
 };
 
-export const ChatContent = ({
+export default function ChatContent({
   messages,
   handleDeleteMsg,
   sendMessageLoadingRef,
-}: Props) => {
+}: Props): ReactElement {
   const { user } = useGetUser();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDeleteMsg, setIsDeleteMsg] = useState<boolean>(false);

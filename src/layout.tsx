@@ -2,9 +2,10 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Auth from "./pages/auth/auth";
 import { Home } from "./pages/home/home";
 import { VerifyRoute } from "./components/auth/verifyRoute";
-import { PrivateChat } from "./pages/privateChat/privateChatHome";
 import { SocketLayout } from "./components/socketLayout/socketLayout";
-import { GroupChat } from "./pages/groupChat/groupChatHome";
+import { lazy } from "react";
+const PrivateChat = lazy(() => import("./pages/privateChat/privateChatHome"));
+const GroupChat = lazy(() => import("./pages/groupChat/groupChatHome"));
 
 const Layout = () => {
   return (
