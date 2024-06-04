@@ -11,20 +11,20 @@ export const useSocket = () => {
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<Socket | undefined>();
-  const [accessToken, setAccessToken] = useState<string | undefined>(
+  const [accessToken] = useState<string | undefined>(
     Cookies.get("accesstoken") || undefined
   );
 
-  useEffect(() => {
-    const accessTokenInterval = setInterval(() => {
-      const newAccessToken = Cookies.get("accesstoken");
-      if (newAccessToken !== accessToken) {
-        setAccessToken(newAccessToken);
-      }
-    }, 5000);
+  // useEffect(() => {
+  //   const accessTokenInterval = setInterval(() => {
+  //     const newAccessToken = Cookies.get("accesstoken");
+  //     if (newAccessToken !== accessToken) {
+  //       setAccessToken(newAccessToken);
+  //     }
+  //   }, 5000);
 
-    return () => clearInterval(accessTokenInterval);
-  }, [accessToken]);
+  //   return () => clearInterval(accessTokenInterval);
+  // }, [accessToken]);
 
   useEffect(() => {
     const connectSocket = () => {

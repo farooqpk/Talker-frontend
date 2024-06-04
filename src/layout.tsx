@@ -13,16 +13,12 @@ const Layout = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
-          <Route element={<SocketLayout />}>
-            <Route path="/" element={<VerifyRoute children={<Home />} />} />
-            <Route
-              path="/chat/:id"
-              element={<VerifyRoute children={<PrivateChat />} />}
-            />
-            <Route
-              path="/group/:id"
-              element={<VerifyRoute children={<GroupChat />} />}
-            />
+          <Route element={<VerifyRoute />}>
+            <Route element={<SocketLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/chat/:id" element={<PrivateChat />} />
+              <Route path="/group/:id" element={<GroupChat />} />
+            </Route>
           </Route>
         </Routes>
       </BrowserRouter>

@@ -95,15 +95,47 @@ const Auth = (): ReactElement => {
   } = useMutation(signup);
 
   const handleAuthSuccess = (type: "login" | "signup") => {
-    if (type === "signup") {
-      toast({
-        title: "Signup Success",
-        description: "You have successfully signed up.",
-        variant: "default",
+    toast({
+      title: type === "signup" ? "Signup Success" : "Login Success",
+      description:
+        type === "signup"
+          ? "You have successfully signed up."
+          : "You have successfully logged in.",
+      variant: "default",
+    });
+    navigate("/");
+  };
+
+  const handleIsPrivateKeyNotExist = async (privateKeyFile: File) => {
+    const encryptedPrivateKey = (await readDataFromFile(
+      privateKeyFile,
+      "arrayBuffer"
+    )) as ArrayBuffer;
+
+    const decryptedPrivateKey = await decryptPrivateKeyWithPassword({
+      encryptedPrivateKey,
+      password: userData.password,
+    });
+
+    if (!decryptedPrivateKey) {
+      form.setError("privateKeyFile", {
+        message: "Invalid private key file. Please try again.",
       });
-      navigate("/");
-    } else if (type === "login") {
+      return;
     }
+
+    const privateKey = await importPrivateKeyAsNonExtractable(
+      decryptedPrivateKey
+    );
+
+    await addValueToStoreIDB(userData.userId, privateKey);
+
+    localStorage.setItem(
+      "user",
+      JSON.stringify({ userId: userData.userId, username: userData.username })
+    );
+
+    handleAuthSuccess("login");
   };
 
   const handleLogin = async ({
@@ -112,41 +144,7 @@ const Auth = (): ReactElement => {
     privateKeyFile,
   }: z.infer<typeof formSchema>) => {
     if (isPrivateKeyNotExist) {
-      // read the content of the file
-      const encryptedPrivateKey = (await readDataFromFile(
-        privateKeyFile,
-        "arrayBuffer"
-      )) as ArrayBuffer;
-
-      const decryptedPrivateKey = await decryptPrivateKeyWithPassword({
-        encryptedPrivateKey,
-        password: userData.password,
-      });
-
-      if (!decryptedPrivateKey) {
-        form.setError("privateKeyFile", {
-          message: "Please provide a valid private key file",
-        });
-        return;
-      }
-
-      const privateKey = await importPrivateKeyAsNonExtractable(
-        decryptedPrivateKey
-      );
-
-      await addValueToStoreIDB(userData.userId, privateKey);
-
-      toast({
-        title: "Login Success",
-        description: "You have successfully logged in.",
-        variant: "default",
-      });
-      localStorage.setItem(
-        "user",
-        JSON.stringify({ userId: userData.userId, username: userData.username })
-      );
-      navigate("/");
-
+      await handleIsPrivateKeyNotExist(privateKeyFile);
       return;
     }
 
@@ -157,28 +155,23 @@ const Auth = (): ReactElement => {
       },
       {
         onSuccess: async (data) => {
-          if (data) {
-            setHasLoginResponse(true);
+          if (!data) return;
 
-            const isPrivateKeyExist = await getValueFromStoreIDB(
-              data?.user?.userId
-            );
+          setHasLoginResponse(true);
 
-            if (!isPrivateKeyExist) {
-              setUserData({ password, ...data?.user });
-              setIsPrivateKeyNotExist(true);
-              form.reset();
-              return;
-            }
+          const isPrivateKeyExist = await getValueFromStoreIDB(
+            data?.user?.userId
+          );
 
-            toast({
-              title: "Login Success",
-              description: "You have successfully logged in.",
-              variant: "default",
-            });
-            localStorage.setItem("user", JSON.stringify(data?.user));
-            navigate("/");
+          if (!isPrivateKeyExist) {
+            setUserData({ password, ...data?.user });
+            setIsPrivateKeyNotExist(true);
+            form.reset();
+            return;
           }
+
+          localStorage.setItem("user", JSON.stringify(data?.user));
+          handleAuthSuccess("login");
         },
       }
     );
@@ -199,14 +192,14 @@ const Auth = (): ReactElement => {
       },
       {
         onSuccess: async (data) => {
-          if (data) {
-            const newPrivateKey = await importPrivateKeyAsNonExtractable(
-              keys.privateKey
-            );
-            await addValueToStoreIDB(data?.user?.userId, newPrivateKey);
-            localStorage.setItem("user", JSON.stringify(data?.user));
-            setShowDownloadConfirmation(true);
-          }
+          if (!data) return;
+
+          const newPrivateKey = await importPrivateKeyAsNonExtractable(
+            keys.privateKey
+          );
+          await addValueToStoreIDB(data?.user?.userId, newPrivateKey);
+          localStorage.setItem("user", JSON.stringify(data?.user));
+          setShowDownloadConfirmation(true);
         },
       }
     );
@@ -222,8 +215,8 @@ const Auth = (): ReactElement => {
     handleAuthSuccess("signup");
   };
 
-  // to solve the chrome browser password check alert problem after signup
   useEffect(() => {
+    // to solve the chrome browser password check alert problem after signup
     if (showDownloadConfirmation) {
       // Ensure the dialog is focused when shown
       (
