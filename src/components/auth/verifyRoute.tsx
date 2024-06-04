@@ -24,9 +24,13 @@ export const VerifyRoute = () => {
   }, [isError]);
 
   useEffect(() => {
-    if (!user) return;
+    if ((!user || !user.userId || !user.username || !user.publicKey) && data) {
+      localStorage.setItem("user", JSON.stringify(data?.data?.payload));
+    }
 
     const isPrivateKeyExist = async () => {
+      if (!user) return;
+
       const privateKey = await getValueFromStoreIDB(user.userId);
 
       if (!privateKey) {
@@ -40,7 +44,7 @@ export const VerifyRoute = () => {
     };
 
     isPrivateKeyExist();
-  }, [user]);
+  }, [user, data]);
 
   if (data) {
     return <Outlet />;

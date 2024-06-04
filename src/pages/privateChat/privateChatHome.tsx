@@ -17,6 +17,7 @@ import { useAudioRecorder } from "react-audio-voice-recorder";
 import { useToast } from "@/components/ui/use-toast";
 import msgRecieveSound from "../../assets/Pocket.mp3";
 import msgSendSound from "../../assets/Solo.mp3";
+import { getValueFromStoreIDB } from "@/lib/idb";
 const ChatContent = lazy(() => import("@/components/chat/chatContent"));
 const ChatFooter = lazy(() => import("@/components/chat/chatFooter"));
 const ChatHeader = lazy(() => import("@/components/chat/chatHeader"));
@@ -25,7 +26,7 @@ const Loader = lazy(() => import("@/components/loader"));
 export default function PrivateChat(): ReactElement {
   const { id } = useParams();
   const socket = useSocket();
-  const { privateKey, publicKey, user } = useGetUser();
+  const { user } = useGetUser();
   const [userStatus, setUserStatus] = useState<UserStatusEnum>(
     UserStatusEnum.OFFLINE
   );
@@ -61,6 +62,10 @@ export default function PrivateChat(): ReactElement {
     queryFn: () => getMessagesApi(recipient.chatId!),
     enabled: !!recipient?.chatId && !!encryptedChatKeyRef.current,
     onSuccess: async (data: MessageType[]) => {
+      if (!data || !user) return;
+
+      const privateKey = await getValueFromStoreIDB(user.userId);
+
       const decryptedData = await Promise.all(
         data?.map(async (message) => {
           if (message.isDeleted) return message;
@@ -106,7 +111,10 @@ export default function PrivateChat(): ReactElement {
   };
 
   const handleSendMessage = async (type: ContentType, imgBlob?: Blob) => {
-    if (!socket || !recipient || !publicKey || !privateKey) return;
+    if (!socket || !recipient || !user?.publicKey) return;
+
+    const privateKey = await getValueFromStoreIDB(user.userId);
+    if (!privateKey) return;
 
     sendMessageLoadingRef.current = true;
 
@@ -122,7 +130,7 @@ export default function PrivateChat(): ReactElement {
       const chatKey = await createSymetricKey();
 
       const usersWithPublicKey = [
-        { userId: user?.userId, publicKey },
+        { userId: user?.userId, publicKey: user?.publicKey },
         { userId: recipient?.userId, publicKey: recipient?.publicKey },
       ];
 
@@ -182,7 +190,7 @@ export default function PrivateChat(): ReactElement {
     if (
       !socket ||
       !id ||
-      !privateKey ||
+      !user ||
       (messages.length > 0 && !encryptedChatKeyRef.current)
     )
       return;
@@ -224,6 +232,9 @@ export default function PrivateChat(): ReactElement {
         encryptedChatKeys?: Array<{ userId: string; encryptedKey: string }>;
       };
     }) => {
+      const privateKey = await getValueFromStoreIDB(user?.userId);
+      if (!privateKey) return;
+
       if (message.encryptedChatKeys) {
         const encryptedKey = message.encryptedChatKeys.find(
           (item) => item.userId === user?.userId
@@ -235,21 +246,21 @@ export default function PrivateChat(): ReactElement {
         ? (message.content = await decryptMessage(
             message?.content!,
             encryptedChatKeyRef.current!,
-            privateKey!,
+            privateKey,
             "TEXT"
           ))
         : message.contentType === "AUDIO"
         ? (message.audio = await decryptMessage(
             message?.content!,
             encryptedChatKeyRef.current!,
-            privateKey!,
+            privateKey,
             "AUDIO"
           ))
         : message.contentType === "IMAGE"
         ? (message.image = await decryptMessage(
             message?.content!,
             encryptedChatKeyRef.current!,
-            privateKey!,
+            privateKey,
             "IMAGE"
           ))
         : null;
@@ -300,7 +311,7 @@ export default function PrivateChat(): ReactElement {
       socket.off("sendPrivateMessage", handleRecieveMessage);
       socket.off("deleteMessage", handleDeleteMessage);
     };
-  }, [id, socket, encryptedChatKeyRef.current, privateKey]);
+  }, [id, socket, encryptedChatKeyRef.current]);
 
   useEffect(() => {
     if (!recordingBlob) return;

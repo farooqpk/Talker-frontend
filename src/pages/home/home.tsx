@@ -9,20 +9,23 @@ import { ReactElement, useEffect, useState } from "react";
 import { useQuery } from "react-query";
 import Options from "@/components/home/options";
 import { useToast } from "@/components/ui/use-toast";
+import { getValueFromStoreIDB } from "@/lib/idb";
 
 export const Home = (): ReactElement => {
   const [chatData, setChatData] = useState<any[]>([]);
-  const { privateKey } = useGetUser();
   const socket = useSocket();
   const [isTyping, setIsTyping] = useState<string[]>([]);
   const { toast } = useToast();
+  const { user } = useGetUser();
 
   const { isLoading, refetch } = useQuery({
     queryKey: ["chatlist"],
     queryFn: getChatListApi,
     keepPreviousData: true,
     onSuccess: async (data) => {
-      if (!data) return;
+      if (!data || !user) return;
+
+      const privateKey = await getValueFromStoreIDB(user.userId);
 
       const decryptedDataPromises = data?.map(async (chat: any) => {
         const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
@@ -50,7 +53,7 @@ export const Home = (): ReactElement => {
 
   // to update latest message in the home
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !user) return;
 
     const groupIds = chatData
       ?.filter((item: any) => item?.isGroup === true)
@@ -78,6 +81,7 @@ export const Home = (): ReactElement => {
 
       const chat = chatData?.find((item) => item?.chatId === message?.chatId);
       const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
+      const privateKey = await getValueFromStoreIDB(user.userId);
 
       if (message.contentType === "TEXT") {
         message.content = await decryptMessage(
@@ -173,7 +177,7 @@ export const Home = (): ReactElement => {
 
       socket.off("exitGroup", handleExitGroup);
     };
-  }, [socket, chatData, privateKey]);
+  }, [socket, chatData, user]);
 
   return (
     <main className="h-[calc(100dvh)] flex flex-col py-6 px-4 gap-8">

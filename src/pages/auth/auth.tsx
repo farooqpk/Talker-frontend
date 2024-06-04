@@ -132,7 +132,11 @@ const Auth = (): ReactElement => {
 
     localStorage.setItem(
       "user",
-      JSON.stringify({ userId: userData.userId, username: userData.username })
+      JSON.stringify({
+        userId: userData.userId,
+        username: userData.username,
+        publicKey: userData.publicKey,
+      })
     );
 
     handleAuthSuccess("login");

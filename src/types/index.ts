@@ -20,6 +20,7 @@ export type MessageType = {
 export type User = {
   userId: string;
   username: string;
+  publicKey: string;
 };
 
 export type ContentType = "TEXT" | "AUDIO" | "IMAGE";
