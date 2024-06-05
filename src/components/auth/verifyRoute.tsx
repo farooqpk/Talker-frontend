@@ -21,9 +21,7 @@ export const VerifyRoute = () => {
     if (isError) {
       navigate("/auth");
     }
-  }, [isError]);
 
-  useEffect(() => {
     if ((!user || !user.userId || !user.username || !user.publicKey) && data) {
       localStorage.setItem("user", JSON.stringify(data?.data?.payload));
     }
@@ -44,7 +42,7 @@ export const VerifyRoute = () => {
     };
 
     isPrivateKeyExist();
-  }, [user, data]);
+  }, [user, data, isError]);
 
   if (data) {
     return <Outlet />;
