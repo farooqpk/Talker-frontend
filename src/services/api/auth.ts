@@ -19,3 +19,7 @@ export const verifyRouteApiReq = async (): Promise<any> => {
 export const changeUsernameApi = async (data: { username: string }) => {
   return (await _axios.post(`/api/auth/update-username`, data)).data;
 };
+
+export const loginTokenApi = async (data: {userId:string, loginToken: string }) => {
+  return (await _axios.post(`/api/auth/login/token`, data)).data;
+};

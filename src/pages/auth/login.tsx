@@ -21,7 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useMutation } from "react-query";
-import { login } from "@/services/api/auth";
+import { login, loginTokenApi } from "@/services/api/auth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -38,11 +38,11 @@ const Login = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isPrivateKeyNotExist, setIsPrivateKeyNotExist] = useState(false);
-  const [hasLoginResponse, setHasLoginResponse] = useState(false);
   const [userData, setUserData] = useState({} as User & { password: string });
+  const [loginToken, setLoginToken] = useState("");
 
   const loginFormSchema = z.object(
-    isPrivateKeyNotExist && hasLoginResponse
+    isPrivateKeyNotExist
       ? {
           privateKeyFile: z
             .instanceof(File, {
@@ -72,6 +72,13 @@ const Login = () => {
     isError: loginIsError,
   } = useMutation(login);
 
+  const {
+    mutate: loginTokenMutate,
+    isLoading: loginTokenLoading,
+    isError: loginTokenIsError,
+    error: loginTokenError,
+  } = useMutation(loginTokenApi);
+
   const handleSuccess = () => {
     toast({
       title: "Login Success",
@@ -79,6 +86,15 @@ const Login = () => {
       variant: "default",
     });
     navigate("/");
+  };
+
+  const handleLoginToken = () => {
+    loginTokenMutate(
+      { userId: userData.userId, loginToken },
+      {
+        onSuccess: handleSuccess,
+      }
+    );
   };
 
   const handleIsPrivateKeyNotExist = async (privateKeyFile: File) => {
@@ -114,7 +130,7 @@ const Login = () => {
       })
     );
 
-    handleSuccess();
+    handleLoginToken();
   };
 
   const handleLogin = async ({
@@ -122,8 +138,9 @@ const Login = () => {
     password,
     privateKeyFile,
   }: z.infer<typeof loginFormSchema>) => {
+    // after upload the private key file
     if (isPrivateKeyNotExist) {
-      await handleIsPrivateKeyNotExist(privateKeyFile);
+      handleIsPrivateKeyNotExist(privateKeyFile);
       return;
     }
 
@@ -136,21 +153,24 @@ const Login = () => {
         onSuccess: async (data) => {
           if (!data) return;
 
-          setHasLoginResponse(true);
+          // set the user data
+          setUserData({ password, ...data?.user });
 
+          // we have to keep the token
+          setLoginToken(data.loginToken);
+
+          // first we have to check wether the private key exist or not
           const isPrivateKeyExist = await getValueFromStoreIDB(
             data?.user?.userId
           );
-
+          // if not exit then we update the state and show the file input then return from here,
           if (!isPrivateKeyExist) {
-            setUserData({ password, ...data?.user });
             setIsPrivateKeyNotExist(true);
             form.reset();
             return;
           }
-
-          localStorage.setItem("user", JSON.stringify(data?.user));
-          handleSuccess();
+          // if private key already exist then immediately make the api call to loginTokenApi
+          handleLoginToken();
         },
       }
     );
@@ -165,18 +185,20 @@ const Login = () => {
             <CardDescription>Please log in to continue.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {loginIsError && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  {(
-                    loginError as {
-                      response?: { data?: { message?: string } };
-                    }
-                  )?.response?.data?.message || "An error occurred"}
-                </AlertDescription>
-              </Alert>
-            )}
+            {loginIsError ||
+              (loginTokenIsError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    {(
+                      loginError ||
+                      (loginTokenError as {
+                        response?: { data?: { message?: string } };
+                      })
+                    )?.response?.data?.message || "An error occurred"}
+                  </AlertDescription>
+                </Alert>
+              ))}
 
             {isPrivateKeyNotExist ? (
               <FormField
@@ -232,9 +254,10 @@ const Login = () => {
           </CardContent>
           <CardFooter>
             <Button disabled={loginLoading}>
-              {loginLoading && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+              {loginLoading ||
+                (loginTokenLoading && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ))}
               Submit
             </Button>
           </CardFooter>
