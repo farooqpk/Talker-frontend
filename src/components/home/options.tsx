@@ -8,7 +8,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import CreateGroup from "../group/createGroup";
@@ -31,8 +30,8 @@ const Options = () => {
     useState(false);
 
   const handleLogout = () => {
-    Cookies.remove("accesstoken");
-    Cookies.remove("refreshtoken");
+    // Cookies.remove("accesstoken");
+    // Cookies.remove("refreshtoken");
     navigate("/auth");
   };
 

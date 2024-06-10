@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -38,8 +38,8 @@ const Login = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isPrivateKeyNotExist, setIsPrivateKeyNotExist] = useState(false);
-  const [userData, setUserData] = useState({} as User & { password: string });
-  const [loginToken, setLoginToken] = useState("");
+  const userDataRef = useRef({} as User & { password: string });
+  const loginTokenRef = useRef("");
 
   const loginFormSchema = z.object(
     isPrivateKeyNotExist
@@ -90,7 +90,10 @@ const Login = () => {
 
   const handleLoginToken = () => {
     loginTokenMutate(
-      { userId: userData.userId, loginToken },
+      {
+        userId: userDataRef.current?.userId,
+        loginToken: loginTokenRef.current,
+      },
       {
         onSuccess: handleSuccess,
       }
@@ -105,7 +108,7 @@ const Login = () => {
 
     const decryptedPrivateKey = await decryptPrivateKeyWithPassword({
       encryptedPrivateKey,
-      password: userData.password,
+      password: userDataRef.current?.password,
     });
 
     if (!decryptedPrivateKey) {
@@ -119,14 +122,14 @@ const Login = () => {
       decryptedPrivateKey
     );
 
-    await addValueToStoreIDB(userData.userId, privateKey);
+    await addValueToStoreIDB(userDataRef.current?.userId, privateKey);
 
     localStorage.setItem(
       "user",
       JSON.stringify({
-        userId: userData.userId,
-        username: userData.username,
-        publicKey: userData.publicKey,
+        userId: userDataRef.current?.userId,
+        username: userDataRef.current?.username,
+        publicKey: userDataRef.current?.publicKey,
       })
     );
 
@@ -154,10 +157,10 @@ const Login = () => {
           if (!data) return;
 
           // set the user data
-          setUserData({ password, ...data?.user });
+          userDataRef.current = { password, ...data?.user };
 
           // we have to keep the token
-          setLoginToken(data.loginToken);
+          loginTokenRef.current = data.loginToken;
 
           // first we have to check wether the private key exist or not
           const isPrivateKeyExist = await getValueFromStoreIDB(

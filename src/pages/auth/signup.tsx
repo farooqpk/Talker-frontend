@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -49,7 +49,7 @@ const Signup = () => {
   const navigate = useNavigate();
   const [showDownloadConfirmation, setShowDownloadConfirmation] =
     useState(false);
-  const [privateKey, setPrivateKey] = useState<JsonWebKey | null>(null);
+  const privateKeyRef = useRef<JsonWebKey | null>(null);
 
   const signupFormSchema = z.object({
     username: z
@@ -84,7 +84,7 @@ const Signup = () => {
     password,
   }: z.infer<typeof signupFormSchema>) => {
     const keys = await createAsymmetricKeys();
-    setPrivateKey(keys.privateKey);
+    privateKeyRef.current = keys.privateKey
 
     signupMutate(
       {
@@ -109,7 +109,7 @@ const Signup = () => {
 
   const handleDownloadPrivateKey = async () => {
     const encryptedPrivateKey = await encryptPrivateKeyWithPassword({
-      privateKey: privateKey as JsonWebKey,
+      privateKey: privateKeyRef.current as JsonWebKey,
       password: form.getValues("password"),
     });
     downloadDataAsFile(encryptedPrivateKey, "talker_private_key.enc");

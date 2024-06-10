@@ -1,7 +1,13 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import { io, Socket } from "socket.io-client";
-import _axios from "@/lib/_axios";
-import Cookies from "js-cookie";
+import { createAccessTokenFromRefreshToken } from "@/services/api/auth";
+import { useNavigate } from "react-router-dom";
 
 export const SocketContext = createContext<Socket | undefined>(undefined);
 
@@ -10,55 +16,46 @@ export const useSocket = () => {
 };
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
+  const navigate = useNavigate();
   const [socket, setSocket] = useState<Socket | undefined>();
-  const [accessToken] = useState<string | undefined>(
-    Cookies.get("accesstoken") || undefined
-  );
 
-  // useEffect(() => {
-  //   const accessTokenInterval = setInterval(() => {
-  //     const newAccessToken = Cookies.get("accesstoken");
-  //     if (newAccessToken !== accessToken) {
-  //       setAccessToken(newAccessToken);
-  //     }
-  //   }, 5000);
+  const connectSocket = useCallback(() => {
+    const newSocket: Socket = io(import.meta.env.VITE_API_URL, {
+      autoConnect: true,
+      withCredentials: true,
+    });
 
-  //   return () => clearInterval(accessTokenInterval);
-  // }, [accessToken]);
+    newSocket.on("connect", () => {
+      console.log("connected");
+    });
+
+    newSocket.on("disconnect", () => {
+      console.log("disconnected");
+    });
+
+    newSocket.on("unauthorized", async (reason) => {
+      console.log(reason);
+      try {
+        await createAccessTokenFromRefreshToken();
+        newSocket.connect();
+      } catch (error) {
+        console.log(error);
+        navigate("/auth");
+      }
+    });
+
+    setSocket(newSocket);
+
+    return newSocket;
+  }, [navigate]);
 
   useEffect(() => {
-    const connectSocket = () => {
-      console.log("connecting socket");
-      if (accessToken) {
-        const newSocket: Socket = io(import.meta.env.VITE_API_URL, {
-          autoConnect: true,
-          auth: {
-            token: accessToken,
-          },
-        });
+    const newSocket = connectSocket();
 
-        newSocket.on("connect", () => {
-          console.log("connected");
-        });
-
-        newSocket.on("disconnect", () => {
-          console.log("disconnected");
-        });
-
-        newSocket.on("unauthorized", (reason) => {
-          console.log(reason);
-        });
-
-        setSocket(newSocket);
-
-        return () => {
-          newSocket.close();
-        };
-      }
+    return () => {
+      newSocket.close();
     };
-
-    connectSocket();
-  }, [accessToken]);
+  }, [connectSocket]);
 
   return (
     <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
