@@ -32,7 +32,7 @@ import {
 } from "@/lib/ecrypt_decrypt";
 import { addValueToStoreIDB, getValueFromStoreIDB } from "@/lib/idb";
 import { User } from "@/types";
-import { readDataFromFile } from "@/lib/utils";
+import { readDataFromFile } from "@/lib/readDataFromFile";
 
 const Login = () => {
   const { toast } = useToast();

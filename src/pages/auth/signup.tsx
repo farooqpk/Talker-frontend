@@ -42,7 +42,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { addValueToStoreIDB } from "@/lib/idb";
-import { downloadDataAsFile } from "@/lib/utils";
+import { downloadDataAsFile } from "@/lib/downloadDataAsFile";
 
 const Signup = () => {
   const { toast } = useToast();

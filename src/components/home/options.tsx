@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { Button } from "../ui/button";
 import {
   DropdownMenu,
@@ -21,6 +21,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import ChangeUsername from "../common/ChangeUsername";
+import { useMutation } from "react-query";
+import { logoutApi } from "@/services/api/auth";
+import { useToast } from "../ui/use-toast";
 
 const Options = () => {
   const navigate = useNavigate();
@@ -28,11 +31,23 @@ const Options = () => {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isChangeUsernameModalOpen, setIsChangeUsernameModalOpen] =
     useState(false);
+  const { mutate: logoutMutate, isLoading: logoutIsLoading } =
+    useMutation(logoutApi);
+  const { toast } = useToast();
 
   const handleLogout = () => {
-    // Cookies.remove("accesstoken");
-    // Cookies.remove("refreshtoken");
-    navigate("/auth");
+    logoutMutate(
+      {},
+      {
+        onSuccess: () => {
+          toast({
+            title: "Logout Successful",
+            description: "You have been logged out successfully",
+          });
+          navigate("/auth");
+        },
+      }
+    );
   };
 
   return (
@@ -94,7 +109,11 @@ const Options = () => {
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction onClick={handleLogout}>
-                Continue
+                {logoutIsLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Logout"
+                )}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

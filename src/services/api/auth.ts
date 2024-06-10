@@ -32,3 +32,7 @@ export const createAccessTokenFromRefreshToken = async () => {
   return (await axios.post(`/api/auth/refresh`, {}, { withCredentials: true }))
     .data;
 };
+
+export const logoutApi = (data: {}) => {
+  return _axios.post(`/api/auth/logout`, data);
+};
