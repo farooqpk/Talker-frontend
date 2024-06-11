@@ -34,6 +34,14 @@ import { addValueToStoreIDB, getValueFromStoreIDB } from "@/lib/idb";
 import { User } from "@/types";
 import { readDataFromFile } from "@/lib/readDataFromFile";
 
+interface LoginError {
+  response: {
+    data: {
+      message: string;
+    };
+  };
+}
+
 const Login = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -188,20 +196,22 @@ const Login = () => {
             <CardDescription>Please log in to continue.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {loginIsError ||
-              (loginTokenIsError && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    {(
-                      loginError ||
-                      (loginTokenError as {
-                        response?: { data?: { message?: string } };
-                      })
-                    )?.response?.data?.message || "An error occurred"}
-                  </AlertDescription>
-                </Alert>
-              ))}
+            {loginIsError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  {(loginError as LoginError)?.response?.data?.message}
+                </AlertDescription>
+              </Alert>
+            )}
+            {loginTokenIsError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  {(loginTokenError as LoginError)?.response?.data?.message}
+                </AlertDescription>
+              </Alert>
+            )}
 
             {isPrivateKeyNotExist ? (
               <FormField

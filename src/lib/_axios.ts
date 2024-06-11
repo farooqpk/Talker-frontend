@@ -31,7 +31,7 @@ _axios.interceptors.response.use(
         return _axios(originalRequest);
       } catch (refreshError) {
         localStorage.removeItem("user");
-        window.location.href = "/login";
+        window.location.href = "/auth";
         return Promise.reject(refreshError);
       }
     }

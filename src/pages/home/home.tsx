@@ -1,4 +1,4 @@
-import { MessageType } from "@/types/index";
+import { ContentType, MessageType } from "@/types/index";
 import HomeHeader from "@/components/home/header";
 import { HomeList } from "@/components/home/homeList";
 import { useGetUser } from "@/hooks/useGetUser";
@@ -27,20 +27,32 @@ export const Home = (): ReactElement => {
 
       const privateKey = await getValueFromStoreIDB(user.userId);
 
+      if (!privateKey) return;
+
       const decryptedDataPromises = data?.map(async (chat: any) => {
         const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
+
         if (chat?.messages?.[0] && !chat.messages[0].isDeleted) {
-          if (chat.messages[0].contentType === "TEXT") {
-            chat.messages[0].content = await decryptMessage(
-              chat.messages[0].content,
-              encryptedChatKey,
-              privateKey!,
-              "TEXT"
-            );
-          } else if (chat.messages[0].contentType === "AUDIO") {
-            chat.messages[0].content = "audio...";
-          } else if (chat.messages[0].contentType === "IMAGE") {
-            chat.messages[0].content = "image...";
+          switch (chat.messages[0].contentType) {
+            case ContentType.TEXT:
+              chat.messages[0].text = (await decryptMessage(
+                chat.messages[0].content,
+                encryptedChatKey,
+                privateKey!,
+                ContentType.TEXT
+              )) as string;
+              break;
+
+            case ContentType.AUDIO:
+              chat.messages[0].text = "audio...";
+              break;
+
+            case ContentType.IMAGE:
+              chat.messages[0].text = "image...";
+              break;
+
+            default:
+              break;
           }
         }
         return chat;
@@ -83,17 +95,26 @@ export const Home = (): ReactElement => {
       const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
       const privateKey = await getValueFromStoreIDB(user.userId);
 
-      if (message.contentType === "TEXT") {
-        message.content = await decryptMessage(
-          message?.content!,
-          encryptedChatKey!,
-          privateKey!,
-          "TEXT"
-        );
-      } else if (message.contentType === "AUDIO") {
-        message.content = "audio...";
-      } else if (message.contentType === "IMAGE") {
-        message.content = "image...";
+      switch (message.contentType) {
+        case ContentType.TEXT:
+          message.text = (await decryptMessage(
+            message?.content!,
+            encryptedChatKey,
+            privateKey!,
+            ContentType.TEXT
+          )) as string;
+          break;
+
+        case ContentType.AUDIO:
+          message.text = "audio...";
+          break;
+
+        case ContentType.IMAGE:
+          message.text = "image...";
+          break;
+
+        default:
+          break;
       }
 
       setChatData((prev) => {

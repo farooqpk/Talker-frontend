@@ -82,7 +82,7 @@ const CreateGroup = ({
 
     let encryptedChatKeyForUsers: Array<{
       userId: string;
-      encryptedKey: string;
+      encryptedKey: ArrayBuffer;
     }> = [];
 
     const [membersPublicKeys, chatKey] = await Promise.all([

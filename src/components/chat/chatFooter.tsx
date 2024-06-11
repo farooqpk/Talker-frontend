@@ -8,10 +8,11 @@ import { useEffect, useRef } from "react";
 import { Input } from "../ui/input";
 import { useToast } from "../ui/use-toast";
 import imageCompression from "browser-image-compression";
+import { ContentType } from "@/types";
 
 type Props = {
   handleTyping: (value: string) => void;
-  handleSendMessage: (type: "TEXT" | "AUDIO" | "IMAGE", imgBlob?: Blob) => void;
+  handleSendMessage: (type: ContentType, imgBlob?: Blob) => void;
   typedText: string;
   isRecording: boolean;
   startRecoring: () => void;
@@ -19,7 +20,7 @@ type Props = {
   recordingTime: number;
 };
 
-export default function ChatFooter ({
+export default function ChatFooter({
   handleTyping,
   handleSendMessage,
   typedText,
@@ -44,7 +45,7 @@ export default function ChatFooter ({
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault(); // Prevents adding a new line
-      typedText.length > 0 && handleSendMessage("TEXT");
+      typedText.length > 0 && handleSendMessage(ContentType.TEXT);
     }
   };
 
@@ -70,7 +71,7 @@ export default function ChatFooter ({
         maxWidthOrHeight: 1000,
       });
 
-      handleSendMessage("IMAGE", compressedFile);
+      handleSendMessage(ContentType.IMAGE, compressedFile);
     } catch (error) {
       toast({
         title: "Error",
@@ -78,7 +79,7 @@ export default function ChatFooter ({
         variant: "destructive",
       });
     }
-  }; 
+  };
 
   useEffect(() => {
     console.log(recordingTime);
@@ -136,7 +137,7 @@ export default function ChatFooter ({
           variant="ghost"
           size="icon"
           className="rounded-full p-2"
-          onClick={() => handleSendMessage("TEXT")}
+          onClick={() => handleSendMessage(ContentType.TEXT)}
         >
           <SendHorizontal />
         </Button>
@@ -157,4 +158,4 @@ export default function ChatFooter ({
       )}
     </section>
   );
-};
+}

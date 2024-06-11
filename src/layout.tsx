@@ -3,9 +3,8 @@ import Auth from "./pages/auth/auth";
 import { Home } from "./pages/home/home";
 import { VerifyRoute } from "./components/auth/verifyRoute";
 import { SocketLayout } from "./components/socketLayout/socketLayout";
-import { lazy } from "react";
-const PrivateChat = lazy(() => import("./pages/privateChat/privateChatHome"));
-const GroupChat = lazy(() => import("./pages/groupChat/groupChatHome"));
+import PrivateChat from "./pages/privateChat/privateChatHome";
+import GroupChat from "./pages/groupChat/groupChatHome";
 
 const Layout = () => {
   return (

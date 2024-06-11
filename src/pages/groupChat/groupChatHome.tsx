@@ -4,7 +4,7 @@ import { useGetUser } from "@/hooks/useGetUser";
 import { decryptMessage, encryptMessage } from "@/lib/ecrypt_decrypt";
 import { getMessagesApi } from "@/services/api/chat";
 import { getGroupDetailsApi } from "@/services/api/group";
-import { ReactElement, lazy, useEffect, useRef, useState } from "react";
+import { ReactElement, useEffect, useRef, useState } from "react";
 import { useAudioRecorder } from "react-audio-voice-recorder";
 import { useQuery } from "react-query";
 import { useNavigate, useParams } from "react-router-dom";
@@ -12,10 +12,10 @@ import { useToast } from "@/components/ui/use-toast";
 import msgRecieveSound from "../../assets/Pocket.mp3";
 import msgSendSound from "../../assets/Solo.mp3";
 import { getValueFromStoreIDB } from "@/lib/idb";
-const ChatContent = lazy(() => import("@/components/chat/chatContent"));
-const ChatFooter = lazy(()=> import("@/components/chat/chatFooter"));
-const ChatHeader = lazy(() => import("@/components/chat/chatHeader"));
-const Loader = lazy(() => import("@/components/loader"));
+import ChatContent from "@/components/chat/chatContent";
+import ChatFooter from "@/components/chat/chatFooter";
+import ChatHeader from "@/components/chat/chatHeader";
+import Loader from "@/components/loader";
 
 export default function GroupChat(): ReactElement {
   const { id } = useParams();
@@ -29,7 +29,7 @@ export default function GroupChat(): ReactElement {
     recordingBlob,
     recordingTime,
   } = useAudioRecorder();
-  const encryptedChatKeyRef = useRef<string>("");
+  const encryptedChatKeyRef = useRef<ArrayBuffer | undefined>(undefined);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useGetUser();
@@ -57,33 +57,42 @@ export default function GroupChat(): ReactElement {
     onSuccess: async (data: MessageType[]) => {
       if (!data || !user) return;
 
-      const privateKey = await getValueFromStoreIDB(user.userId)
+      const privateKey = await getValueFromStoreIDB(user.userId);
+
+      if (!privateKey) return;
 
       const decryptedData = await Promise.all(
         data.map(async (message) => {
           if (message.isDeleted) return message;
 
-          if (message.contentType === "TEXT") {
-            message.content = await decryptMessage(
-              message?.content!,
-              encryptedChatKeyRef.current!,
-              privateKey,
-              "TEXT"
-            );
-          } else if (message.contentType === "AUDIO") {
-            message.audio = await decryptMessage(
-              message?.content!,
-              encryptedChatKeyRef.current!,
-              privateKey,
-              "AUDIO"
-            );
-          } else if (message.contentType === "IMAGE") {
-            message.image = await decryptMessage(
-              message?.content!,
-              encryptedChatKeyRef.current!,
-              privateKey,
-              "IMAGE"
-            );
+          switch (message.contentType) {
+            case ContentType.TEXT:
+              message.text = (await decryptMessage(
+                message?.content!,
+                encryptedChatKeyRef.current!,
+                privateKey,
+                ContentType.TEXT
+              )) as string;
+              break;
+            case ContentType.IMAGE:
+              message.image = (await decryptMessage(
+                message?.content!,
+                encryptedChatKeyRef.current!,
+                privateKey,
+                ContentType.IMAGE
+              )) as Blob;
+              break;
+            case ContentType.AUDIO:
+              message.audio = (await decryptMessage(
+                message?.content!,
+                encryptedChatKeyRef.current!,
+                privateKey,
+                ContentType.AUDIO
+              )) as Blob;
+              break;
+
+              default:
+                break;
           }
 
           return message;
@@ -101,7 +110,7 @@ export default function GroupChat(): ReactElement {
   const handleSendMessage = async (type: ContentType, imgBlob?: Blob) => {
     if (!socket || !encryptedChatKeyRef.current || !user) return;
 
-    const privateKey = await getValueFromStoreIDB(user.userId)
+    const privateKey = await getValueFromStoreIDB(user.userId);
 
     sendMessageLoadingRef.current = true;
 
@@ -131,33 +140,40 @@ export default function GroupChat(): ReactElement {
   };
 
   useEffect(() => {
-    if (!socket || !id || !encryptedChatKeyRef.current ||!user) return;
+    if (!socket || !id || !encryptedChatKeyRef.current || !user) return;
 
     const recieveMessage = async ({ message }: { message: MessageType }) => {
+      const privateKey = await getValueFromStoreIDB(user.userId);
+      if (!privateKey) return;
 
-      const privateKey = await getValueFromStoreIDB(user.userId)
+      switch (message.contentType) {
+        case ContentType.TEXT:
+          message.text = (await decryptMessage(
+            message?.content!,
+            encryptedChatKeyRef.current!,
+            privateKey,
+            ContentType.TEXT
+          )) as string;
+          break;
+        case ContentType.IMAGE:
+          message.image = (await decryptMessage(
+            message?.content!,
+            encryptedChatKeyRef.current!,
+            privateKey,
+            ContentType.IMAGE
+          )) as Blob;
+          break;
+        case ContentType.AUDIO:
+          message.audio = (await decryptMessage(
+            message?.content!,
+            encryptedChatKeyRef.current!,
+            privateKey,
+            ContentType.AUDIO
+          )) as Blob;
+          break;
 
-      if (message.contentType === "TEXT") {
-        message.content = await decryptMessage(
-          message?.content!,
-          encryptedChatKeyRef.current!,
-          privateKey!,
-          "TEXT"
-        );
-      } else if (message.contentType === "AUDIO") {
-        message.audio = await decryptMessage(
-          message?.content!,
-          encryptedChatKeyRef.current!,
-          privateKey!,
-          "AUDIO"
-        );
-      } else if (message.contentType === "IMAGE") {
-        message.image = await decryptMessage(
-          message?.content!,
-          encryptedChatKeyRef.current!,
-          privateKey!,
-          "IMAGE"
-        );
+          default:
+            break;
       }
 
       setMessages((prev) => [...prev, message]);
@@ -217,13 +233,13 @@ export default function GroupChat(): ReactElement {
       socket.off("exitGroup", exitGroupReceiver);
       socket.off("updateGroupDetails", updateGroupDetailsReceiver);
     };
-  }, [id, socket, encryptedChatKeyRef.current,user]);
+  }, [id, socket, encryptedChatKeyRef.current, user]);
 
   useEffect(() => {
     if (!recordingBlob) return;
     const sendAudioMessage = async () => {
       try {
-        await handleSendMessage("AUDIO");
+        await handleSendMessage(ContentType.AUDIO);
       } catch (error) {
         toast({
           title: "Error sending audio message",

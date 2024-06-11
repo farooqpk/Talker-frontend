@@ -1,11 +1,9 @@
 import { ContentType } from "@/types";
-import CryptoJS from "crypto-js";
 
 export const createAsymmetricKeys = async (): Promise<{
   publicKey: JsonWebKey;
   privateKey: JsonWebKey;
 }> => {
-  // Generate a new key pair
   const keys = await crypto.subtle.generateKey(
     {
       name: "RSA-OAEP",
@@ -26,7 +24,7 @@ export const createAsymmetricKeys = async (): Promise<{
   return { privateKey, publicKey };
 };
 
-export const createSymetricKey = async () => {
+export const createSymetricKey = async (): Promise<ArrayBuffer> => {
   const key = await crypto.subtle.generateKey(
     {
       name: "AES-GCM",
@@ -42,7 +40,7 @@ export const createSymetricKey = async () => {
 export const encryptSymetricKeyWithPublicKey = async (
   symetricKey: ArrayBuffer,
   publicKey: string
-): Promise<string> => {
+): Promise<ArrayBuffer> => {
   try {
     const importedPublicKey = await crypto.subtle.importKey(
       "jwk",
@@ -63,89 +61,114 @@ export const encryptSymetricKeyWithPublicKey = async (
       symetricKey
     );
 
-    return btoa(String.fromCharCode(...new Uint8Array(encryptedSymetricKey)));
+    return encryptedSymetricKey;
   } catch (error: any) {
     throw new Error("Error encrypting message: " + error);
   }
 };
 
 export const decryptSymetricKeyWithPrivateKey = async (
-  encryptedSymetricKey: string,
+  encryptedSymetricKey: ArrayBuffer,
   privateKey: CryptoKey
-): Promise<string> => {
+): Promise<CryptoKey> => {
   try {
     const decryptedSymetricKey = await crypto.subtle.decrypt(
       {
         name: "RSA-OAEP",
       },
       privateKey,
-      Uint8Array.from(atob(encryptedSymetricKey), (c) => c.charCodeAt(0))
+      encryptedSymetricKey
     );
 
-    return new TextDecoder().decode(new Uint8Array(decryptedSymetricKey));
+    const importedSymetricKey = await crypto.subtle.importKey(
+      "raw",
+      decryptedSymetricKey,
+      {
+        name: "AES-GCM",
+        length: 128,
+      },
+      true,
+      ["encrypt", "decrypt"]
+    );
+
+    return importedSymetricKey;
   } catch (error: any) {
-    console.log(error);
     throw new Error(error);
   }
 };
 
 export const decryptMessage = async (
-  encryptedMessage: string,
-  encryptedSymetricKey: string,
+  encryptedMessage: ArrayBuffer,
+  encryptedSymetricKey: ArrayBuffer,
   privateKey: CryptoKey,
   contentType: ContentType
-): Promise<any> => {
+): Promise<string | Blob> => {
   try {
     const decryptedSymetricKey = await decryptSymetricKeyWithPrivateKey(
       encryptedSymetricKey,
       privateKey
     );
-    // decrypt encrypted message to WordArray
-    const decryptedData = CryptoJS.AES.decrypt(
-      encryptedMessage,
-      decryptedSymetricKey
+
+    const decryptedBuffer = await crypto.subtle.decrypt(
+      {
+        name: "AES-GCM",
+      },
+      decryptedSymetricKey,
+      encryptedMessage
     );
 
-    if (contentType === "AUDIO" || contentType === "IMAGE") {
-      // Convert WordArray to Uint8Array
-      const uint8Array = new Uint8Array(decryptedData.words.length * 4);
-      let offset = 0;
-      for (let i = 0; i < decryptedData.words.length; i++) {
-        const word = decryptedData.words[i];
-        uint8Array[offset++] = word >> 24;
-        uint8Array[offset++] = (word >> 16) & 0xff;
-        uint8Array[offset++] = (word >> 8) & 0xff;
-        uint8Array[offset++] = word & 0xff;
-      }
+    let decryptedData: Blob | string = "";
 
-      // Create Blob from Uint8Array
-      return new Blob([uint8Array], {
-        type: contentType === "AUDIO" ? "audio/webm;codecs=opus" : "image/webp",
-      });
-    } else if (contentType === "TEXT") {
-      //convert WordArray to string
-      return decryptedData.toString(CryptoJS.enc.Utf8) as string;
+    switch (contentType) {
+      case ContentType.TEXT:
+        decryptedData = new TextDecoder().decode(decryptedBuffer);
+        break;
+      case ContentType.AUDIO:
+        // create blob from arraybuffer
+        decryptedData = new Blob([decryptedBuffer], {
+          type: "audio/webm;codecs=opus",
+        });
+        break;
+      case ContentType.IMAGE:
+        // create blob from arraybuffer
+        decryptedData = new Blob([decryptedBuffer], {
+          type: "image/webp",
+        });
+        break;
+
+      default:
+        break;
     }
+
+    return decryptedData;
   } catch (error) {
-    console.log(error);
     throw new Error("Error decrypting message: " + error);
   }
 };
 
 export const encryptMessage = async (
   message: string | Blob,
-  encryptedSymetricKey: string,
+  encryptedSymetricKey: ArrayBuffer,
   privateKey: CryptoKey
-): Promise<string | Object> => {
+): Promise<ArrayBuffer> => {
   try {
     const decryptedSymetricKey = await decryptSymetricKeyWithPrivateKey(
       encryptedSymetricKey!,
       privateKey!
     );
 
+    let encryptedMessageBuffer: ArrayBuffer;
+
     if (typeof message === "string") {
       // Encrypt string message
-      return CryptoJS.AES.encrypt(message, decryptedSymetricKey).toString();
+      const messageBuffer = new TextEncoder().encode(message);
+      encryptedMessageBuffer = await crypto.subtle.encrypt(
+        {
+          name: "AES-GCM",
+        },
+        decryptedSymetricKey,
+        messageBuffer
+      );
     } else {
       // Encrypt Blob message
       const reader = new FileReader();
@@ -157,32 +180,27 @@ export const encryptMessage = async (
         reader.onerror = reject;
       });
 
-      const wordArray = CryptoJS.lib.WordArray.create(
-        reader.result as ArrayBuffer
-      );
-      const cipherParams = CryptoJS.AES.encrypt(
-        wordArray,
-        decryptedSymetricKey
-      );
+      const readerResult = reader.result;
 
-      return extractEncryptionData(cipherParams);
-      // return JSON.stringify(extractEncryptionData(cipherParams));
+      if (!readerResult) {
+        throw new Error("Error reading file");
+      }
+
+      encryptedMessageBuffer = await crypto.subtle.encrypt(
+        {
+          name: "AES-GCM",
+        },
+        decryptedSymetricKey,
+        readerResult as ArrayBuffer
+      );
     }
+
+    return encryptedMessageBuffer;
   } catch (error) {
     console.log(error);
     throw new Error("Error encrypting message: " + error);
   }
 };
-
-function extractEncryptionData(cipherParams: any) {
-  const necessaryData = {
-    ciphertext: cipherParams.ciphertext.words,
-    key: cipherParams.key.words,
-    iv: cipherParams.iv.words,
-    keySize: cipherParams.algorithm.keySize,
-  };
-  return necessaryData;
-}
 
 export const encryptPrivateKeyWithPassword = async ({
   privateKey,

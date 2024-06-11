@@ -29,8 +29,13 @@ export const loginTokenApi = async (data: {
 };
 
 export const createAccessTokenFromRefreshToken = async () => {
-  return (await axios.post(`/api/auth/refresh`, {}, { withCredentials: true }))
-    .data;
+  return (
+    await axios.post(
+      `${import.meta.env.VITE_API_URL}/api/auth/refresh`,
+      {},
+      { withCredentials: true }
+    )
+  ).data;
 };
 
 export const logoutApi = (data: {}) => {

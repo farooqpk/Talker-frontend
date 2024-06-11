@@ -8,8 +8,9 @@ export type MessageType = {
   messageId: string;
   chatId: string;
   senderId: string;
-  contentType: string;
-  content: string;
+  contentType: ContentType;
+  content: ArrayBuffer;
+  text?: string;
   audio?: Blob;
   image?: Blob;
   createdAt: string;
@@ -23,7 +24,12 @@ export type User = {
   publicKey: string;
 };
 
-export type ContentType = "TEXT" | "AUDIO" | "IMAGE";
+// export type ContentType = "TEXT" | "AUDIO" | "IMAGE";
+export enum ContentType {
+  TEXT = "TEXT",
+  AUDIO = "AUDIO",
+  IMAGE = "IMAGE",
+}
 
 export type Option = {
   label: string;

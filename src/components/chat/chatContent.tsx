@@ -1,6 +1,6 @@
 import { useGetUser } from "@/hooks/useGetUser";
 import Container from "../Container";
-import { MessageType } from "../../types";
+import { ContentType, MessageType } from "../../types";
 import { formateDate } from "@/lib/format-date";
 import { ReactElement, useEffect, useRef, useState } from "react";
 import { Pause, Play, Trash2, X } from "lucide-react";
@@ -134,11 +134,11 @@ export default function ChatContent({
                   <p className="text-sm text-muted-foreground font-semibold">
                     This message was deleted
                   </p>
-                ) : msg.contentType === "TEXT" ? (
+                ) : msg.contentType === ContentType.TEXT ? (
                   <p className="text-sm text-muted-foreground font-semibold">
-                    {msg.content}
+                    {msg.text}
                   </p>
-                ) : msg.contentType === "AUDIO" ? (
+                ) : msg.contentType === ContentType.AUDIO ? (
                   <div className="flex gap-3 p-3">
                     {isPlaying[msg?.messageId!!] ? (
                       <Pause
@@ -161,7 +161,7 @@ export default function ChatContent({
                     )}
                     <p>audio..</p>
                   </div>
-                ) : msg.contentType === "IMAGE" ? (
+                ) : msg.contentType === ContentType.IMAGE ? (
                   <div className="md:h-48 ">
                     <img
                       src={URL.createObjectURL(msg.image as Blob)}
@@ -235,4 +235,4 @@ export default function ChatContent({
       )}
     </Container>
   );
-};
+}

@@ -3,7 +3,6 @@ import React, {
   useContext,
   useEffect,
   useState,
-  useCallback,
 } from "react";
 import { io, Socket } from "socket.io-client";
 import { createAccessTokenFromRefreshToken } from "@/services/api/auth";
@@ -19,7 +18,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const [socket, setSocket] = useState<Socket | undefined>();
 
-  const connectSocket = useCallback(() => {
+  const connectSocket = () => {
     const newSocket: Socket = io(import.meta.env.VITE_API_URL, {
       autoConnect: true,
       withCredentials: true,
@@ -45,9 +44,10 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     setSocket(newSocket);
+   
 
     return newSocket;
-  }, [navigate]);
+  };
 
   useEffect(() => {
     const newSocket = connectSocket();
@@ -55,7 +55,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       newSocket.close();
     };
-  }, [connectSocket]);
+  }, []);
 
   return (
     <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
