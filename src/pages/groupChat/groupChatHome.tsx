@@ -1,4 +1,4 @@
-import { ContentType, MessageType } from "@/types/index";
+import { ContentType, MessageType, SocketEvents } from "@/types/index";
 import { useSocket } from "@/context/socketProvider";
 import { useGetUser } from "@/hooks/useGetUser";
 import { decryptMessage, encryptMessage } from "@/lib/ecrypt_decrypt";
@@ -128,7 +128,7 @@ export default function GroupChat(): ReactElement {
       encryptedChatKeyRef.current!,
       privateKey!
     );
-    socket.emit("sendMessageForGroup", {
+    socket.emit(SocketEvents.SEND_GROUP_MESSAGE, {
       groupId: id,
       message: {
         content: encryptedMessage,
@@ -205,7 +205,7 @@ export default function GroupChat(): ReactElement {
       groupId: string;
     }) => {
       if (isExitByAdmin || exitedUserId === user?.userId) {
-        socket?.emit("leaveGroup", { groupIds: [groupId] });
+        socket?.emit(SocketEvents.LEAVE_GROUP, { groupIds: [groupId] });
         navigate("/");
         toast({
           description:
@@ -220,18 +220,18 @@ export default function GroupChat(): ReactElement {
       refetchGroup();
     };
 
-    socket?.on("sendMessageForGroup", recieveMessage);
-    socket?.emit("joinGroup", { groupIds: [id] });
-    socket.on("deleteMessage", deleteMessageReceiver);
-    socket.on("exitGroup", exitGroupReceiver);
-    socket.on("updateGroupDetails", updateGroupDetailsReceiver);
+    socket?.on(SocketEvents.SEND_GROUP_MESSAGE, recieveMessage);
+    socket?.emit(SocketEvents.JOIN_GROUP, { groupIds: [id] });
+    socket.on(SocketEvents.DELETE_MESSAGE, deleteMessageReceiver);
+    socket.on(SocketEvents.EXIT_GROUP, exitGroupReceiver);
+    socket.on(SocketEvents.UPDATE_GROUP_DETAILS, updateGroupDetailsReceiver);
 
     return () => {
-      socket?.off("sendMessageForGroup", recieveMessage);
-      socket?.emit("leaveGroup", { groupIds: [id] });
-      socket.off("deleteMessage", recieveMessage);
-      socket.off("exitGroup", exitGroupReceiver);
-      socket.off("updateGroupDetails", updateGroupDetailsReceiver);
+      socket?.off(SocketEvents.SEND_GROUP_MESSAGE, recieveMessage);
+      socket?.emit(SocketEvents.LEAVE_GROUP, { groupIds: [id] });
+      socket.off(SocketEvents.DELETE_MESSAGE, recieveMessage);
+      socket.off(SocketEvents.EXIT_GROUP, exitGroupReceiver);
+      socket.off(SocketEvents.UPDATE_GROUP_DETAILS, updateGroupDetailsReceiver);
     };
   }, [id, socket, encryptedChatKeyRef.current, user]);
 
@@ -252,7 +252,7 @@ export default function GroupChat(): ReactElement {
 
   const handleDeleteMsg = (msgId: string) => {
     if (!socket) return;
-    socket.emit("deleteMessage", {
+    socket.emit(SocketEvents.DELETE_MESSAGE, {
       messageId: msgId,
       groupId: id,
       isGroup: true,
@@ -261,7 +261,7 @@ export default function GroupChat(): ReactElement {
 
   const handleExitGroup = () => {
     if (!socket) return;
-    socket.emit("exitGroup", {
+    socket.emit(SocketEvents.EXIT_GROUP, {
       groupId: id,
     });
   };
@@ -270,7 +270,7 @@ export default function GroupChat(): ReactElement {
     name?: string;
     description?: string;
   }) => {
-    socket?.emit("updateGroupDetails", { groupId: id, ...data });
+    socket?.emit(SocketEvents.UPDATE_GROUP_DETAILS, { groupId: id, ...data });
   };
 
   return (

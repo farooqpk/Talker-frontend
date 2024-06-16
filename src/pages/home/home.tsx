@@ -1,4 +1,4 @@
-import { ContentType, MessageType } from "@/types/index";
+import { ContentType, MessageType, SocketEvents } from "@/types/index";
 import HomeHeader from "@/components/home/header";
 import { HomeList } from "@/components/home/homeList";
 import { useGetUser } from "@/hooks/useGetUser";
@@ -38,7 +38,7 @@ export const Home = (): ReactElement => {
               chat.messages[0].text = (await decryptMessage(
                 chat.messages[0].content,
                 encryptedChatKey,
-                privateKey!,
+                privateKey,
                 ContentType.TEXT
               )) as string;
               break;
@@ -158,45 +158,45 @@ export const Home = (): ReactElement => {
       isExitByAdmin: boolean;
     }) => {
       if (isExitByAdmin) {
-        socket?.emit("leaveGroup", { groupIds: [groupId] });
+        socket?.emit(SocketEvents.LEAVE_GROUP, { groupIds: [groupId] });
         setChatData((prev) =>
           prev.filter((item) => item?.Group?.[0]?.groupId !== groupId)
         );
       }
     };
 
-    socket?.emit("joinGroup", { groupIds });
+    socket?.emit(SocketEvents.JOIN_GROUP, { groupIds });
 
-    socket?.on("isTyping", handleIsTyping);
+    socket?.on(SocketEvents.IS_TYPING, handleIsTyping);
 
-    socket?.on("isNotTyping", handleIsNotTyping);
+    socket?.on(SocketEvents.IS_NOT_TYPING, handleIsNotTyping);
 
-    socket?.on("sendMessageForGroup", handleRecieveMessage);
+    socket?.on(SocketEvents.SEND_GROUP_MESSAGE, handleRecieveMessage);
 
-    socket?.on("sendPrivateMessage", handleRecieveMessage);
+    socket?.on(SocketEvents.SEND_PRIVATE_MESSAGE, handleRecieveMessage);
 
-    socket?.on("deleteMessage", handleDeleteMessage);
+    socket?.on(SocketEvents.DELETE_MESSAGE, handleDeleteMessage);
 
-    socket?.on("groupCreated", handleGroupCreated);
+    socket?.on(SocketEvents.GROUP_CREATED, handleGroupCreated);
 
-    socket.on("exitGroup", handleExitGroup);
+    socket.on(SocketEvents.EXIT_GROUP, handleExitGroup);
 
     return () => {
-      socket?.off("isTyping", handleIsTyping);
+      socket?.off(SocketEvents.IS_TYPING, handleIsTyping);
 
-      socket?.off("isNotTyping", handleIsNotTyping);
+      socket?.off(SocketEvents.IS_NOT_TYPING, handleIsNotTyping);
 
-      socket?.off("sendMessageForGroup", handleRecieveMessage);
+      socket?.off(SocketEvents.SEND_GROUP_MESSAGE, handleRecieveMessage);
 
-      socket?.off("sendPrivateMessage", handleRecieveMessage);
+      socket?.off(SocketEvents.SEND_PRIVATE_MESSAGE, handleRecieveMessage);
 
-      socket?.emit("leaveGroup", { groupIds });
+      socket?.emit(SocketEvents.LEAVE_GROUP, { groupIds });
 
-      socket?.off("deleteMessage", handleDeleteMessage);
+      socket?.off(SocketEvents.DELETE_MESSAGE, handleDeleteMessage);
 
-      socket?.off("groupCreated", handleGroupCreated);
+      socket?.off(SocketEvents.GROUP_CREATED, handleGroupCreated);
 
-      socket.off("exitGroup", handleExitGroup);
+      socket.off(SocketEvents.EXIT_GROUP, handleExitGroup);
     };
   }, [socket, chatData, user]);
 

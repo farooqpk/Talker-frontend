@@ -189,6 +189,7 @@ export const encryptMessage = async (
       encryptedMessageBuffer = await crypto.subtle.encrypt(
         {
           name: "AES-GCM",
+          iv: new Uint8Array(12),
         },
         decryptedSymetricKey,
         readerResult as ArrayBuffer

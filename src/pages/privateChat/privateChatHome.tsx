@@ -4,8 +4,18 @@ import { useQuery } from "react-query";
 import { findUserApi } from "@/services/api/user";
 import { useSocket } from "@/context/socketProvider";
 import { useEffect, useState } from "react";
-import { ContentType, MessageType, UserStatusEnum } from "@/types/index";
-import { getChatKeyApi, getMessagesApi } from "@/services/api/chat";
+import {
+  ContentType,
+  MessageType,
+  SocketEvents,
+  UserStatusEnum,
+} from "@/types/index";
+import {
+  getChatKeyApi,
+  getMessagesApi,
+  getSignedUrlApi,
+  uploadToSignedUrlApi,
+} from "@/services/api/chat";
 import {
   createSymetricKey,
   decryptMessage,
@@ -98,8 +108,8 @@ export default function PrivateChat(): ReactElement {
               )) as Blob;
               break;
 
-              default:
-                break;
+            default:
+              break;
           }
 
           return message;
@@ -113,9 +123,9 @@ export default function PrivateChat(): ReactElement {
     if (!socket) return;
     setTypedText(value);
     if (value.length > 0) {
-      socket.emit("isTyping", { toUserId: id });
+      socket.emit(SocketEvents.IS_TYPING, { toUserId: id });
     } else {
-      socket.emit("isNotTyping", { toUserId: id });
+      socket.emit(SocketEvents.IS_NOT_TYPING, { toUserId: id });
     }
   };
 
@@ -166,11 +176,11 @@ export default function PrivateChat(): ReactElement {
     }
 
     const chatContent =
-      type === "TEXT"
+      type === ContentType.TEXT
         ? typedText
-        : type === "IMAGE"
+        : type === ContentType.IMAGE
         ? imgBlob!
-        : type === "AUDIO"
+        : type === ContentType.AUDIO
         ? recordingBlob!
         : "";
 
@@ -186,17 +196,33 @@ export default function PrivateChat(): ReactElement {
       privateKey
     );
 
-    socket.emit("sendPrivateMessage", {
+    let uploadedPath: string | null = null;
+
+    if (type !== ContentType.TEXT) {
+      const { url, uniqueKey } = await getSignedUrlApi({
+        filesize: encryptedMessage.byteLength,
+      });
+
+      uploadedPath = uniqueKey;
+
+      await uploadToSignedUrlApi({
+        content: encryptedMessage,
+        url,
+      });
+    }
+
+    socket.emit(SocketEvents.SEND_PRIVATE_MESSAGE, {
       recipientId: id,
       message: {
-        content: encryptedMessage,
+        content: type === ContentType.TEXT && encryptedMessage,
         contentType: type,
+        mediaPath: type !== ContentType.TEXT && uploadedPath,
       },
       encryptedChatKey: !isChatAlreadyExist && encryptedChatKeyForUsers,
     });
 
     setTypedText("");
-    socket.emit("isNotTyping", { toUserId: id });
+    socket.emit(SocketEvents.IS_NOT_TYPING, { toUserId: id });
   };
 
   useEffect(() => {
@@ -284,8 +310,8 @@ export default function PrivateChat(): ReactElement {
           )) as Blob;
           break;
 
-          default:
-            break;
+        default:
+          break;
       }
 
       setMessages((prev) => [...prev, message]);
@@ -309,30 +335,30 @@ export default function PrivateChat(): ReactElement {
       );
     };
 
-    socket.emit("isOnline", id);
+    socket.emit(SocketEvents.IS_ONLINE, id);
 
-    socket.on("isOnline", handleIsOnline);
+    socket.on(SocketEvents.IS_ONLINE, handleIsOnline);
 
-    socket.on("isDisconnected", handleIsDisconnected);
+    socket.on(SocketEvents.IS_DISCONNECTED, handleIsDisconnected);
 
-    socket.on("isConnected", handleIsConnected);
+    socket.on(SocketEvents.IS_CONNECTED, handleIsConnected);
 
-    socket.on("isTyping", handleIsTyping);
+    socket.on(SocketEvents.IS_TYPING, handleIsTyping);
 
-    socket.on("isNotTyping", handleIsNotTyping);
+    socket.on(SocketEvents.IS_NOT_TYPING, handleIsNotTyping);
 
-    socket.on("sendPrivateMessage", handleRecieveMessage);
+    socket.on(SocketEvents.SEND_PRIVATE_MESSAGE, handleRecieveMessage);
 
-    socket.on("deleteMessage", handleDeleteMessage);
+    socket.on(SocketEvents.DELETE_MESSAGE, handleDeleteMessage);
 
     return () => {
-      socket.off("isOnline", handleIsOnline);
-      socket.off("isDisconnected", handleIsDisconnected);
-      socket.off("isConnected", handleIsConnected);
-      socket.off("isTyping", handleIsTyping);
-      socket.off("isNotTyping", handleIsNotTyping);
-      socket.off("sendPrivateMessage", handleRecieveMessage);
-      socket.off("deleteMessage", handleDeleteMessage);
+      socket.off(SocketEvents.IS_ONLINE, handleIsOnline);
+      socket.off(SocketEvents.IS_DISCONNECTED, handleIsDisconnected);
+      socket.off(SocketEvents.IS_CONNECTED, handleIsConnected);
+      socket.off(SocketEvents.IS_TYPING, handleIsTyping);
+      socket.off(SocketEvents.IS_NOT_TYPING, handleIsNotTyping);
+      socket.off(SocketEvents.SEND_PRIVATE_MESSAGE, handleRecieveMessage);
+      socket.off(SocketEvents.DELETE_MESSAGE, handleDeleteMessage);
     };
   }, [id, socket, encryptedChatKeyRef.current]);
 
@@ -355,7 +381,10 @@ export default function PrivateChat(): ReactElement {
 
   const handleDeleteMsg = (msgId: string) => {
     if (!socket) return;
-    socket.emit("deleteMessage", { messageId: msgId, recipientId: id });
+    socket.emit(SocketEvents.DELETE_MESSAGE, {
+      messageId: msgId,
+      recipientId: id,
+    });
   };
 
   return (
