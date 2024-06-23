@@ -12,6 +12,7 @@ import {
 } from "@/types/index";
 import {
   getChatKeyApi,
+  getMediaApi,
   getMessagesApi,
   getSignedUrlApi,
   uploadToSignedUrlApi,
@@ -218,8 +219,6 @@ export default function PrivateChat(): ReactElement {
         content: encryptedMessage,
         url,
       });
-
-      console.log(url);
     }
 
     // convert message to base64 for sending to server
@@ -394,6 +393,55 @@ export default function PrivateChat(): ReactElement {
     });
   };
 
+  const handleGetMedia = async (
+    mediapath: string,
+    type: ContentType,
+    messageId: string
+  ) => {
+    if (!user) return;
+
+    const privateKey = await getValueFromStoreIDB(user.userId);
+    if (!privateKey) return;
+
+    const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
+      encryptedChatKeyRef.current!,
+      privateKey
+    );
+
+    const selectedMsg = messages.find((item) => item.messageId === messageId);
+    if (!selectedMsg) return;
+
+    const arrayBuffer = await getMediaApi(mediapath);
+    console.log(arrayBuffer);
+
+    switch (type) {
+      case ContentType.IMAGE:
+        selectedMsg.image = (await decryptMessage(
+          arrayBuffer,
+          decryptedChatKey,
+          ContentType.IMAGE
+        )) as Blob;
+        break;
+      case ContentType.AUDIO:
+        selectedMsg.audio = (await decryptMessage(
+          arrayBuffer,
+          decryptedChatKey,
+          ContentType.AUDIO
+        )) as Blob;
+        break;
+
+      default:
+        break;
+    }
+
+    // set selected message in state with updated media
+    setMessages((prev) =>
+      prev.map((item) =>
+        item.messageId === messageId ? { ...item, ...selectedMsg } : item
+      )
+    );
+  };
+
   return (
     <>
       <main className="flex flex-col h-full">
@@ -415,6 +463,7 @@ export default function PrivateChat(): ReactElement {
               messages={messages}
               handleDeleteMsg={handleDeleteMsg}
               sendMessageLoadingRef={sendMessageLoadingRef}
+              handleGetMedia={handleGetMedia}
             />
 
             <ChatFooter

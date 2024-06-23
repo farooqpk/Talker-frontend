@@ -21,12 +21,18 @@ type Props = {
   messages: MessageType[];
   handleDeleteMsg: (id: string) => void;
   sendMessageLoadingRef: React.MutableRefObject<boolean>;
+  handleGetMedia: (
+    mediapath: string,
+    type: ContentType,
+    messageId: string
+  ) => void;
 };
 
 export default function ChatContent({
   messages,
   handleDeleteMsg,
   sendMessageLoadingRef,
+  handleGetMedia,
 }: Props): ReactElement {
   const { user } = useGetUser();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -140,11 +146,21 @@ export default function ChatContent({
                     {
                       // if not downloaded
                       !msg.audio ? (
-                        <IconButton icon={<ArrowDown />} className="w-8 h-8" />
+                        <IconButton
+                          icon={<ArrowDown />}
+                          className="w-8 h-8 "
+                          onClick={() =>
+                            handleGetMedia(
+                              msg?.mediaPath as string,
+                              ContentType.AUDIO,
+                              msg.messageId
+                            )
+                          }
+                        />
                       ) : isPlaying[msg?.messageId!!] ? (
                         <IconButton
                           icon={<Pause />}
-                          className="w-8 h-8"
+                          className="w-9 h-9"
                           onClick={() =>
                             handleAudio(
                               msg?.messageId!!,
@@ -156,7 +172,7 @@ export default function ChatContent({
                       ) : (
                         <IconButton
                           icon={<Play />}
-                          className="w-8 h-8"
+                          className="w-9 h-9"
                           onClick={() =>
                             handleAudio(
                               msg?.messageId!!,
@@ -178,6 +194,13 @@ export default function ChatContent({
                           <IconButton
                             icon={<ArrowDown />}
                             className="w-8 h-8"
+                            onClick={() =>
+                              handleGetMedia(
+                                msg?.mediaPath as string,
+                                ContentType.IMAGE,
+                                msg.messageId
+                              )
+                            }
                           />
                           <p>Image..</p>
                         </div>

@@ -30,3 +30,13 @@ export const getSignedUrlApi = async (data: {
 }): Promise<{ url: string; uniqueKey: string }> => {
   return (await _axios.post("/api/chat/get-signed-url", data)).data;
 };
+
+export const getMediaApi = async (mediapath: string): Promise<ArrayBuffer> => {
+  const res = await _axios.get(`/api/message/get-media/${mediapath}`, {
+    responseType: "arraybuffer",
+    headers: {
+      Accept: "application/octet-stream",
+    },
+  });
+  return res.data;
+};
