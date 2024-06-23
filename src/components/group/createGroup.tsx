@@ -27,12 +27,16 @@ import {
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createSymetricKey, encryptSymetricKeyWithPublicKey } from "@/lib/ecrypt_decrypt";
+import {
+  createSymetricKey,
+  encryptSymetricKeyWithPublicKey,
+} from "@/lib/ecrypt_decrypt";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { useGetUser } from "@/hooks/useGetUser";
 import { toast } from "../ui/use-toast";
 import { getUsersForSearch } from "@/services/api/search";
 import { Option } from "../../types/index";
+import { encode as arrayBufferToBase64 } from "base64-arraybuffer";
 
 const formSchema = z.object({
   groupName: z
@@ -82,7 +86,7 @@ const CreateGroup = ({
 
     let encryptedChatKeyForUsers: Array<{
       userId: string;
-      encryptedKey: ArrayBuffer;
+      encryptedKey: string;
     }> = [];
 
     const [membersPublicKeys, chatKey] = await Promise.all([
@@ -97,9 +101,11 @@ const CreateGroup = ({
           item.publicKey
         );
 
+        const encryptedChatKeyBase64 = arrayBufferToBase64(encryptedChatKey);
+
         encryptedChatKeyForUsers.push({
           userId: item.userId,
-          encryptedKey: encryptedChatKey,
+          encryptedKey: encryptedChatKeyBase64,
         });
       })
     );

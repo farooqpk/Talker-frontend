@@ -43,7 +43,7 @@ export const HomeList = ({
                     {chats?.messages[0]?.isDeleted
                       ? truncateMessage("This message was deleted")
                       : truncateMessage(
-                          chats?.messages[0]?.content ||
+                          chats?.messages[0]?.text ||
                             chats?.Group?.[0]?.description
                         )}
                   </span>

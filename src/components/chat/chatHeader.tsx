@@ -36,6 +36,7 @@ import { getUsersForSearch } from "@/services/api/search";
 import { Input } from "@/components/ui/input";
 import { Option } from "../../types/index";
 import { useQuery } from "react-query";
+import { IconButton } from "../IconButton";
 
 export default function ChatHeader({
   groupDetails,
@@ -54,7 +55,7 @@ export default function ChatHeader({
     name?: string;
     description?: string;
   }) => void;
-}){
+}) {
   const { user } = useGetUser();
   const [isExitGroupModalOpen, setIsExitGroupModalOpen] = useState(false);
   const [isGroupNameEdit, setIsGroupNameEdit] = useState(false);
@@ -89,9 +90,7 @@ export default function ChatHeader({
       {isGroup ? (
         <div className="flex items-center p-3 border-b rounded-xl">
           <Link to={`/`} className="absolute">
-            <Button variant={"outline"} size={"icon"}>
-              <ArrowLeft />
-            </Button>
+            <IconButton icon={<ArrowLeft />} className="w-8 h-8" />
           </Link>
 
           <Sheet
@@ -122,23 +121,23 @@ export default function ChatHeader({
                         onChange={(e) => setGroupName(e.target.value)}
                       />
 
-                      <Button
-                        variant={"ghost"}
-                        size={"icon"}
+                      <IconButton
                         disabled={groupName.trim()?.length < 3}
+                        className="w-10 h-8 border-none"
                         onClick={() => {
                           setIsGroupNameEdit(!isGroupNameEdit);
                           if (isGroupNameEdit) {
                             handleUpdateGroupDetails?.({ name: groupName });
                           }
                         }}
-                      >
-                        {isGroupNameEdit ? (
-                          <Save size={17} />
-                        ) : (
-                          <Pencil size={17} />
-                        )}
-                      </Button>
+                        icon={
+                          isGroupNameEdit ? (
+                            <Save size={17} />
+                          ) : (
+                            <Pencil size={17} />
+                          )
+                        }
+                      />
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -149,9 +148,8 @@ export default function ChatHeader({
                         onChange={(e) => setGroupDescription(e.target.value)}
                       />
 
-                      <Button
-                        variant={"ghost"}
-                        size={"icon"}
+                      <IconButton
+                        className="w-10 h-8 border-none"
                         disabled={groupDescription.trim()?.length < 1}
                         onClick={() => {
                           setIsGroupDiscEdit(!isGroupDiscEdit);
@@ -161,13 +159,14 @@ export default function ChatHeader({
                             });
                           }
                         }}
-                      >
-                        {isGroupDiscEdit ? (
-                          <Save size={17} />
-                        ) : (
-                          <Pencil size={17} />
-                        )}
-                      </Button>
+                        icon={
+                          isGroupDiscEdit ? (
+                            <Save size={17} />
+                          ) : (
+                            <Pencil size={17} />
+                          )
+                        }
+                      />
                     </div>
                   </>
                 ) : (
@@ -276,13 +275,10 @@ export default function ChatHeader({
                       </Link>
                       {user?.userId === groupDetails?.adminId &&
                         participant?.user?.userId !== user?.userId && (
-                          <Button
-                            variant={"outline"}
-                            className="rounded-full"
-                            size={"icon"}
-                          >
-                            <Trash2 color="red" className="w-5 h-5" />
-                          </Button>
+                          <IconButton
+                            className="w-8 h-8 border-none"
+                            icon={<Trash2 color="red" className="w-5 h-5" />}
+                          />
                         )}
                     </div>
                   ))}
@@ -305,9 +301,7 @@ export default function ChatHeader({
       ) : (
         <div className="flex items-center p-3 rounded-xl border-b ">
           <Link to={`/`} className="absolute">
-            <Button variant={"outline"} size={"icon"}>
-              <ArrowLeft />
-            </Button>
+            <IconButton icon={<ArrowLeft />} className="w-8 h-8" />
           </Link>
           <div className="flex flex-col md:gap-2 mx-auto">
             <p className="text-lg truncate font-semibold">
@@ -343,4 +337,4 @@ export default function ChatHeader({
       )}
     </>
   );
-};
+}

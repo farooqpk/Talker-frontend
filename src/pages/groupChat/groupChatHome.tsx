@@ -1,8 +1,16 @@
 import { ContentType, MessageType, SocketEvents } from "@/types/index";
 import { useSocket } from "@/context/socketProvider";
 import { useGetUser } from "@/hooks/useGetUser";
-import { decryptMessage, encryptMessage } from "@/lib/ecrypt_decrypt";
-import { getMessagesApi } from "@/services/api/chat";
+import {
+  decryptMessage,
+  decryptSymetricKeyWithPrivateKey,
+  encryptMessage,
+} from "@/lib/ecrypt_decrypt";
+import {
+  getMessagesApi,
+  getSignedUrlApi,
+  uploadToSignedUrlApi,
+} from "@/services/api/chat";
 import { getGroupDetailsApi } from "@/services/api/group";
 import { ReactElement, useEffect, useRef, useState } from "react";
 import { useAudioRecorder } from "react-audio-voice-recorder";
@@ -16,6 +24,10 @@ import ChatContent from "@/components/chat/chatContent";
 import ChatFooter from "@/components/chat/chatFooter";
 import ChatHeader from "@/components/chat/chatHeader";
 import Loader from "@/components/loader";
+import {
+  decode as base64ToArrayBuffer,
+  encode as arrayBufferToBase64,
+} from "base64-arraybuffer";
 
 export default function GroupChat(): ReactElement {
   const { id } = useParams();
@@ -45,7 +57,9 @@ export default function GroupChat(): ReactElement {
     enabled: !!id,
     onSuccess: (data) => {
       if (data) {
-        encryptedChatKeyRef.current = data?.Chat?.ChatKey?.[0]?.encryptedKey;
+        const encryptedKey = data?.Chat?.ChatKey?.[0]?.encryptedKey;
+        const encryptedKeyArrayBuffer = base64ToArrayBuffer(encryptedKey);
+        encryptedChatKeyRef.current = encryptedKeyArrayBuffer;
       }
     },
   });
@@ -67,32 +81,37 @@ export default function GroupChat(): ReactElement {
 
           switch (message.contentType) {
             case ContentType.TEXT:
-              message.text = (await decryptMessage(
-                message?.content!,
+              const textArrayBuffer = base64ToArrayBuffer(message?.content!);
+
+              const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
                 encryptedChatKeyRef.current!,
-                privateKey,
+                privateKey
+              );
+              message.text = (await decryptMessage(
+                textArrayBuffer,
+                decryptedChatKey,
                 ContentType.TEXT
               )) as string;
               break;
             case ContentType.IMAGE:
-              message.image = (await decryptMessage(
-                message?.content!,
-                encryptedChatKeyRef.current!,
-                privateKey,
-                ContentType.IMAGE
-              )) as Blob;
+              // message.image = (await decryptMessage(
+              //   message?.content!,
+              //   encryptedChatKeyRef.current!,
+              //   privateKey,
+              //   ContentType.IMAGE
+              // )) as Blob;
               break;
             case ContentType.AUDIO:
-              message.audio = (await decryptMessage(
-                message?.content!,
-                encryptedChatKeyRef.current!,
-                privateKey,
-                ContentType.AUDIO
-              )) as Blob;
+              // message.audio = (await decryptMessage(
+              //   message?.content!,
+              //   encryptedChatKeyRef.current!,
+              //   privateKey,
+              //   ContentType.AUDIO
+              // )) as Blob;
               break;
 
-              default:
-                break;
+            default:
+              break;
           }
 
           return message;
@@ -123,16 +142,43 @@ export default function GroupChat(): ReactElement {
         ? recordingBlob!
         : "";
 
-    const encryptedMessage = await encryptMessage(
-      chatContent,
+    const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
       encryptedChatKeyRef.current!,
       privateKey!
     );
+
+    const encryptedMessage = await encryptMessage(
+      chatContent,
+      decryptedChatKey
+    );
+
+    let uploadedPath: string | null = null;
+
+    if (type !== ContentType.TEXT) {
+      const { url, uniqueKey } = await getSignedUrlApi({
+        filesize: encryptedMessage.byteLength,
+      });
+
+      uploadedPath = uniqueKey;
+
+      await uploadToSignedUrlApi({
+        content: encryptedMessage,
+        url,
+      });
+
+      console.log(url);
+    }
+
+    // convert message to base64 for sending to server
+    const encryptedMessageBase64 =
+      type === ContentType.TEXT ? arrayBufferToBase64(encryptedMessage) : null;
+
     socket.emit(SocketEvents.SEND_GROUP_MESSAGE, {
       groupId: id,
       message: {
-        content: encryptedMessage,
+        content: type === ContentType.TEXT ? encryptedMessageBase64 : null,
         contentType: type,
+        mediaPath: type !== ContentType.TEXT ? uploadedPath : null,
       },
     });
 
@@ -148,32 +194,38 @@ export default function GroupChat(): ReactElement {
 
       switch (message.contentType) {
         case ContentType.TEXT:
-          message.text = (await decryptMessage(
-            message?.content!,
+          const textArrayBuffer = base64ToArrayBuffer(message?.content!);
+
+          const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
             encryptedChatKeyRef.current!,
-            privateKey,
+            privateKey
+          );
+
+          message.text = (await decryptMessage(
+            textArrayBuffer,
+            decryptedChatKey,
             ContentType.TEXT
           )) as string;
           break;
         case ContentType.IMAGE:
-          message.image = (await decryptMessage(
-            message?.content!,
-            encryptedChatKeyRef.current!,
-            privateKey,
-            ContentType.IMAGE
-          )) as Blob;
+          // message.image = (await decryptMessage(
+          //   message?.content!,
+          //   encryptedChatKeyRef.current!,
+          //   privateKey,
+          //   ContentType.IMAGE
+          // )) as Blob;
           break;
         case ContentType.AUDIO:
-          message.audio = (await decryptMessage(
-            message?.content!,
-            encryptedChatKeyRef.current!,
-            privateKey,
-            ContentType.AUDIO
-          )) as Blob;
+          // message.audio = (await decryptMessage(
+          //   message?.content!,
+          //   encryptedChatKeyRef.current!,
+          //   privateKey,
+          //   ContentType.AUDIO
+          // )) as Blob;
           break;
 
-          default:
-            break;
+        default:
+          break;
       }
 
       setMessages((prev) => [...prev, message]);
@@ -283,13 +335,11 @@ export default function GroupChat(): ReactElement {
             <ChatHeader
               groupDetails={groupDetails}
               isGroup
-              key={`${id}+4`}
               handleExitGroup={handleExitGroup}
               handleUpdateGroupDetails={handleUpdateGroupDetails}
             />
             <ChatContent
               messages={messages}
-              key={`${id}+5`}
               handleDeleteMsg={handleDeleteMsg}
               sendMessageLoadingRef={sendMessageLoadingRef}
             />
@@ -301,7 +351,6 @@ export default function GroupChat(): ReactElement {
               startRecoring={startRecording}
               stopRecording={stopRecording}
               recordingTime={recordingTime}
-              key={`${id}+6`}
             />
           </>
         )}

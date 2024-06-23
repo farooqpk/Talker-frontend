@@ -1,5 +1,4 @@
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "../ui/button";
 import { Disc, ImageUp, Mic, SendHorizontal, Smile } from "lucide-react";
 import { Theme } from "emoji-picker-react";
 import EmojiPicker from "emoji-picker-react";
@@ -9,6 +8,7 @@ import { Input } from "../ui/input";
 import { useToast } from "../ui/use-toast";
 import imageCompression from "browser-image-compression";
 import { ContentType } from "@/types";
+import { IconButton } from "../IconButton";
 
 type Props = {
   handleTyping: (value: string) => void;
@@ -89,9 +89,7 @@ export default function ChatFooter({
     <section className="flex gap-1 md:gap-4 items-center px-5 md:px-24 relative">
       <Dialog>
         <DialogTrigger>
-          <Button variant="ghost" size="icon" className="rounded-full p-2">
-            <Smile />
-          </Button>
+          <IconButton icon={<Smile />} className="p-2 border-none" />
         </DialogTrigger>
         <DialogContent className="bg-background border-none">
           <EmojiPicker
@@ -115,14 +113,11 @@ export default function ChatFooter({
         onKeyDown={handleKeyDown}
       />
 
-      <Button
-        variant="ghost"
-        size="icon"
-        className="rounded-full p-2"
+      <IconButton
+        icon={<ImageUp />}
+        className="p-2 border-none"
         onClick={() => uploadInputRef.current?.click()}
-      >
-        <ImageUp />
-      </Button>
+      />
 
       <Input
         type="file"
@@ -133,28 +128,26 @@ export default function ChatFooter({
       />
 
       {typedText.trim().length > 0 ? (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full p-2"
+        <IconButton
+          icon={<SendHorizontal />}
+          className="p-2 border-none"
           onClick={() => handleSendMessage(ContentType.TEXT)}
-        >
-          <SendHorizontal />
-        </Button>
+        />
       ) : (
-        <Button variant="ghost" size="icon" className="rounded-full p-2">
-          {isRecording ? (
-            <>
+        <IconButton
+          className="p-2 border-none"
+          icon={
+            isRecording ? (
               <Disc
                 onClick={stopRecording}
                 className="animate-pulse"
                 color="red"
               />
-            </>
-          ) : (
-            <Mic onClick={startRecoring} />
-          )}
-        </Button>
+            ) : (
+              <Mic onClick={startRecoring} />
+            )
+          }
+        />
       )}
     </section>
   );

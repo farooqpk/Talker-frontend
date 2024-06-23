@@ -3,7 +3,7 @@ import Container from "../Container";
 import { ContentType, MessageType } from "../../types";
 import { formateDate } from "@/lib/format-date";
 import { ReactElement, useEffect, useRef, useState } from "react";
-import { Pause, Play, Trash2, X } from "lucide-react";
+import { ArrowDown, Pause, Play, Trash2, X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,8 +14,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "../ui/button";
 import { ThreeDots } from "react-loader-spinner";
+import { IconButton } from "../IconButton";
 
 type Props = {
   messages: MessageType[];
@@ -33,18 +33,16 @@ export default function ChatContent({
   const [isDeleteMsg, setIsDeleteMsg] = useState<boolean>(false);
   const [deleteMsgId, setDeleteMsgId] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [audioPlayers, setAudioPlayers] = useState<
+    Record<string, HTMLAudioElement>
+  >({});
+  const [isPlaying, setIsPlaying] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, sendMessageLoadingRef.current]);
-
-  const [audioPlayers, setAudioPlayers] = useState<
-    Record<string, HTMLAudioElement>
-  >({});
-
-  const [isPlaying, setIsPlaying] = useState<Record<string, boolean>>({});
 
   const handleAudio = (audioId: string, audioBlob: Blob, isPlay: boolean) => {
     if (isPlay) {
@@ -117,10 +115,9 @@ export default function ChatContent({
                 }`}</h3>
 
                 {msg.senderId === user?.userId && !msg.isDeleted && (
-                  <Trash2
-                    size={16}
-                    color="red"
-                    className="cursor-pointer"
+                  <IconButton
+                    icon={<Trash2 color="red" size={18} />}
+                    className="w-8 h-8"
                     onClick={() => {
                       setDeleteMsgId(msg.messageId);
                       setIsDeleteMsg(true);
@@ -139,38 +136,66 @@ export default function ChatContent({
                     {msg.text}
                   </p>
                 ) : msg.contentType === ContentType.AUDIO ? (
-                  <div className="flex gap-3 p-3">
-                    {isPlaying[msg?.messageId!!] ? (
-                      <Pause
-                        className="cursor-pointer"
-                        onClick={() =>
-                          handleAudio(
-                            msg?.messageId!!,
-                            msg.audio as Blob,
-                            false
-                          )
-                        }
-                      />
-                    ) : (
-                      <Play
-                        className="cursor-pointer"
-                        onClick={() =>
-                          handleAudio(msg?.messageId!!, msg.audio as Blob, true)
-                        }
-                      />
-                    )}
-                    <p>audio..</p>
+                  <div className="flex gap-3 p-3 items-center">
+                    {
+                      // if not downloaded
+                      !msg.audio ? (
+                        <IconButton icon={<ArrowDown />} className="w-8 h-8" />
+                      ) : isPlaying[msg?.messageId!!] ? (
+                        <IconButton
+                          icon={<Pause />}
+                          className="w-8 h-8"
+                          onClick={() =>
+                            handleAudio(
+                              msg?.messageId!!,
+                              msg.audio as Blob,
+                              false
+                            )
+                          }
+                        />
+                      ) : (
+                        <IconButton
+                          icon={<Play />}
+                          className="w-8 h-8"
+                          onClick={() =>
+                            handleAudio(
+                              msg?.messageId!!,
+                              msg.audio as Blob,
+                              true
+                            )
+                          }
+                        />
+                      )
+                    }
+                    <p>Audio..</p>
                   </div>
                 ) : msg.contentType === ContentType.IMAGE ? (
-                  <div className="md:h-48 ">
-                    <img
-                      src={URL.createObjectURL(msg.image as Blob)}
-                      alt="Image"
-                      className="object-contain w-full h-full cursor-pointer"
-                      onClick={() =>
-                        setLightboxImage(URL.createObjectURL(msg.image as Blob))
-                      }
-                    />
+                  <div>
+                    {
+                      // if not downloaded
+                      !msg.image ? (
+                        <div className="flex gap-3 p-3 items-center">
+                          <IconButton
+                            icon={<ArrowDown />}
+                            className="w-8 h-8"
+                          />
+                          <p>Image..</p>
+                        </div>
+                      ) : (
+                        <div className="md:h-48 ">
+                          <img
+                            src={URL.createObjectURL(msg.image as Blob)}
+                            alt="Image"
+                            className="object-contain w-full h-full cursor-pointer"
+                            onClick={() =>
+                              setLightboxImage(
+                                URL.createObjectURL(msg.image as Blob)
+                              )
+                            }
+                          />
+                        </div>
+                      )
+                    }
                   </div>
                 ) : null}
               </div>
@@ -199,14 +224,11 @@ export default function ChatContent({
             alt="Lightbox Image"
             className="max-w-full max-h-full"
           />
-          <Button
-            className="absolute top-4 right-4 rounded-full"
-            size={"icon"}
-            variant={"outline"}
+          <IconButton
+            icon={<X />}
+            className="absolute top-4 right-4 rounded-full w-10 h-10"
             onClick={() => setLightboxImage(null)}
-          >
-            <X />
-          </Button>
+          />
         </div>
       )}
 
