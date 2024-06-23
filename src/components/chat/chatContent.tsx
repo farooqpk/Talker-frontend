@@ -3,7 +3,7 @@ import Container from "../Container";
 import { ContentType, MessageType } from "../../types";
 import { formateDate } from "@/lib/format-date";
 import { ReactElement, useEffect, useRef, useState } from "react";
-import { ArrowDown, Pause, Play, Trash2, X } from "lucide-react";
+import { ArrowDown, Loader2, Pause, Play, Trash2, X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +26,10 @@ type Props = {
     type: ContentType,
     messageId: string
   ) => void;
+  getMediaLoading: {
+    messageId: string;
+    loading: boolean;
+  };
 };
 
 export default function ChatContent({
@@ -33,6 +37,7 @@ export default function ChatContent({
   handleDeleteMsg,
   sendMessageLoadingRef,
   handleGetMedia,
+  getMediaLoading,
 }: Props): ReactElement {
   const { user } = useGetUser();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -147,7 +152,14 @@ export default function ChatContent({
                       // if not downloaded
                       !msg.audio ? (
                         <IconButton
-                          icon={<ArrowDown />}
+                          icon={
+                            getMediaLoading?.messageId === msg?.messageId &&
+                            getMediaLoading.loading ? (
+                              <Loader2 className="animate-spin" />
+                            ) : (
+                              <ArrowDown />
+                            )
+                          }
                           className="w-8 h-8 "
                           onClick={() =>
                             handleGetMedia(
@@ -155,6 +167,10 @@ export default function ChatContent({
                               ContentType.AUDIO,
                               msg.messageId
                             )
+                          }
+                          disabled={
+                            getMediaLoading?.messageId === msg?.messageId &&
+                            getMediaLoading.loading
                           }
                         />
                       ) : isPlaying[msg?.messageId!!] ? (
@@ -192,7 +208,14 @@ export default function ChatContent({
                       !msg.image ? (
                         <div className="flex gap-3 p-3 items-center">
                           <IconButton
-                            icon={<ArrowDown />}
+                            icon={
+                              getMediaLoading?.messageId === msg?.messageId &&
+                              getMediaLoading.loading ? (
+                                <Loader2 className="animate-spin" />
+                              ) : (
+                                <ArrowDown />
+                              )
+                            }
                             className="w-8 h-8"
                             onClick={() =>
                               handleGetMedia(
@@ -200,6 +223,10 @@ export default function ChatContent({
                                 ContentType.IMAGE,
                                 msg.messageId
                               )
+                            }
+                            disabled={
+                              getMediaLoading?.messageId === msg?.messageId &&
+                              getMediaLoading.loading
                             }
                           />
                           <p>Image..</p>

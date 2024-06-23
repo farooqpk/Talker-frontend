@@ -58,6 +58,10 @@ export default function PrivateChat(): ReactElement {
   const encryptedChatKeyRef = useRef<ArrayBuffer | undefined>(undefined);
   const { toast } = useToast();
   const sendMessageLoadingRef = useRef<boolean>(false);
+  const [getMediaLoading, setGetMediaLoading] = useState<{
+    messageId: string;
+    loading: boolean;
+  }>({ messageId: "", loading: false });
 
   const { data: recipient, isLoading } = useQuery({
     queryKey: ["userquery", id],
@@ -400,6 +404,8 @@ export default function PrivateChat(): ReactElement {
   ) => {
     if (!user) return;
 
+    setGetMediaLoading((prev) => ({ ...prev, messageId, loading: true }));
+
     const privateKey = await getValueFromStoreIDB(user.userId);
     if (!privateKey) return;
 
@@ -412,7 +418,6 @@ export default function PrivateChat(): ReactElement {
     if (!selectedMsg) return;
 
     const arrayBuffer = await getMediaApi(mediapath);
-    console.log(arrayBuffer);
 
     switch (type) {
       case ContentType.IMAGE:
@@ -440,6 +445,8 @@ export default function PrivateChat(): ReactElement {
         item.messageId === messageId ? { ...item, ...selectedMsg } : item
       )
     );
+
+    setGetMediaLoading((prev) => ({ ...prev, messageId, loading: false }));
   };
 
   return (
@@ -464,6 +471,7 @@ export default function PrivateChat(): ReactElement {
               handleDeleteMsg={handleDeleteMsg}
               sendMessageLoadingRef={sendMessageLoadingRef}
               handleGetMedia={handleGetMedia}
+              getMediaLoading={getMediaLoading}
             />
 
             <ChatFooter
