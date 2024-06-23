@@ -19,6 +19,7 @@ import {
 import {
   createSymetricKey,
   decryptMessage,
+  decryptSymetricKeyWithPrivateKey,
   encryptMessage,
   encryptSymetricKeyWithPublicKey,
 } from "@/lib/ecrypt_decrypt";
@@ -32,6 +33,10 @@ import ChatContent from "@/components/chat/chatContent";
 import ChatFooter from "@/components/chat/chatFooter";
 import ChatHeader from "@/components/chat/chatHeader";
 import Loader from "@/components/loader";
+import {
+  decode as base64ToArrayBuffer,
+  encode as arrayBufferToBase64,
+} from "base64-arraybuffer";
 
 export default function PrivateChat(): ReactElement {
   const { id } = useParams();
@@ -62,8 +67,11 @@ export default function PrivateChat(): ReactElement {
     queryKey: ["chatKeyquery", recipient?.chatId],
     enabled: !!recipient?.chatId,
     queryFn: () => getChatKeyApi(recipient?.chatId!),
-    onSuccess: (data) => {
-      if (data) encryptedChatKeyRef.current = data?.encryptedKey;
+    onSuccess: (encryptedKey: string) => {
+      if (encryptedKey) {
+        const encryptedKeyArrayBuffer = base64ToArrayBuffer(encryptedKey);
+        encryptedChatKeyRef.current = encryptedKeyArrayBuffer;
+      }
     },
   });
 
@@ -84,28 +92,35 @@ export default function PrivateChat(): ReactElement {
 
           switch (message.contentType) {
             case ContentType.TEXT:
-              message.text = (await decryptMessage(
-                message?.content!,
+              const textArrayBuffer = base64ToArrayBuffer(message?.content!);
+
+              const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
                 encryptedChatKeyRef.current!,
-                privateKey,
+                privateKey
+              );
+
+              message.text = (await decryptMessage(
+                textArrayBuffer,
+                decryptedChatKey,
                 ContentType.TEXT
               )) as string;
+
               break;
             case ContentType.AUDIO:
-              message.audio = (await decryptMessage(
-                message?.content!,
-                encryptedChatKeyRef.current!,
-                privateKey,
-                ContentType.AUDIO
-              )) as Blob;
+              // message.audio = (await decryptMessage(
+              //   message?.content!,
+              //   encryptedChatKeyRef.current!,
+              //   privateKey,
+              //   ContentType.AUDIO
+              // )) as Blob;
               break;
             case ContentType.IMAGE:
-              message.image = (await decryptMessage(
-                message?.content!,
-                encryptedChatKeyRef.current!,
-                privateKey,
-                ContentType.IMAGE
-              )) as Blob;
+              // message.image = (await decryptMessage(
+              //   message?.content!,
+              //   encryptedChatKeyRef.current!,
+              //   privateKey,
+              //   ContentType.IMAGE
+              // )) as Blob;
               break;
 
             default:
@@ -135,6 +150,7 @@ export default function PrivateChat(): ReactElement {
     const privateKey: CryptoKey = await getValueFromStoreIDB(user.userId);
     if (!privateKey) return;
 
+    // for loading....
     sendMessageLoadingRef.current = true;
 
     const isChatAlreadyExist = recipient?.chatId;
@@ -142,6 +158,11 @@ export default function PrivateChat(): ReactElement {
     let encryptedChatKeyForUsers: Array<{
       userId: string;
       encryptedKey: ArrayBuffer;
+    }> = [];
+
+    let encryptedChatKeyForUsersBase64: Array<{
+      userId: string;
+      encryptedKey: string;
     }> = [];
 
     let ourOwnEncryptedChatKey: ArrayBuffer | undefined;
@@ -164,6 +185,12 @@ export default function PrivateChat(): ReactElement {
           encryptedChatKeyForUsers.push({
             userId: item.userId,
             encryptedKey,
+          });
+
+          // keeping this for sending to server as base64
+          encryptedChatKeyForUsersBase64.push({
+            userId: item.userId,
+            encryptedKey: arrayBufferToBase64(encryptedKey),
           });
         })
       );
@@ -190,10 +217,14 @@ export default function PrivateChat(): ReactElement {
 
     if (!chatKey) return;
 
+    const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
+      chatKey!,
+      privateKey!
+    );
+
     const encryptedMessage = await encryptMessage(
       chatContent,
-      chatKey,
-      privateKey
+      decryptedChatKey
     );
 
     let uploadedPath: string | null = null;
@@ -209,18 +240,27 @@ export default function PrivateChat(): ReactElement {
         content: encryptedMessage,
         url,
       });
+
+      console.log(url);
     }
+
+    // convert message to base64 for sending to server
+    const encryptedMessageBase64 =
+      type === ContentType.TEXT ? arrayBufferToBase64(encryptedMessage) : null;
 
     socket.emit(SocketEvents.SEND_PRIVATE_MESSAGE, {
       recipientId: id,
       message: {
-        content: type === ContentType.TEXT && encryptedMessage,
+        content: type === ContentType.TEXT ? encryptedMessageBase64 : null,
         contentType: type,
-        mediaPath: type !== ContentType.TEXT && uploadedPath,
+        mediaPath: type !== ContentType.TEXT ? uploadedPath : null,
       },
-      encryptedChatKey: !isChatAlreadyExist && encryptedChatKeyForUsers,
+      encryptedChatKey: !isChatAlreadyExist
+        ? encryptedChatKeyForUsersBase64
+        : null,
     });
 
+    // Reset the input field and typing indicator
     setTypedText("");
     socket.emit(SocketEvents.IS_NOT_TYPING, { toUserId: id });
   };
@@ -270,7 +310,7 @@ export default function PrivateChat(): ReactElement {
       message: MessageType & {
         encryptedChatKeys?: Array<{
           userId: string;
-          encryptedKey: ArrayBuffer;
+          encryptedKey: string;
         }>;
       };
     }) => {
@@ -281,33 +321,44 @@ export default function PrivateChat(): ReactElement {
         const encryptedKey = message.encryptedChatKeys.find(
           (item) => item.userId === user?.userId
         )?.encryptedKey;
-        encryptedChatKeyRef.current = encryptedKey!;
+
+        // convert this encryptedKey(base64) to ArrayBuffer
+        const encryptedKeyArrayBuffer = base64ToArrayBuffer(encryptedKey!);
+
+        encryptedChatKeyRef.current = encryptedKeyArrayBuffer!;
       }
 
       switch (message.contentType) {
         case ContentType.TEXT:
-          message.text = (await decryptMessage(
-            message?.content!,
+          const textArrayBuffer = base64ToArrayBuffer(message?.content!);
+
+          const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
             encryptedChatKeyRef.current!,
-            privateKey,
+            privateKey
+          );
+
+          message.text = (await decryptMessage(
+            textArrayBuffer,
+            decryptedChatKey,
             ContentType.TEXT
           )) as string;
+
           break;
         case ContentType.AUDIO:
-          message.audio = (await decryptMessage(
-            message?.content!,
-            encryptedChatKeyRef.current!,
-            privateKey,
-            ContentType.AUDIO
-          )) as Blob;
+          // message.audio = (await decryptMessage(
+          //   message?.content!,
+          //   encryptedChatKeyRef.current!,
+          //   privateKey,
+          //   ContentType.AUDIO
+          // )) as Blob;
           break;
         case ContentType.IMAGE:
-          message.image = (await decryptMessage(
-            message?.content!,
-            encryptedChatKeyRef.current!,
-            privateKey,
-            ContentType.IMAGE
-          )) as Blob;
+          // message.image = (await decryptMessage(
+          //   message?.content!,
+          //   encryptedChatKeyRef.current!,
+          //   privateKey,
+          //   ContentType.IMAGE
+          // )) as Blob;
           break;
 
         default:

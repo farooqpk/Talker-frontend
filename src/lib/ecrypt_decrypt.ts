@@ -93,27 +93,22 @@ export const decryptSymetricKeyWithPrivateKey = async (
 
     return importedSymetricKey;
   } catch (error: any) {
-    throw new Error(error);
+    throw new Error("Error decrypting symetric key: " + error);
   }
 };
 
 export const decryptMessage = async (
   encryptedMessage: ArrayBuffer,
-  encryptedSymetricKey: ArrayBuffer,
-  privateKey: CryptoKey,
+  symetricKey: CryptoKey,
   contentType: ContentType
 ): Promise<string | Blob> => {
   try {
-    const decryptedSymetricKey = await decryptSymetricKeyWithPrivateKey(
-      encryptedSymetricKey,
-      privateKey
-    );
-
     const decryptedBuffer = await crypto.subtle.decrypt(
       {
         name: "AES-GCM",
+        iv: new Uint8Array(12),
       },
-      decryptedSymetricKey,
+      symetricKey,
       encryptedMessage
     );
 
@@ -148,15 +143,9 @@ export const decryptMessage = async (
 
 export const encryptMessage = async (
   message: string | Blob,
-  encryptedSymetricKey: ArrayBuffer,
-  privateKey: CryptoKey
+  symetricKey: CryptoKey
 ): Promise<ArrayBuffer> => {
   try {
-    const decryptedSymetricKey = await decryptSymetricKeyWithPrivateKey(
-      encryptedSymetricKey!,
-      privateKey!
-    );
-
     let encryptedMessageBuffer: ArrayBuffer;
 
     if (typeof message === "string") {
@@ -165,8 +154,9 @@ export const encryptMessage = async (
       encryptedMessageBuffer = await crypto.subtle.encrypt(
         {
           name: "AES-GCM",
+          iv: new Uint8Array(12),
         },
-        decryptedSymetricKey,
+        symetricKey,
         messageBuffer
       );
     } else {
@@ -191,7 +181,7 @@ export const encryptMessage = async (
           name: "AES-GCM",
           iv: new Uint8Array(12),
         },
-        decryptedSymetricKey,
+        symetricKey,
         readerResult as ArrayBuffer
       );
     }

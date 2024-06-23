@@ -76,7 +76,7 @@ export const HomeList = ({
                     <span className="text-muted-foreground text-sm">
                       {chats?.messages[0]?.isDeleted
                         ? truncateMessage("This message was deleted")
-                        : truncateMessage(chats?.messages[0]?.content)}
+                        : truncateMessage(chats?.messages[0]?.text)}
                     </span>
                   )}
                 </div>

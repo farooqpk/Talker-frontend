@@ -2,7 +2,10 @@ import { ContentType, MessageType, SocketEvents } from "@/types/index";
 import HomeHeader from "@/components/home/header";
 import { HomeList } from "@/components/home/homeList";
 import { useGetUser } from "@/hooks/useGetUser";
-import { decryptMessage } from "@/lib/ecrypt_decrypt";
+import {
+  decryptMessage,
+  decryptSymetricKeyWithPrivateKey,
+} from "@/lib/ecrypt_decrypt";
 import { getChatListApi } from "@/services/api/chat";
 import { useSocket } from "@/context/socketProvider";
 import { ReactElement, useEffect, useState } from "react";
@@ -10,6 +13,7 @@ import { useQuery } from "react-query";
 import Options from "@/components/home/options";
 import { useToast } from "@/components/ui/use-toast";
 import { getValueFromStoreIDB } from "@/lib/idb";
+import { decode as base64ToArrayBuffer } from "base64-arraybuffer";
 
 export const Home = (): ReactElement => {
   const [chatData, setChatData] = useState<any[]>([]);
@@ -31,16 +35,27 @@ export const Home = (): ReactElement => {
 
       const decryptedDataPromises = data?.map(async (chat: any) => {
         const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
+        const encryptedChatKeyArrayBuffer =
+          base64ToArrayBuffer(encryptedChatKey);
 
         if (chat?.messages?.[0] && !chat.messages[0].isDeleted) {
           switch (chat.messages[0].contentType) {
             case ContentType.TEXT:
+              const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
+                encryptedChatKeyArrayBuffer,
+                privateKey
+              );
+
+              const textArrayBuffer = base64ToArrayBuffer(
+                chat.messages[0].content
+              );
+
               chat.messages[0].text = (await decryptMessage(
-                chat.messages[0].content,
-                encryptedChatKey,
-                privateKey,
+                textArrayBuffer,
+                decryptedChatKey,
                 ContentType.TEXT
               )) as string;
+
               break;
 
             case ContentType.AUDIO:
@@ -92,15 +107,25 @@ export const Home = (): ReactElement => {
       }
 
       const chat = chatData?.find((item) => item?.chatId === message?.chatId);
-      const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
-      const privateKey = await getValueFromStoreIDB(user.userId);
 
       switch (message.contentType) {
         case ContentType.TEXT:
+          const privateKey = await getValueFromStoreIDB(user.userId);
+          const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
+
+          const encryptedChatKeyArrayBuffer =
+            base64ToArrayBuffer(encryptedChatKey);
+
+          const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
+            encryptedChatKeyArrayBuffer,
+            privateKey
+          );
+
+          const textArrayBuffer = base64ToArrayBuffer(message?.content!);
+
           message.text = (await decryptMessage(
-            message?.content!,
-            encryptedChatKey,
-            privateKey!,
+            textArrayBuffer,
+            decryptedChatKey,
             ContentType.TEXT
           )) as string;
           break;

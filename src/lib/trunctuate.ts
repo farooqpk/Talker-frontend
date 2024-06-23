@@ -7,6 +7,7 @@ export function truncateUsername(username: string) {
 }
 
 export function truncateMessage(msg: string) {
+  if (!msg) return;
   const maxLength = 20;
   if (msg.length <= maxLength) {
     return msg;

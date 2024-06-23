@@ -9,7 +9,7 @@ export type MessageType = {
   chatId: string;
   senderId: string;
   contentType: ContentType;
-  content?: ArrayBuffer;
+  content?: string;
   text?: string;
   audio?: Blob;
   image?: Blob;
