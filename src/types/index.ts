@@ -39,6 +39,7 @@ export type Option = {
 
 export enum StoreNameIDB {
   PRIVATE_KEY_DB = "privateKeyDB",
+  MEDIA_CACHE_DB = "mediaCacheDB",
 }
 
 
@@ -59,4 +60,31 @@ export enum SocketEvents {
   UN_AUTHORIZED = 'unauthorized',
   DISCONNECT='disconnect',
   GROUP_CREATED = "groupCreated",
+}
+
+
+
+
+interface Participant {
+  user: User;
+}
+
+interface Group {
+  groupId: string;
+  name: string;
+  description: string;
+}
+
+interface ChatKey {
+  encryptedKey: string;
+}
+
+export interface Chat {
+  chatId: string;
+  createdAt: string;
+  isGroup: boolean;
+  messages: MessageType[];
+  participants: Participant[];
+  Group: Group[];
+  ChatKey: ChatKey[];
 }

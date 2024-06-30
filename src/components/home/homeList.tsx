@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formateDate } from "@/lib/format-date";
 import { truncateMessage } from "@/lib/trunctuate";
 import Loader from "../loader";
+import { Chat } from "@/types";
 
 export const HomeList = ({
   chatData,
@@ -18,9 +19,10 @@ export const HomeList = ({
     return <Loader />;
   }
 
-  return (
-    <section className="overflow-auto">
-      {chatData?.map((chats: any, index: number) => {
+
+  const chatList = () => {
+    return <>
+      {chatData?.map((chats: Chat, index: number) => {
         return (
           <div className="md:w-[60%] mx-auto" key={index}>
             {chats?.isGroup ? (
@@ -43,9 +45,9 @@ export const HomeList = ({
                     {chats?.messages[0]?.isDeleted
                       ? truncateMessage("This message was deleted")
                       : truncateMessage(
-                          chats?.messages[0]?.text ||
-                            chats?.Group?.[0]?.description
-                        )}
+                        chats?.messages[0]?.text ||
+                        chats?.Group?.[0]?.description
+                      )}
                   </span>
                 </div>
 
@@ -76,7 +78,7 @@ export const HomeList = ({
                     <span className="text-muted-foreground text-sm">
                       {chats?.messages[0]?.isDeleted
                         ? truncateMessage("This message was deleted")
-                        : truncateMessage(chats?.messages[0]?.text)}
+                        : truncateMessage(chats?.messages[0]?.text as string)}
                     </span>
                   )}
                 </div>
@@ -89,6 +91,22 @@ export const HomeList = ({
           </div>
         );
       })}
+    </>
+  }
+
+  const chatEmpty = () => {
+    return (
+      <div className="flex justify-center items-center h-full text-muted-foreground md:text-lg text-sm text-center">
+        <span className="leading-7">Start a new chat by searching a user or creating a new group</span>
+      </div>
+    );
+  }
+
+  return (
+    <section className="overflow-auto">
+      {
+        chatData.length > 0 ? chatList() : chatEmpty()
+      }
     </section>
   );
 };

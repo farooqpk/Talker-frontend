@@ -9,12 +9,31 @@ interface MyDB extends DBSchema {
   };
 }
 
+// Define the database schema for cache
+interface MediaCacheDB extends DBSchema {
+  cache: {
+    key: string;
+    value: any;
+  };
+}
+
 // Open the database
 const dbPromise = async () => {
   return await openDB<MyDB>(StoreNameIDB.PRIVATE_KEY_DB, 1, {
     upgrade(db) {
       if (!db.objectStoreNames.contains("keys")) {
         db.createObjectStore("keys");
+      }
+    },
+  });
+};
+
+// Open the database for cache
+const dbPromiseMediaCache = async () => {
+  return await openDB<MediaCacheDB>(StoreNameIDB.MEDIA_CACHE_DB, 1, {
+    upgrade(db) {
+      if (!db.objectStoreNames.contains("cache")) {
+        db.createObjectStore("cache");
       }
     },
   });
@@ -27,7 +46,7 @@ export const addValueToStoreIDB = async (key: string, value: any) => {
 };
 
 // Function to get a value from the store
-export const getValueFromStoreIDB = async (key: string) => {
+export const getValueFromStoreIDB = async (key: string):Promise<CryptoKey> => {
   const db = await dbPromise();
   return db.get("keys", key);
 };
@@ -36,4 +55,21 @@ export const getValueFromStoreIDB = async (key: string) => {
 export const deleteValueFromStoreIDB = async (key: string) => {
   const db = await dbPromise();
   return db.delete("keys", key);
+};
+
+
+// Functions for interacting with the cache store
+export const addValueToMediaCacheIDB = async (key: string, value: ArrayBuffer) => {
+  const db = await dbPromiseMediaCache();
+  return db.put("cache", value, key);
+};
+
+export const getValueFromMediaCacheIDB = async (key: string):Promise<ArrayBuffer> => {
+  const db = await dbPromiseMediaCache();
+  return db.get("cache", key);
+};
+
+export const deleteValueFromMediaCacheIDB = async (key: string) => {
+  const db = await dbPromiseMediaCache();
+  return db.delete("cache", key);
 };

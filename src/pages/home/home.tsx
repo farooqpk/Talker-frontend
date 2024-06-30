@@ -1,4 +1,4 @@
-import { ContentType, MessageType, SocketEvents } from "@/types/index";
+import { Chat, ContentType, MessageType, SocketEvents } from "@/types/index";
 import HomeHeader from "@/components/home/header";
 import { HomeList } from "@/components/home/homeList";
 import { useGetUser } from "@/hooks/useGetUser";
@@ -8,7 +8,7 @@ import {
 } from "@/lib/ecrypt_decrypt";
 import { getChatListApi } from "@/services/api/chat";
 import { useSocket } from "@/context/socketProvider";
-import { ReactElement, useEffect, useState } from "react";
+import { type ReactElement, useEffect, useState } from "react";
 import { useQuery } from "react-query";
 import Options from "@/components/home/options";
 import { useToast } from "@/components/ui/use-toast";
@@ -16,7 +16,7 @@ import { getValueFromStoreIDB } from "@/lib/idb";
 import { decode as base64ToArrayBuffer } from "base64-arraybuffer";
 
 export const Home = (): ReactElement => {
-  const [chatData, setChatData] = useState<any[]>([]);
+  const [chatData, setChatData] = useState<Chat[]>([]);
   const socket = useSocket();
   const [isTyping, setIsTyping] = useState<string[]>([]);
   const { toast } = useToast();
@@ -33,7 +33,7 @@ export const Home = (): ReactElement => {
 
       if (!privateKey) return;
 
-      const decryptedDataPromises = data?.map(async (chat: any) => {
+      const decryptedDataPromises = data?.map(async (chat: Chat) => {
         const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
         const encryptedChatKeyArrayBuffer =
           base64ToArrayBuffer(encryptedChatKey);
@@ -47,7 +47,7 @@ export const Home = (): ReactElement => {
               );
 
               const textArrayBuffer = base64ToArrayBuffer(
-                chat.messages[0].content
+                chat.messages[0].content as string
               );
 
               chat.messages[0].text = (await decryptMessage(
@@ -111,7 +111,8 @@ export const Home = (): ReactElement => {
       switch (message.contentType) {
         case ContentType.TEXT:
           const privateKey = await getValueFromStoreIDB(user.userId);
-          const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
+          const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey
+          if (!encryptedChatKey) return;
 
           const encryptedChatKeyArrayBuffer =
             base64ToArrayBuffer(encryptedChatKey);

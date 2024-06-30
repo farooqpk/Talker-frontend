@@ -7,6 +7,7 @@ import {
   encryptMessage,
 } from "@/lib/ecrypt_decrypt";
 import {
+  getMediaApi,
   getMessagesApi,
   getSignedUrlApi,
   uploadToSignedUrlApi,
@@ -19,7 +20,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import msgRecieveSound from "../../assets/Pocket.mp3";
 import msgSendSound from "../../assets/Solo.mp3";
-import { getValueFromStoreIDB } from "@/lib/idb";
+import { addValueToMediaCacheIDB, getValueFromMediaCacheIDB, getValueFromStoreIDB } from "@/lib/idb";
 import ChatContent from "@/components/chat/chatContent";
 import ChatFooter from "@/components/chat/chatFooter";
 import ChatHeader from "@/components/chat/chatHeader";
@@ -46,6 +47,10 @@ export default function GroupChat(): ReactElement {
   const navigate = useNavigate();
   const { user } = useGetUser();
   const sendMessageLoadingRef = useRef<boolean>(false);
+  const [getMediaLoading, setGetMediaLoading] = useState<{
+    messageId: string;
+    loading: boolean;
+  }>({ messageId: "", loading: false });
 
   const {
     data: groupDetails,
@@ -75,41 +80,47 @@ export default function GroupChat(): ReactElement {
 
       if (!privateKey) return;
 
+      const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
+        encryptedChatKeyRef.current!,
+        privateKey
+      );
+
       const decryptedData = await Promise.all(
         data.map(async (message) => {
           if (message.isDeleted) return message;
 
           switch (message.contentType) {
-            case ContentType.TEXT:
+            case ContentType.TEXT: {
               const textArrayBuffer = base64ToArrayBuffer(message?.content!);
-
-              const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
-                encryptedChatKeyRef.current!,
-                privateKey
-              );
               message.text = (await decryptMessage(
                 textArrayBuffer,
                 decryptedChatKey,
                 ContentType.TEXT
               )) as string;
               break;
-            case ContentType.IMAGE:
-              // message.image = (await decryptMessage(
-              //   message?.content!,
-              //   encryptedChatKeyRef.current!,
-              //   privateKey,
-              //   ContentType.IMAGE
-              // )) as Blob;
-              break;
-            case ContentType.AUDIO:
-              // message.audio = (await decryptMessage(
-              //   message?.content!,
-              //   encryptedChatKeyRef.current!,
-              //   privateKey,
-              //   ContentType.AUDIO
-              // )) as Blob;
-              break;
+            }
 
+            case ContentType.IMAGE: {
+              const getMediaFromCache = await getValueFromMediaCacheIDB(message.mediaPath!)
+              if (!getMediaFromCache) break;
+              message.image = await decryptMessage(
+                getMediaFromCache,
+                decryptedChatKey,
+                ContentType.IMAGE
+              ) as Blob;
+              break
+            }
+
+            case ContentType.AUDIO: {
+              const getMediaFromCache = await getValueFromMediaCacheIDB(message.mediaPath!)
+              if (!getMediaFromCache) break;
+              message.image = await decryptMessage(
+                getMediaFromCache,
+                decryptedChatKey,
+                ContentType.IMAGE
+              ) as Blob;
+              break
+            }
             default:
               break;
           }
@@ -137,10 +148,10 @@ export default function GroupChat(): ReactElement {
       type === "TEXT"
         ? typedText
         : type === "IMAGE"
-        ? imgBlob!
-        : type === "AUDIO"
-        ? recordingBlob!
-        : "";
+          ? imgBlob!
+          : type === "AUDIO"
+            ? recordingBlob!
+            : "";
 
     const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
       encryptedChatKeyRef.current!,
@@ -192,40 +203,22 @@ export default function GroupChat(): ReactElement {
       const privateKey = await getValueFromStoreIDB(user.userId);
       if (!privateKey) return;
 
-      switch (message.contentType) {
-        case ContentType.TEXT:
-          const textArrayBuffer = base64ToArrayBuffer(message?.content!);
+      if (message.contentType === ContentType.TEXT) {
 
-          const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
-            encryptedChatKeyRef.current!,
-            privateKey
-          );
+        const textArrayBuffer = base64ToArrayBuffer(message?.content!);
 
-          message.text = (await decryptMessage(
-            textArrayBuffer,
-            decryptedChatKey,
-            ContentType.TEXT
-          )) as string;
-          break;
-        case ContentType.IMAGE:
-          // message.image = (await decryptMessage(
-          //   message?.content!,
-          //   encryptedChatKeyRef.current!,
-          //   privateKey,
-          //   ContentType.IMAGE
-          // )) as Blob;
-          break;
-        case ContentType.AUDIO:
-          // message.audio = (await decryptMessage(
-          //   message?.content!,
-          //   encryptedChatKeyRef.current!,
-          //   privateKey,
-          //   ContentType.AUDIO
-          // )) as Blob;
-          break;
+        const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
+          encryptedChatKeyRef.current!,
+          privateKey
+        );
 
-        default:
-          break;
+        message.text = (await decryptMessage(
+          textArrayBuffer,
+          decryptedChatKey,
+          ContentType.TEXT
+        )) as string;
+
+
       }
 
       setMessages((prev) => [...prev, message]);
@@ -325,6 +318,61 @@ export default function GroupChat(): ReactElement {
     socket?.emit(SocketEvents.UPDATE_GROUP_DETAILS, { groupId: id, ...data });
   };
 
+  const handleGetMedia = async (
+    mediapath: string,
+    type: ContentType,
+    messageId: string
+  ) => {
+    if (!user) return;
+
+    setGetMediaLoading((prev) => ({ ...prev, messageId, loading: true }));
+
+    const privateKey = await getValueFromStoreIDB(user.userId);
+    if (!privateKey) return;
+
+    const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
+      encryptedChatKeyRef.current!,
+      privateKey
+    );
+
+    const mediaFromApi = await getMediaApi(mediapath);
+    // store media in cache
+    await addValueToMediaCacheIDB(mediapath, mediaFromApi);
+
+    const selectedMsg = messages.find((item) => item.messageId === messageId);
+    if (!selectedMsg) return;
+
+    switch (type) {
+      case ContentType.IMAGE:
+        selectedMsg.image = (await decryptMessage(
+          mediaFromApi,
+          decryptedChatKey,
+          ContentType.IMAGE
+        )) as Blob;
+        break;
+      case ContentType.AUDIO:
+        selectedMsg.audio = (await decryptMessage(
+          mediaFromApi,
+          decryptedChatKey,
+          ContentType.AUDIO
+        )) as Blob;
+        break;
+
+      default:
+        break;
+    }
+
+    // set selected message in state with updated media
+    setMessages((prev) =>
+      prev.map((item) =>
+        item.messageId === messageId ? { ...item, ...selectedMsg } : item
+      )
+    );
+
+    setGetMediaLoading((prev) => ({ ...prev, messageId, loading: false }));
+  };
+
+
   return (
     <>
       <main className="flex flex-col h-full">
@@ -342,6 +390,8 @@ export default function GroupChat(): ReactElement {
               messages={messages}
               handleDeleteMsg={handleDeleteMsg}
               sendMessageLoadingRef={sendMessageLoadingRef}
+              getMediaLoading={getMediaLoading}
+              handleGetMedia={handleGetMedia}
             />
             <ChatFooter
               handleTyping={handleTyping}

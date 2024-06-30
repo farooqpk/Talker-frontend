@@ -67,9 +67,6 @@ const Options = () => {
             <DropdownMenuLabel>Options</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <div className="grid gap-2">
-              <DropdownMenuItem className="cursor-pointer hover:bg-muted">
-                Export keys
-              </DropdownMenuItem>
               <DropdownMenuItem
                 className="cursor-pointer hover:bg-muted"
                 onClick={() => setIsCreateGroupModalOpen(true)}

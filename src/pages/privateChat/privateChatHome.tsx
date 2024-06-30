@@ -29,7 +29,7 @@ import { useAudioRecorder } from "react-audio-voice-recorder";
 import { useToast } from "@/components/ui/use-toast";
 import msgRecieveSound from "../../assets/Pocket.mp3";
 import msgSendSound from "../../assets/Solo.mp3";
-import { getValueFromStoreIDB } from "@/lib/idb";
+import { addValueToMediaCacheIDB, getValueFromMediaCacheIDB, getValueFromStoreIDB } from "@/lib/idb";
 import ChatContent from "@/components/chat/chatContent";
 import ChatFooter from "@/components/chat/chatFooter";
 import ChatHeader from "@/components/chat/chatHeader";
@@ -87,27 +87,53 @@ export default function PrivateChat(): ReactElement {
     onSuccess: async (data: MessageType[]) => {
       if (!data || !user) return;
 
-      const privateKey: CryptoKey = await getValueFromStoreIDB(user.userId);
+      const privateKey = await getValueFromStoreIDB(user.userId);
 
       if (!privateKey) return;
+
+      const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
+        encryptedChatKeyRef.current!,
+        privateKey
+      );
 
       const decryptedData = await Promise.all(
         data?.map(async (message) => {
           if (message.isDeleted) return message;
 
-          if (message.contentType === ContentType.TEXT) {
-            const textArrayBuffer = base64ToArrayBuffer(message?.content!);
+          switch (message.contentType) {
 
-            const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
-              encryptedChatKeyRef.current!,
-              privateKey
-            );
+            case ContentType.TEXT: {
+              const textArrayBuffer = base64ToArrayBuffer(message?.content!);
+              message.text = (await decryptMessage(
+                textArrayBuffer,
+                decryptedChatKey,
+                ContentType.TEXT
+              )) as string;
 
-            message.text = (await decryptMessage(
-              textArrayBuffer,
-              decryptedChatKey,
-              ContentType.TEXT
-            )) as string;
+              break;
+            }
+            case ContentType.IMAGE: {
+              const getMediaFromCache = await getValueFromMediaCacheIDB(message.mediaPath!)
+              if (!getMediaFromCache) break;
+              message.image = await decryptMessage(
+                getMediaFromCache,
+                decryptedChatKey,
+                ContentType.IMAGE
+              ) as Blob;
+              break
+            }
+            case ContentType.AUDIO: {
+              const getMediaFromCache = await getValueFromMediaCacheIDB(message.mediaPath!)
+              if (!getMediaFromCache) break;
+              message.audio = await decryptMessage(
+                getMediaFromCache,
+                decryptedChatKey,
+                ContentType.AUDIO
+              ) as Blob;
+              break
+            }
+            default:
+              break;
           }
 
           return message;
@@ -189,10 +215,10 @@ export default function PrivateChat(): ReactElement {
       type === ContentType.TEXT
         ? typedText
         : type === ContentType.IMAGE
-        ? imgBlob!
-        : type === ContentType.AUDIO
-        ? recordingBlob!
-        : "";
+          ? imgBlob!
+          : type === ContentType.AUDIO
+            ? recordingBlob!
+            : "";
 
     const chatKey = isChatAlreadyExist
       ? encryptedChatKeyRef.current
@@ -414,22 +440,24 @@ export default function PrivateChat(): ReactElement {
       privateKey
     );
 
+    const mediaFromApi = await getMediaApi(mediapath);
+    // store media in cache
+    await addValueToMediaCacheIDB(mediapath, mediaFromApi);
+
     const selectedMsg = messages.find((item) => item.messageId === messageId);
     if (!selectedMsg) return;
-
-    const arrayBuffer = await getMediaApi(mediapath);
 
     switch (type) {
       case ContentType.IMAGE:
         selectedMsg.image = (await decryptMessage(
-          arrayBuffer,
+          mediaFromApi,
           decryptedChatKey,
           ContentType.IMAGE
         )) as Blob;
         break;
       case ContentType.AUDIO:
         selectedMsg.audio = (await decryptMessage(
-          arrayBuffer,
+          mediaFromApi,
           decryptedChatKey,
           ContentType.AUDIO
         )) as Blob;
@@ -453,10 +481,10 @@ export default function PrivateChat(): ReactElement {
     <>
       <main className="flex flex-col h-full">
         {isLoading ||
-        !socket ||
-        (recipient?.chatId && messagesLoading) ||
-        chatKeyLoading ||
-        !recipient ? (
+          !socket ||
+          (recipient?.chatId && messagesLoading) ||
+          chatKeyLoading ||
+          !recipient ? (
           <Loader />
         ) : (
           <>
