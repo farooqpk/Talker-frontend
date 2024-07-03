@@ -20,7 +20,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import msgRecieveSound from "../../assets/Pocket.mp3";
 import msgSendSound from "../../assets/Solo.mp3";
-import { addValueToMediaCacheIDB, getValueFromMediaCacheIDB, getValueFromStoreIDB } from "@/lib/idb";
+import { addValueToMediaCacheIDB, clearOldestMediaCacheIDB, getValueFromMediaCacheIDB, getValueFromStoreIDB, sizeOfMediaCacheIDB } from "@/lib/idb";
 import ChatContent from "@/components/chat/chatContent";
 import ChatFooter from "@/components/chat/chatFooter";
 import ChatHeader from "@/components/chat/chatHeader";
@@ -336,6 +336,12 @@ export default function GroupChat(): ReactElement {
     );
 
     const mediaFromApi = await getMediaApi(mediapath);
+    // check current size of cache in idb
+    const cacheSize = await sizeOfMediaCacheIDB()
+    // if cache size is greater than 10 MB, clear oldest media
+    if (cacheSize > 10 * 1024 * 1024) {
+      await clearOldestMediaCacheIDB();
+    }
     // store media in cache
     await addValueToMediaCacheIDB(mediapath, mediaFromApi);
 
