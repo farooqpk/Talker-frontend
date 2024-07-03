@@ -40,7 +40,7 @@ export const Home = (): ReactElement => {
 
         if (chat?.messages?.[0] && !chat.messages[0].isDeleted) {
           switch (chat.messages[0].contentType) {
-            case ContentType.TEXT:
+            case ContentType.TEXT: {
               const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
                 encryptedChatKeyArrayBuffer,
                 privateKey
@@ -55,16 +55,18 @@ export const Home = (): ReactElement => {
                 decryptedChatKey,
                 ContentType.TEXT
               )) as string;
-
               break;
+            }
 
-            case ContentType.AUDIO:
+            case ContentType.AUDIO: {
               chat.messages[0].text = "audio...";
               break;
+            }
 
-            case ContentType.IMAGE:
+            case ContentType.IMAGE: {
               chat.messages[0].text = "image...";
               break;
+            }
 
             default:
               break;
@@ -83,8 +85,8 @@ export const Home = (): ReactElement => {
     if (!socket || !user) return;
 
     const groupIds = chatData
-      ?.filter((item: any) => item?.isGroup === true)
-      ?.map((item: any) => item?.Group[0]?.groupId);
+      ?.filter((item: Chat) => item?.isGroup === true)
+      ?.map((item: Chat) => item?.Group[0]?.groupId);
 
     const handleIsTyping = (userId: string) => {
       setIsTyping((prev) => [...prev, userId]);
@@ -109,7 +111,7 @@ export const Home = (): ReactElement => {
       const chat = chatData?.find((item) => item?.chatId === message?.chatId);
 
       switch (message.contentType) {
-        case ContentType.TEXT:
+        case ContentType.TEXT: {
           const privateKey = await getValueFromStoreIDB(user.userId);
           const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey
           if (!encryptedChatKey) return;
@@ -130,14 +132,17 @@ export const Home = (): ReactElement => {
             ContentType.TEXT
           )) as string;
           break;
+        }
 
-        case ContentType.AUDIO:
+        case ContentType.AUDIO: {
           message.text = "audio...";
           break;
+        }
 
-        case ContentType.IMAGE:
+        case ContentType.IMAGE: {
           message.text = "image...";
           break;
+        }
 
         default:
           break;
@@ -224,7 +229,7 @@ export const Home = (): ReactElement => {
 
       socket.off(SocketEvents.EXIT_GROUP, handleExitGroup);
     };
-  }, [socket, chatData, user]);
+  }, [socket, chatData, user, isTyping]);
 
   return (
     <main className="h-[calc(100dvh)] flex flex-col py-6 px-4 gap-8">

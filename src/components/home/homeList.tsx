@@ -4,14 +4,14 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formateDate } from "@/lib/format-date";
 import { truncateMessage } from "@/lib/trunctuate";
 import Loader from "../loader";
-import { Chat } from "@/types";
+import type { Chat } from "@/types";
 
 export const HomeList = ({
   chatData,
   isTyping,
   isLoading,
 }: {
-  chatData: any;
+  chatData: Chat[];
   isTyping: string[];
   isLoading: boolean;
 }): ReactElement => {
@@ -96,7 +96,7 @@ export const HomeList = ({
 
   const chatEmpty = () => {
     return (
-      <div className="flex justify-center items-center h-full text-muted-foreground md:text-lg text-sm text-center">
+      <div className="flex justify-center items-center h-full text-muted-foreground text-sm text-center">
         <span className="leading-7">Start a new chat by searching a user or creating a new group</span>
       </div>
     );
