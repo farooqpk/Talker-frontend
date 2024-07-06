@@ -53,10 +53,10 @@ export default function ChatFooter({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // if greater than 1MB then return
-    if (file.size > 1024 * 1024) {
+    // if greater than 2MB then return
+    if (file.size > 2 * 1024 * 1024) {
       toast({
-        description: "File size is too large",
+        description: "Image size should be less than 2MB",
         variant: "destructive",
       });
       return;
@@ -82,8 +82,17 @@ export default function ChatFooter({
   };
 
   useEffect(() => {
-    console.log(recordingTime);
+    if(recordingTime ===60){
+      stopRecording();
+      toast({
+        title: "Recording stopped",
+        description: "Recording time exceeded 60 seconds",
+        variant: "destructive",
+      })
+    }
   }, [recordingTime]);
+
+
 
   return (
     <section className="flex gap-1 md:gap-4 items-center px-5 md:px-24 relative">
@@ -130,8 +139,9 @@ export default function ChatFooter({
       {typedText.trim().length > 0 ? (
         <IconButton
           icon={<SendHorizontal />}
-          className="p-2 border-none"
+          className={`p-2 border-none ${typedText.length === 500 ? "cursor-not-allowed hover:bg-transparent" : ""}`}
           onClick={() => handleSendMessage(ContentType.TEXT)}
+          disabled={typedText.length===500}
         />
       ) : (
         <IconButton
