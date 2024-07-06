@@ -45,6 +45,7 @@ export default function ChatHeader({
   isGroup,
   handleExitGroup,
   handleUpdateGroupDetails,
+  handleKickUserFromGroup
 }: {
   groupDetails?: any;
   recipient?: User;
@@ -55,6 +56,7 @@ export default function ChatHeader({
     name?: string;
     description?: string;
   }) => void;
+  handleKickUserFromGroup?: (userId: string) => void;
 }) {
   const { user } = useGetUser();
   const [isExitGroupModalOpen, setIsExitGroupModalOpen] = useState(false);
@@ -268,16 +270,17 @@ export default function ChatHeader({
                         </p>
                         {participant?.user?.userId ===
                           groupDetails?.adminId && (
-                          <Badge className="text-xs" variant={"outline"}>
-                            Admin
-                          </Badge>
-                        )}
+                            <Badge className="text-xs" variant={"outline"}>
+                              Admin
+                            </Badge>
+                          )}
                       </Link>
                       {user?.userId === groupDetails?.adminId &&
                         participant?.user?.userId !== user?.userId && (
                           <IconButton
                             className="w-8 h-8 border-none"
                             icon={<Trash2 color="red" className="w-5 h-5" />}
+                            onClick={() => handleKickUserFromGroup?.(participant?.user?.userId)}
                           />
                         )}
                     </div>

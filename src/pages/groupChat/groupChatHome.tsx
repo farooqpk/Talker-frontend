@@ -18,8 +18,8 @@ import { useAudioRecorder } from "react-audio-voice-recorder";
 import { useQuery } from "react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
-import msgRecieveSound from "../../assets/Pocket.mp3";
-import msgSendSound from "../../assets/Solo.mp3";
+import msgRecieveSound from "../../../public/Pocket.mp3";
+import msgSendSound from "../../../public/Solo.mp3";
 import { addValueToMediaCacheIDB, clearOldestMediaCacheIDB, getValueFromMediaCacheIDB, getValueFromStoreIDB, sizeOfMediaCacheIDB } from "@/lib/idb";
 import ChatContent from "@/components/chat/chatContent";
 import ChatFooter from "@/components/chat/chatFooter";
@@ -176,8 +176,6 @@ export default function GroupChat(): ReactElement {
         content: encryptedMessage,
         url,
       });
-
-      console.log(url);
     }
 
     // convert message to base64 for sending to server
@@ -379,6 +377,11 @@ export default function GroupChat(): ReactElement {
   };
 
 
+  const handleKickUserFromGroup = (userId: string) => {
+    
+  }
+
+
   return (
     <>
       <main className="flex flex-col h-full">
@@ -391,6 +394,7 @@ export default function GroupChat(): ReactElement {
               isGroup
               handleExitGroup={handleExitGroup}
               handleUpdateGroupDetails={handleUpdateGroupDetails}
+              handleKickUserFromGroup={handleKickUserFromGroup}
             />
             <ChatContent
               messages={messages}

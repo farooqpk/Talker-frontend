@@ -27,8 +27,8 @@ import {
 import { useGetUser } from "@/hooks/useGetUser";
 import { useAudioRecorder } from "react-audio-voice-recorder";
 import { useToast } from "@/components/ui/use-toast";
-import msgRecieveSound from "../../assets/Pocket.mp3";
-import msgSendSound from "../../assets/Solo.mp3";
+import msgRecieveSound from "../../../public/Pocket.mp3";
+import msgSendSound from "../../../public/Solo.mp3";
 import { addValueToMediaCacheIDB, clearOldestMediaCacheIDB, getValueFromMediaCacheIDB, getValueFromStoreIDB, sizeOfMediaCacheIDB } from "@/lib/idb";
 import ChatContent from "@/components/chat/chatContent";
 import ChatFooter from "@/components/chat/chatFooter";
