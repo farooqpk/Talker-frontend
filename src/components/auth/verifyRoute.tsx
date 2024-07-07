@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useQuery } from "react-query";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import _axios from "../../lib/_axios";
 import { verifyRouteApiReq } from "@/services/api/auth";
 import { useGetUser } from "@/hooks/useGetUser";
@@ -11,6 +11,7 @@ export const VerifyRoute = () => {
   const navigate = useNavigate();
   const { user } = useGetUser();
   const { toast } = useToast();
+  const { pathname } = useLocation()
 
   const { data, isError } = useQuery("verifyroute", () => verifyRouteApiReq(), {
     retry: false,
@@ -31,7 +32,7 @@ export const VerifyRoute = () => {
 
       const privateKey = await getValueFromStoreIDB(user.userId);
 
-      if (!privateKey) {
+      if (!privateKey && pathname !== "/auth") {
         toast({
           title: "Private key not found!",
           description: "Please log again and upload your private key file.",
