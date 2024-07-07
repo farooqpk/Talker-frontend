@@ -378,7 +378,7 @@ export default function GroupChat(): ReactElement {
 
 
   const handleKickUserFromGroup = (userId: string) => {
-    
+    console.log(userId)
   }
 
 
