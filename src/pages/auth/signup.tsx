@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -117,15 +117,6 @@ const Signup = () => {
     handleSuccess();
   };
 
-  useEffect(() => {
-    // to solve the chrome browser password check alert problem after signup
-    if (showDownloadConfirmation) {
-      // Ensure the dialog is focused when shown
-      (
-        document.querySelector('[role="dialog"]') as HTMLElement | null
-      )?.focus();
-    }
-  }, [showDownloadConfirmation]);
 
   const signupForm = () => (
     <Form {...form}>
@@ -224,9 +215,13 @@ const Signup = () => {
 
   return (
     <>
-      {showDownloadConfirmation
-        ? downloadPrivateKeyConfirmation()
-        : signupForm()}
+      {
+        showDownloadConfirmation
+          ?
+          downloadPrivateKeyConfirmation()
+          : signupForm()
+
+      }
     </>
   );
 };

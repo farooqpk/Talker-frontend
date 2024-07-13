@@ -61,12 +61,13 @@ export default function GroupChat(): ReactElement {
     queryFn: () => getGroupDetailsApi(id!),
     enabled: !!id,
     onSuccess: (data) => {
-      if (data) {
-        const encryptedKey = data?.Chat?.ChatKey?.[0]?.encryptedKey;
-        const encryptedKeyArrayBuffer = base64ToArrayBuffer(encryptedKey);
-        encryptedChatKeyRef.current = encryptedKeyArrayBuffer;
-      }
-    },
+      if (!data) navigate("/")
+      const encryptedKey = data?.Chat?.ChatKey?.[0]?.encryptedKey;
+      const encryptedKeyArrayBuffer = base64ToArrayBuffer(encryptedKey);
+      encryptedChatKeyRef.current = encryptedKeyArrayBuffer;
+    }, onError: () => {
+      navigate("/")
+    }
   });
 
   const { isLoading: messagesLoading } = useQuery({
@@ -263,11 +264,27 @@ export default function GroupChat(): ReactElement {
       refetchGroup();
     };
 
+    const kickMemberReceiver = ({ removedUserId, removedUserName }: { removedUserId: string, removedUserName: string }) => {
+      if (removedUserId === user?.userId) {
+        toast({
+          description: "You have been kicked from the group.",
+        })
+        navigate("/");
+      } else {
+        toast({
+          description: `${removedUserName} has been kicked from the group.`,
+        })
+        refetchGroup();
+      }
+
+    }
+
     socket?.on(SocketEvents.SEND_GROUP_MESSAGE, recieveMessage);
     socket?.emit(SocketEvents.JOIN_GROUP, { groupIds: [id] });
     socket.on(SocketEvents.DELETE_MESSAGE, deleteMessageReceiver);
     socket.on(SocketEvents.EXIT_GROUP, exitGroupReceiver);
     socket.on(SocketEvents.UPDATE_GROUP_DETAILS, updateGroupDetailsReceiver);
+    socket.on(SocketEvents.KICK_MEMBER, kickMemberReceiver)
 
     return () => {
       socket?.off(SocketEvents.SEND_GROUP_MESSAGE, recieveMessage);
@@ -275,6 +292,7 @@ export default function GroupChat(): ReactElement {
       socket.off(SocketEvents.DELETE_MESSAGE, recieveMessage);
       socket.off(SocketEvents.EXIT_GROUP, exitGroupReceiver);
       socket.off(SocketEvents.UPDATE_GROUP_DETAILS, updateGroupDetailsReceiver);
+      socket.off(SocketEvents.KICK_MEMBER, kickMemberReceiver)
     };
   }, [id, socket, encryptedChatKeyRef.current, user]);
 
@@ -378,7 +396,11 @@ export default function GroupChat(): ReactElement {
 
 
   const handleKickUserFromGroup = (userId: string) => {
-    console.log(userId)
+    if (!socket) return;
+    socket.emit(SocketEvents.KICK_MEMBER, {
+      groupId: id,
+      userId,
+    });
   }
 
 

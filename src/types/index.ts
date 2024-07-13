@@ -60,6 +60,7 @@ export enum SocketEvents {
   UN_AUTHORIZED = 'unauthorized',
   DISCONNECT='disconnect',
   GROUP_CREATED = "groupCreated",
+  KICK_MEMBER = "kickMember",
 }
 
 
