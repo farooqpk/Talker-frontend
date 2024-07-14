@@ -45,7 +45,9 @@ export default function ChatHeader({
   isGroup,
   handleExitGroup,
   handleUpdateGroupDetails,
-  handleKickUserFromGroup
+  handleKickUserFromGroup,
+  isKickMemberClicked,
+  setIsKickMemberClicked
 }: {
   groupDetails?: any;
   recipient?: User;
@@ -57,6 +59,8 @@ export default function ChatHeader({
     description?: string;
   }) => void;
   handleKickUserFromGroup?: (userId: string) => void;
+  isKickMemberClicked?: boolean;
+  setIsKickMemberClicked?: (value: boolean) => void;
 }) {
   const { user } = useGetUser();
   const [isExitGroupModalOpen, setIsExitGroupModalOpen] = useState(false);
@@ -70,6 +74,7 @@ export default function ChatHeader({
     useState(false);
   const [addNewMembers, setAddNewMembers] = useState<string[]>([]);
   const [users, setUsers] = useState([] as Option[]);
+  const [kickMemberId, setKickMemberId] = useState<string>("");
 
   useQuery<Option[]>({
     queryKey: ["addnewmemberstogroupu"],
@@ -280,7 +285,10 @@ export default function ChatHeader({
                           <IconButton
                             className="w-8 h-8 border-none"
                             icon={<Trash2 color="red" className="w-5 h-5" />}
-                            onClick={() => handleKickUserFromGroup?.(participant?.user?.userId)}
+                            onClick={() => {
+                              setKickMemberId(participant?.user?.userId)
+                              setIsKickMemberClicked?.(true)
+                            }}
                           />
                         )}
                     </div>
@@ -332,6 +340,24 @@ export default function ChatHeader({
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction onClick={() => handleExitGroup?.()}>
+                Continue
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {isKickMemberClicked && (
+        <AlertDialog open={isKickMemberClicked}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure to kick this user?</AlertDialogTitle>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setIsKickMemberClicked?.(false)}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={() => handleKickUserFromGroup?.(kickMemberId)}>
                 Continue
               </AlertDialogAction>
             </AlertDialogFooter>
