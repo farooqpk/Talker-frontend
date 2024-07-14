@@ -5,6 +5,7 @@ import {
   decryptMessage,
   decryptSymetricKeyWithPrivateKey,
   encryptMessage,
+  encryptSymetricKeyWithPublicKey,
 } from "@/lib/ecrypt_decrypt";
 import {
   getMediaApi,
@@ -12,7 +13,7 @@ import {
   getSignedUrlApi,
   uploadToSignedUrlApi,
 } from "@/services/api/chat";
-import { getGroupDetailsApi } from "@/services/api/group";
+import { getGroupDetailsApi, getPublicKeysApi } from "@/services/api/group";
 import { ReactElement, useEffect, useRef, useState } from "react";
 import { useAudioRecorder } from "react-audio-voice-recorder";
 import { useQuery } from "react-query";
@@ -52,6 +53,8 @@ export default function GroupChat(): ReactElement {
     loading: boolean;
   }>({ messageId: "", loading: false });
   const [isKickMemberClicked, setIsKickMemberClicked] = useState(false);
+  const [isAddingNewMembersLoading, setIsAddingNewMembersLoading] = useState(false);
+
 
   const {
     data: groupDetails,
@@ -71,7 +74,7 @@ export default function GroupChat(): ReactElement {
     }
   });
 
-  const { isLoading: messagesLoading } = useQuery({
+  const { isLoading: messagesLoading, refetch: refetchMessages } = useQuery({
     queryKey: ["messagesqueryforgroup", id],
     queryFn: () => getMessagesApi(groupDetails?.chatId!),
     enabled: !!groupDetails?.chatId && !!encryptedChatKeyRef.current,
@@ -265,7 +268,7 @@ export default function GroupChat(): ReactElement {
       refetchGroup();
     };
 
-    const kickMemberReceiver = ({ removedUserId, removedUserName }: { removedUserId: string, removedUserName: string }) => {
+    const kickMemberReceiver = async ({ removedUserId, removedUserName }: { removedUserId: string, removedUserName: string }) => {
       setIsKickMemberClicked(false);
       if (removedUserId === user?.userId) {
         toast({
@@ -273,12 +276,25 @@ export default function GroupChat(): ReactElement {
         })
         navigate("/");
       } else {
+
+        await Promise.all([
+          refetchGroup(),
+          refetchMessages()
+        ])
+
         toast({
           description: `${removedUserName} has been kicked from the group.`,
         })
-        refetchGroup();
-      }
 
+      }
+    }
+
+    const addNewMembersToGroupReceiver = async () => {
+      setIsAddingNewMembersLoading(false);
+      await refetchGroup(),
+        toast({
+          description: "New members have been added to the group.",
+        })
     }
 
     socket?.on(SocketEvents.SEND_GROUP_MESSAGE, recieveMessage);
@@ -287,6 +303,7 @@ export default function GroupChat(): ReactElement {
     socket.on(SocketEvents.EXIT_GROUP, exitGroupReceiver);
     socket.on(SocketEvents.UPDATE_GROUP_DETAILS, updateGroupDetailsReceiver);
     socket.on(SocketEvents.KICK_MEMBER, kickMemberReceiver)
+    socket.on(SocketEvents.ADD_NEW_MEMBER_TO_GROUP, addNewMembersToGroupReceiver)
 
     return () => {
       socket?.off(SocketEvents.SEND_GROUP_MESSAGE, recieveMessage);
@@ -295,8 +312,10 @@ export default function GroupChat(): ReactElement {
       socket.off(SocketEvents.EXIT_GROUP, exitGroupReceiver);
       socket.off(SocketEvents.UPDATE_GROUP_DETAILS, updateGroupDetailsReceiver);
       socket.off(SocketEvents.KICK_MEMBER, kickMemberReceiver)
+      socket.off(SocketEvents.ADD_NEW_MEMBER_TO_GROUP, addNewMembersToGroupReceiver)
     };
   }, [id, socket, encryptedChatKeyRef.current, user]);
+
 
   useEffect(() => {
     if (!recordingBlob) return;
@@ -406,6 +425,54 @@ export default function GroupChat(): ReactElement {
   }
 
 
+  const handleAddNewMembers = async (newMembers: string[]) => {
+    if (!socket) return;
+
+    setIsAddingNewMembersLoading(true);
+
+    let encryptedChatKeyForUsers: Array<{
+      userId: string;
+      encryptedKey: string;
+    }> = [];
+
+    // Get symmetric key of the group from admin encrypted symmetric key
+    const privateKey = await getValueFromStoreIDB(user?.userId!);
+    if (!privateKey) return;
+
+    const decryptedKey = await decryptSymetricKeyWithPrivateKey(
+      encryptedChatKeyRef.current!,
+      privateKey
+    );
+    if (!decryptedKey) return;
+
+    const decryptedKeyAsArrayBuffer = await crypto.subtle.exportKey("raw", decryptedKey);
+
+    const membersPublicKeys = await getPublicKeysApi(newMembers);
+    if (!membersPublicKeys || membersPublicKeys.length === 0) return;
+
+    await Promise.all(
+      membersPublicKeys.map(async (item) => {
+        const encryptedChatKey = await encryptSymetricKeyWithPublicKey(
+          decryptedKeyAsArrayBuffer,
+          item.publicKey
+        );
+
+        const encryptedChatKeyBase64 = arrayBufferToBase64(encryptedChatKey);
+
+        encryptedChatKeyForUsers.push({
+          userId: item.userId,
+          encryptedKey: encryptedChatKeyBase64,
+        });
+      })
+    );
+
+    socket.emit(SocketEvents.ADD_NEW_MEMBER_TO_GROUP, {
+      groupId: id,
+      members: encryptedChatKeyForUsers
+    });
+  };
+
+
   return (
     <>
       <main className="flex flex-col h-full">
@@ -421,6 +488,8 @@ export default function GroupChat(): ReactElement {
               handleKickUserFromGroup={handleKickUserFromGroup}
               isKickMemberClicked={isKickMemberClicked}
               setIsKickMemberClicked={setIsKickMemberClicked}
+              handleAddNewMembers={handleAddNewMembers}
+              isAddingNewMembersLoading={isAddingNewMembersLoading}
             />
             <ChatContent
               messages={messages}

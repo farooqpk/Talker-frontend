@@ -61,6 +61,7 @@ export enum SocketEvents {
   DISCONNECT='disconnect',
   GROUP_CREATED = "groupCreated",
   KICK_MEMBER = "kickMember",
+  ADD_NEW_MEMBER_TO_GROUP = "addNewMemberToGroup",
 }
 
 

@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { useGetUser } from "@/hooks/useGetUser";
 import { User, UserStatusEnum } from "../../types";
 import { truncateUsername } from "@/lib/trunctuate";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,7 +47,9 @@ export default function ChatHeader({
   handleUpdateGroupDetails,
   handleKickUserFromGroup,
   isKickMemberClicked,
-  setIsKickMemberClicked
+  setIsKickMemberClicked,
+  handleAddNewMembers,
+  isAddingNewMembersLoading
 }: {
   groupDetails?: any;
   recipient?: User;
@@ -61,6 +63,8 @@ export default function ChatHeader({
   handleKickUserFromGroup?: (userId: string) => void;
   isKickMemberClicked?: boolean;
   setIsKickMemberClicked?: (value: boolean) => void;
+  handleAddNewMembers?: (selectedUsers: string[]) => void;
+  isAddingNewMembersLoading?: boolean
 }) {
   const { user } = useGetUser();
   const [isExitGroupModalOpen, setIsExitGroupModalOpen] = useState(false);
@@ -72,9 +76,9 @@ export default function ChatHeader({
   );
   const [isAddNewMemberInputClicked, setIsAddNewMemberInputClicked] =
     useState(false);
-  const [addNewMembers, setAddNewMembers] = useState<string[]>([]);
   const [users, setUsers] = useState([] as Option[]);
   const [kickMemberId, setKickMemberId] = useState<string>("");
+  const [newMembers, setNewMembers] = useState<string[]>([]);
 
   useQuery<Option[]>({
     queryKey: ["addnewmemberstogroupu"],
@@ -91,6 +95,12 @@ export default function ChatHeader({
       setUsers(filteredData);
     },
   });
+
+  useEffect(() => {
+    if (isAddingNewMembersLoading) {
+      setNewMembers([])
+    }
+  }, [isAddingNewMembersLoading])
 
   return (
     <>
@@ -192,12 +202,12 @@ export default function ChatHeader({
                   <>
                     <div className="flex flex-col gap-1">
                       <MultiSelector
-                        values={addNewMembers}
+                        values={newMembers || []}
                         onValuesChange={(formValue) => {
                           let newArr = formValue?.map(
                             (option: string) => option
                           );
-                          setAddNewMembers(newArr);
+                          setNewMembers(newArr);
                         }}
                         loop
                         className="w-full"
@@ -230,11 +240,15 @@ export default function ChatHeader({
                         variant={"secondary"}
                         size={"sm"}
                         disabled={
-                          users.length === 0 || addNewMembers.length === 0
+                          users.length === 0 || newMembers.length === 0 || isAddingNewMembersLoading
                         }
                         className="w-full md:w-auto"
+                        onClick={() => {
+                          const membersIds = newMembers.map((item) => users.find((user) => user.label === item)?.value as string)
+                          handleAddNewMembers?.(membersIds);
+                        }}
                       >
-                        Save
+                        {isAddingNewMembersLoading ? "Saving..." : "Save"}
                       </Button>
                     </div>
                     <div className="border my-3" />
