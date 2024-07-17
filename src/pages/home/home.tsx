@@ -1,10 +1,15 @@
-import { Chat, ContentType, MessageType, SocketEvents } from "@/types/index";
+import {
+	type Chat,
+	ContentType,
+	type MessageType,
+	SocketEvents,
+} from "@/types/index";
 import HomeHeader from "@/components/home/header";
 import { HomeList } from "@/components/home/homeList";
 import { useGetUser } from "@/hooks/useGetUser";
 import {
-  decryptMessage,
-  decryptSymetricKeyWithPrivateKey,
+	decryptMessage,
+	decryptSymetricKeyWithPrivateKey,
 } from "@/lib/ecrypt_decrypt";
 import { getChatListApi } from "@/services/api/chat";
 import { useSocket } from "@/context/socketProvider";
@@ -16,226 +21,197 @@ import { getValueFromStoreIDB } from "@/lib/idb";
 import { decode as base64ToArrayBuffer } from "base64-arraybuffer";
 
 export const Home = (): ReactElement => {
-  const [chatData, setChatData] = useState<Chat[]>([]);
-  const socket = useSocket();
-  const [isTyping, setIsTyping] = useState<string[]>([]);
-  const { toast } = useToast();
-  const { user } = useGetUser();
+	const [chatData, setChatData] = useState<Chat[]>([]);
+	const socket = useSocket();
+	const [isTyping, setIsTyping] = useState<string[]>([]);
+	const { toast } = useToast();
+	const { user } = useGetUser();
 
-  const { isLoading, refetch } = useQuery({
-    queryKey: ["chatlist"],
-    queryFn: getChatListApi,
-    keepPreviousData: true,
-    onSuccess: async (data) => {
-      if (!data || !user) return;
+	const { isLoading, refetch } = useQuery({
+		queryKey: ["chatlist"],
+		queryFn: getChatListApi,
+		keepPreviousData: true,
+		onSuccess: async (data) => {
+			if (!data || !user) return;
 
-      const privateKey = await getValueFromStoreIDB(user.userId);
+			const privateKey = await getValueFromStoreIDB(user.userId);
 
-      if (!privateKey) return;
+			if (!privateKey) return;
 
-      const decryptedDataPromises = data?.map(async (chat: Chat) => {
-        const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
-        const encryptedChatKeyArrayBuffer =
-          base64ToArrayBuffer(encryptedChatKey);
+			const decryptedDataPromises = data?.map(async (chat: Chat) => {
+				const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
+				const encryptedChatKeyArrayBuffer =
+					base64ToArrayBuffer(encryptedChatKey);
 
-        if (chat?.messages?.[0] && !chat.messages[0].isDeleted) {
-          switch (chat.messages[0].contentType) {
-            case ContentType.TEXT: {
-              const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
-                encryptedChatKeyArrayBuffer,
-                privateKey
-              );
+				if (
+					chat?.messages?.[0]?.isDeleted ||
+					chat?.messages?.[0]?.contentType !== ContentType.TEXT
+				)
+					return chat;
 
-              const textArrayBuffer = base64ToArrayBuffer(
-                chat.messages[0].content as string
-              );
+				const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
+					encryptedChatKeyArrayBuffer,
+					privateKey,
+				);
 
-              chat.messages[0].text = (await decryptMessage(
-                textArrayBuffer,
-                decryptedChatKey,
-                ContentType.TEXT
-              )) as string;
-              break;
-            }
+				const textArrayBuffer = base64ToArrayBuffer(
+					chat.messages[0].content as string,
+				);
 
-            case ContentType.AUDIO: {
-              chat.messages[0].text = "audio...";
-              break;
-            }
+				chat.messages[0].text = (await decryptMessage(
+					textArrayBuffer,
+					decryptedChatKey,
+					ContentType.TEXT,
+				)) as string;
+				return chat;
+			});
 
-            case ContentType.IMAGE: {
-              chat.messages[0].text = "image...";
-              break;
-            }
+			const decryptedData = await Promise.all(decryptedDataPromises);
+			setChatData(decryptedData);
+		},
+	});
 
-            default:
-              break;
-          }
-        }
-        return chat;
-      });
+	// to update latest message in the home
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+	useEffect(() => {
+		if (!socket || !user) return;
 
-      const decryptedData = await Promise.all(decryptedDataPromises);
-      setChatData(decryptedData);
-    },
-  });
+		const groupIds = chatData
+			?.filter((item: Chat) => item?.isGroup === true)
+			?.map((item: Chat) => item?.Group[0]?.groupId);
 
-  // to update latest message in the home
-  useEffect(() => {
-    if (!socket || !user) return;
+		const handleIsTyping = (userId: string) => {
+			setIsTyping((prev) => [...prev, userId]);
+		};
 
-    const groupIds = chatData
-      ?.filter((item: Chat) => item?.isGroup === true)
-      ?.map((item: Chat) => item?.Group[0]?.groupId);
+		const handleIsNotTyping = (userId: string) => {
+			setIsTyping(isTyping.filter((id) => id !== userId));
+		};
 
-    const handleIsTyping = (userId: string) => {
-      setIsTyping((prev) => [...prev, userId]);
-    };
+		const handleRecieveMessage = async ({
+			message,
+			isRefetchChatList,
+		}: {
+			message: MessageType;
+			isRefetchChatList?: boolean;
+		}) => {
+			if (isRefetchChatList) {
+				refetch();
+				return;
+			}
 
-    const handleIsNotTyping = (userId: string) => {
-      setIsTyping(isTyping.filter((id) => id !== userId));
-    };
+			const chat = chatData?.find((item) => item?.chatId === message?.chatId);
 
-    const handleRecieveMessage = async ({
-      message,
-      isRefetchChatList,
-    }: {
-      message: MessageType;
-      isRefetchChatList?: boolean;
-    }) => {
-      if (isRefetchChatList) {
-        refetch();
-        return;
-      }
+			if (message.content && message.contentType === ContentType.TEXT) {
+				const privateKey = await getValueFromStoreIDB(user.userId);
+				const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey;
+				if (!encryptedChatKey) return;
 
-      const chat = chatData?.find((item) => item?.chatId === message?.chatId);
+				const encryptedChatKeyArrayBuffer =
+					base64ToArrayBuffer(encryptedChatKey);
 
-      switch (message.contentType) {
-        case ContentType.TEXT: {
-          const privateKey = await getValueFromStoreIDB(user.userId);
-          const encryptedChatKey = chat?.ChatKey[0]?.encryptedKey
-          if (!encryptedChatKey) return;
+				const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
+					encryptedChatKeyArrayBuffer,
+					privateKey,
+				);
 
-          const encryptedChatKeyArrayBuffer =
-            base64ToArrayBuffer(encryptedChatKey);
+				const textArrayBuffer = base64ToArrayBuffer(message?.content);
 
-          const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
-            encryptedChatKeyArrayBuffer,
-            privateKey
-          );
+				message.text = (await decryptMessage(
+					textArrayBuffer,
+					decryptedChatKey,
+					ContentType.TEXT,
+				)) as string;
+			}
 
-          const textArrayBuffer = base64ToArrayBuffer(message?.content!);
+			setChatData((prev) => {
+				if (chat) {
+					const index = prev?.indexOf(chat);
+					prev[index] = { ...chat, messages: [message] };
+				}
+				return [...prev];
+			});
+		};
 
-          message.text = (await decryptMessage(
-            textArrayBuffer,
-            decryptedChatKey,
-            ContentType.TEXT
-          )) as string;
-          break;
-        }
+		const handleDeleteMessage = (messageId: string) => {
+			const chat = chatData?.find(
+				(item) => item?.messages?.[0]?.messageId === messageId,
+			);
 
-        case ContentType.AUDIO: {
-          message.text = "audio...";
-          break;
-        }
+			if (!chat) return;
+			setChatData((prev) => {
+				const index = prev?.indexOf(chat);
+				prev[index] = {
+					...chat,
+					messages: [{ ...chat?.messages[0], isDeleted: true }],
+				};
 
-        case ContentType.IMAGE: {
-          message.text = "image...";
-          break;
-        }
+				return [...prev];
+			});
+		};
 
-        default:
-          break;
-      }
+		const handleGroupCreated = () => {
+			refetch();
+			toast({
+				title: "You were added to a new group",
+			});
+		};
 
-      setChatData((prev) => {
-        if (chat) {
-          const index = prev?.indexOf(chat);
-          prev[index] = { ...chat, messages: [message] };
-        }
-        return [...prev];
-      });
-    };
+		const handleExitGroup = ({
+			groupId,
+			isExitByAdmin,
+		}: {
+			groupId: string;
+			isExitByAdmin: boolean;
+		}) => {
+			if (isExitByAdmin) {
+				socket?.emit(SocketEvents.LEAVE_GROUP, { groupIds: [groupId] });
+				setChatData((prev) =>
+					prev.filter((item) => item?.Group?.[0]?.groupId !== groupId),
+				);
+			}
+		};
 
-    const handleDeleteMessage = (messageId: string) => {
-      const chat = chatData?.find(
-        (item) => item?.messages?.[0]?.messageId === messageId
-      );
+		socket?.emit(SocketEvents.JOIN_GROUP, { groupIds });
 
-      if (!chat) return;
-      setChatData((prev) => {
-        const index = prev?.indexOf(chat);
-        prev[index] = {
-          ...chat,
-          messages: [{ ...chat?.messages[0], isDeleted: true }],
-        };
+		socket?.on(SocketEvents.IS_TYPING, handleIsTyping);
 
-        return [...prev];
-      });
-    };
+		socket?.on(SocketEvents.IS_NOT_TYPING, handleIsNotTyping);
 
-    const handleGroupCreated = () => {
-      refetch();
-      toast({
-        title: "You were added to a new group",
-      });
-    };
+		socket?.on(SocketEvents.SEND_GROUP_MESSAGE, handleRecieveMessage);
 
-    const handleExitGroup = ({
-      groupId,
-      isExitByAdmin,
-    }: {
-      groupId: string;
-      isExitByAdmin: boolean;
-    }) => {
-      if (isExitByAdmin) {
-        socket?.emit(SocketEvents.LEAVE_GROUP, { groupIds: [groupId] });
-        setChatData((prev) =>
-          prev.filter((item) => item?.Group?.[0]?.groupId !== groupId)
-        );
-      }
-    };
+		socket?.on(SocketEvents.SEND_PRIVATE_MESSAGE, handleRecieveMessage);
 
-    socket?.emit(SocketEvents.JOIN_GROUP, { groupIds });
+		socket?.on(SocketEvents.DELETE_MESSAGE, handleDeleteMessage);
 
-    socket?.on(SocketEvents.IS_TYPING, handleIsTyping);
+		socket?.on(SocketEvents.GROUP_CREATED, handleGroupCreated);
 
-    socket?.on(SocketEvents.IS_NOT_TYPING, handleIsNotTyping);
+		socket.on(SocketEvents.EXIT_GROUP, handleExitGroup);
 
-    socket?.on(SocketEvents.SEND_GROUP_MESSAGE, handleRecieveMessage);
+		return () => {
+			socket?.off(SocketEvents.IS_TYPING, handleIsTyping);
 
-    socket?.on(SocketEvents.SEND_PRIVATE_MESSAGE, handleRecieveMessage);
+			socket?.off(SocketEvents.IS_NOT_TYPING, handleIsNotTyping);
 
-    socket?.on(SocketEvents.DELETE_MESSAGE, handleDeleteMessage);
+			socket?.off(SocketEvents.SEND_GROUP_MESSAGE, handleRecieveMessage);
 
-    socket?.on(SocketEvents.GROUP_CREATED, handleGroupCreated);
+			socket?.off(SocketEvents.SEND_PRIVATE_MESSAGE, handleRecieveMessage);
 
-    socket.on(SocketEvents.EXIT_GROUP, handleExitGroup);
+			socket?.emit(SocketEvents.LEAVE_GROUP, { groupIds });
 
-    return () => {
-      socket?.off(SocketEvents.IS_TYPING, handleIsTyping);
+			socket?.off(SocketEvents.DELETE_MESSAGE, handleDeleteMessage);
 
-      socket?.off(SocketEvents.IS_NOT_TYPING, handleIsNotTyping);
+			socket?.off(SocketEvents.GROUP_CREATED, handleGroupCreated);
 
-      socket?.off(SocketEvents.SEND_GROUP_MESSAGE, handleRecieveMessage);
+			socket.off(SocketEvents.EXIT_GROUP, handleExitGroup);
+		};
+	}, [socket, chatData, user, isTyping]);
 
-      socket?.off(SocketEvents.SEND_PRIVATE_MESSAGE, handleRecieveMessage);
-
-      socket?.emit(SocketEvents.LEAVE_GROUP, { groupIds });
-
-      socket?.off(SocketEvents.DELETE_MESSAGE, handleDeleteMessage);
-
-      socket?.off(SocketEvents.GROUP_CREATED, handleGroupCreated);
-
-      socket.off(SocketEvents.EXIT_GROUP, handleExitGroup);
-    };
-  }, [socket, chatData, user, isTyping]);
-
-  return (
-    <main className="h-[calc(100dvh)] flex flex-col py-6 px-4 gap-8">
-      <HomeHeader />
-      <HomeList chatData={chatData} isTyping={isTyping} isLoading={isLoading} />
-      <Options />
-    </main>
-  );
+	return (
+		<main className="h-[calc(100dvh)] flex flex-col py-6 px-4 gap-8">
+			<HomeHeader />
+			<HomeList chatData={chatData} isTyping={isTyping} isLoading={isLoading} />
+			<Options />
+		</main>
+	);
 };
