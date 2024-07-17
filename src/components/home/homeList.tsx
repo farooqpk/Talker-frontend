@@ -19,94 +19,51 @@ export const HomeList = ({
     return <Loader />;
   }
 
+  const ChatItem = ({ chat }: { chat: Chat }) => {
 
-  const chatList = () => {
-    return <>
-      {chatData?.map((chats: Chat, index: number) => {
-        return (
-          <div className="md:w-[60%] mx-auto" key={index}>
-            {chats?.isGroup ? (
-              <Link
-                to={`/group/${chats?.Group?.[0]?.groupId}`}
-                className="flex justify-between items-center p-3 hover:bg-slate-900 rounded-2xl "
-              >
-                <Avatar>
-                  <AvatarFallback className="capitalize">
-                    {chats?.Group?.[0]?.name[0]}
-                  </AvatarFallback>
-                </Avatar>
+    const isGroup = chat.isGroup;
+    const name = isGroup ? chat.Group?.[0]?.name : chat.participants[0]?.user?.username;
+    const avatar = name?.[0].toUpperCase();
+    const link = isGroup ? `/group/${chat.Group?.[0]?.groupId}` : `/chat/${chat.participants[0]?.user?.userId}`;
+    const message = chat.messages[0]?.isDeleted
+      ? "This message was deleted"
+      : chat.messages[0]?.text || (isGroup && chat.Group?.[0]?.description);
+    const date = formateDate(chat.messages[0]?.createdAt || chat.createdAt);
+    const isUserTyping = !isGroup && isTyping.includes(chat.participants[0]?.user?.userId);
 
-                <div className="flex flex-col items-center gap-2">
-                  <h2 className="text-lg font-medium">
-                    {chats?.Group?.[0]?.name}
-                  </h2>
-
-                  <span className="text-muted-foreground text-sm">
-                    {chats?.messages[0]?.isDeleted
-                      ? truncateMessage("This message was deleted")
-                      : truncateMessage(
-                        chats?.messages[0]?.text ||
-                        chats?.Group?.[0]?.description
-                      )}
-                  </span>
-                </div>
-
-                <span className="text-muted-foreground text-sm">
-                  {formateDate(
-                    chats?.messages[0]?.createdAt || chats?.createdAt
-                  )}
-                </span>
-              </Link>
-            ) : (
-              <Link
-                to={`/chat/${chats?.participants[0]?.user?.userId}`}
-                className="flex justify-between items-center p-3 hover:bg-slate-900 rounded-2xl "
-              >
-                <Avatar>
-                  <AvatarFallback className="capitalize">
-                    {chats?.participants[0]?.user?.username[0]}
-                  </AvatarFallback>
-                </Avatar>
-
-                <div className="flex flex-col items-center gap-2">
-                  <h2 className="text-lg font-medium ">
-                    {chats?.participants[0]?.user?.username}
-                  </h2>
-                  {isTyping.includes(chats?.participants[0]?.user?.userId) ? (
-                    <span className="text-sm text-warning">Typing...</span>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">
-                      {chats?.messages[0]?.isDeleted
-                        ? truncateMessage("This message was deleted")
-                        : truncateMessage(chats?.messages[0]?.text as string)}
-                    </span>
-                  )}
-                </div>
-
-                <span className="text-muted-foreground text-sm">
-                  {formateDate(chats?.messages[0]?.createdAt)}
-                </span>
-              </Link>
-            )}
-          </div>
-        );
-      })}
-    </>
-  }
-
-  const chatEmpty = () => {
     return (
-      <div className="flex justify-center items-center h-full text-muted-foreground text-sm text-center">
-        <span className="leading-7">Start a new chat by searching a user or creating a new group</span>
-      </div>
-    );
-  }
+      <Link to={link} className="flex items-center gap-2 p-4 hover:bg-slate-900 rounded-xl transition-colors duration-200">
+        <Avatar className="h-12 w-12 mr-4">
+          <AvatarFallback className="text-lg font-semibold">{avatar}</AvatarFallback>
+        </Avatar>
+        <div className="flex-grow">
+          <h2 className="text-lg font-medium truncate">{name}</h2>
+          <span className={`text-sm ${isUserTyping ? 'text-warning' : 'text-muted-foreground'} truncate`}>
+            {isUserTyping ? "Typing..." : truncateMessage(message || "")}
+          </span>
+        </div>
+        <span className="text-xs text-muted-foreground ml-4 whitespace-nowrap">{date}</span>
+      </Link>
+    )
+  };
+
 
   return (
-    <section className="overflow-auto">
-      {
-        chatData.length > 0 ? chatList() : chatEmpty()
-      }
+    <section className="overflow-auto h-full">
+      {chatData.length > 0 ? (
+        <div className="md:w-[50%] mx-auto">
+          {
+            chatData.map((chat, index) => <ChatItem key={index} chat={chat} />)
+          }
+        </div>
+
+      ) : (
+        <div className="flex justify-center h-full text-muted-foreground text-sm text-center">
+          <span className="leading-7">
+            Start a new chat by searching a user or creating a new group
+          </span>
+        </div>
+      )}
     </section>
   );
 };

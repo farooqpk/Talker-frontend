@@ -3,7 +3,7 @@ import Container from "../Container";
 import { ContentType, MessageType } from "../../types";
 import { formateDate } from "@/lib/format-date";
 import { ReactElement, useEffect, useRef, useState } from "react";
-import { ArrowDown, Loader2, Pause, Play, Trash2, X } from "lucide-react";
+import { ArrowDown, Check, CheckCheck, Loader2, Pause, Play, Trash2, X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +20,7 @@ import { IconButton } from "../IconButton";
 type Props = {
   messages: MessageType[];
   handleDeleteMsg: (id: string) => void;
-  sendMessageLoadingRef: React.MutableRefObject<boolean>;
+  sendMessageLoading: boolean
   handleGetMedia: (
     mediapath: string,
     type: ContentType,
@@ -35,7 +35,7 @@ type Props = {
 export default function ChatContent({
   messages,
   handleDeleteMsg,
-  sendMessageLoadingRef,
+  sendMessageLoading,
   handleGetMedia,
   getMediaLoading,
 }: Props): ReactElement {
@@ -53,7 +53,7 @@ export default function ChatContent({
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, sendMessageLoadingRef.current]);
+  }, [messages, sendMessageLoading]);
 
   const handleAudio = (audioId: string, audioBlob: Blob, isPlay: boolean) => {
     if (isPlay) {
@@ -116,7 +116,7 @@ export default function ChatContent({
           return (
             <div
               key={index}
-              className={`border rounded-3xl p-3 break-words flex flex-col flex-wrap gap-2 ${
+              className={`border rounded-3xl p-3 break-words flex flex-col flex-wrap gap-4 ${
                 msg.senderId === user?.userId ? "ml-auto" : "mr-auto"
               }`}
             >
@@ -250,16 +250,20 @@ export default function ChatContent({
                 ) : null}
               </div>
 
-              <div className="ml-auto">
+              <div className="flex ml-auto items-center gap-3">
                 <span className="text-xs text-muted-foreground">
                   {formateDate(msg.createdAt)}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                 <Check className="w-4 h-4" />
+                 {/* <CheckCheck  className="w-4 h-4"/> */}
                 </span>
               </div>
             </div>
           );
         })}
 
-        {sendMessageLoadingRef.current && (
+        {sendMessageLoading && (
           <div className="ml-auto border rounded-3xl p-3">
             <ThreeDots color="#E5E7EB" width={50} />
           </div>

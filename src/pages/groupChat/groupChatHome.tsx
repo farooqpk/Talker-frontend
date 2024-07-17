@@ -47,7 +47,7 @@ export default function GroupChat(): ReactElement {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useGetUser();
-  const sendMessageLoadingRef = useRef<boolean>(false);
+   const [sendMessageLoading,setSendMessageLoading] = useState(false)
   const [getMediaLoading, setGetMediaLoading] = useState<{
     messageId: string;
     loading: boolean;
@@ -147,7 +147,7 @@ export default function GroupChat(): ReactElement {
 
     const privateKey = await getValueFromStoreIDB(user.userId);
 
-    sendMessageLoadingRef.current = true;
+   setSendMessageLoading(true)
 
     const chatContent =
       type === "TEXT"
@@ -227,7 +227,7 @@ export default function GroupChat(): ReactElement {
       setMessages((prev) => [...prev, message]);
 
       if (message.senderId === user?.userId) {
-        sendMessageLoadingRef.current = false;
+       setSendMessageLoading(false)
       }
 
       await new Audio(
@@ -494,7 +494,7 @@ export default function GroupChat(): ReactElement {
             <ChatContent
               messages={messages}
               handleDeleteMsg={handleDeleteMsg}
-              sendMessageLoadingRef={sendMessageLoadingRef}
+              sendMessageLoading={sendMessageLoading}
               getMediaLoading={getMediaLoading}
               handleGetMedia={handleGetMedia}
             />

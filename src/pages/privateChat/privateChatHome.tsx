@@ -57,7 +57,7 @@ export default function PrivateChat(): ReactElement {
   } = useAudioRecorder();
   const encryptedChatKeyRef = useRef<ArrayBuffer | undefined>(undefined);
   const { toast } = useToast();
-  const sendMessageLoadingRef = useRef<boolean>(false);
+  const [sendMessageLoading,setSendMessageLoading] = useState(false)
   const [getMediaLoading, setGetMediaLoading] = useState<{
     messageId: string;
     loading: boolean;
@@ -160,7 +160,7 @@ export default function PrivateChat(): ReactElement {
     if (!privateKey) return;
 
     // for loading....
-    sendMessageLoadingRef.current = true;
+    setSendMessageLoading(true)
 
     const isChatAlreadyExist = recipient?.chatId;
 
@@ -353,7 +353,7 @@ export default function PrivateChat(): ReactElement {
       setMessages((prev) => [...prev, message]);
 
       if (message.senderId === user?.userId) {
-        sendMessageLoadingRef.current = false;
+        setSendMessageLoading(false);
       }
 
       if (message.senderId === user?.userId) {
@@ -503,7 +503,7 @@ export default function PrivateChat(): ReactElement {
             <ChatContent
               messages={messages}
               handleDeleteMsg={handleDeleteMsg}
-              sendMessageLoadingRef={sendMessageLoadingRef}
+              sendMessageLoading={sendMessageLoading}
               handleGetMedia={handleGetMedia}
               getMediaLoading={getMediaLoading}
             />
