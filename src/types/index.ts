@@ -4,6 +4,11 @@ export enum UserStatusEnum {
   TYPING = "typing",
 }
 
+export type MsgStatus = {
+  userId: string;
+  isRead: boolean;
+};
+
 export type MessageType = {
   messageId: string;
   chatId: string;
@@ -16,7 +21,8 @@ export type MessageType = {
   createdAt: string;
   sender?: User;
   isDeleted: boolean;
-  mediaPath?:string
+  mediaPath?: string;
+  status: MsgStatus[];
 };
 
 export type User = {
@@ -42,7 +48,6 @@ export enum StoreNameIDB {
   MEDIA_CACHE_DB = "mediaCacheDB",
 }
 
-
 export enum SocketEvents {
   IS_ONLINE = "isOnline",
   IS_TYPING = "isTyping",
@@ -54,18 +59,16 @@ export enum SocketEvents {
   DELETE_MESSAGE = "deleteMessage",
   EXIT_GROUP = "exitGroup",
   UPDATE_GROUP_DETAILS = "updateGroupDetails",
-  CONNECTION = 'connection',
-  IS_CONNECTED = 'isConnected',
-  IS_DISCONNECTED = 'isDisconnected',
-  UN_AUTHORIZED = 'unauthorized',
-  DISCONNECT='disconnect',
+  CONNECTION = "connection",
+  IS_CONNECTED = "isConnected",
+  IS_DISCONNECTED = "isDisconnected",
+  UN_AUTHORIZED = "unauthorized",
+  DISCONNECT = "disconnect",
   GROUP_CREATED = "groupCreated",
   KICK_MEMBER = "kickMember",
   ADD_NEW_MEMBER_TO_GROUP = "addNewMemberToGroup",
+  READ_MESSAGE = "readMessage",
 }
-
-
-
 
 interface Participant {
   user: User;

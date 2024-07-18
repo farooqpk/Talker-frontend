@@ -1,9 +1,18 @@
 import { useGetUser } from "@/hooks/useGetUser";
 import Container from "../Container";
-import { ContentType, MessageType } from "../../types";
+import { ContentType, MsgStatus, type MessageType } from "../../types";
 import { formateDate } from "@/lib/format-date";
-import { ReactElement, useEffect, useRef, useState } from "react";
-import { ArrowDown, Check, CheckCheck, Loader2, Pause, Play, Trash2, X } from "lucide-react";
+import { type ReactElement, useEffect, useRef, useState } from "react";
+import {
+  ArrowDown,
+  Check,
+  CheckCheck,
+  Loader2,
+  Pause,
+  Play,
+  Trash2,
+  X,
+} from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +29,7 @@ import { IconButton } from "../IconButton";
 type Props = {
   messages: MessageType[];
   handleDeleteMsg: (id: string) => void;
-  sendMessageLoading: boolean
+  sendMessageLoading: boolean;
   handleGetMedia: (
     mediapath: string,
     type: ContentType,
@@ -30,6 +39,7 @@ type Props = {
     messageId: string;
     loading: boolean;
   };
+  handleReadMessage: (msgId: string) => void;
 };
 
 export default function ChatContent({
@@ -38,6 +48,7 @@ export default function ChatContent({
   sendMessageLoading,
   handleGetMedia,
   getMediaLoading,
+  handleReadMessage,
 }: Props): ReactElement {
   const { user } = useGetUser();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -53,7 +64,7 @@ export default function ChatContent({
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, sendMessageLoading]);
+  }, [messages, scrollRef.current, sendMessageLoading]);
 
   const handleAudio = (audioId: string, audioBlob: Blob, isPlay: boolean) => {
     if (isPlay) {
@@ -98,6 +109,25 @@ export default function ChatContent({
     }
   };
 
+  const IsRead = (msgStatus: MsgStatus[]) => {
+    return msgStatus.every((status) => status.isRead);
+  };
+
+  useEffect(() => {
+    if (!messages || messages.length === 0) return;
+
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.senderId === user?.userId) return;
+
+    const isReadLastMsg = lastMessage.status.find(
+      (status) => status.userId === user?.userId
+    )?.isRead;
+
+    if (!isReadLastMsg) {
+      handleReadMessage(lastMessage.messageId);
+    }
+  }, [messages]);
+
   return (
     <Container>
       <section
@@ -112,10 +142,10 @@ export default function ChatContent({
           </AlertDescription>
         </Alert>
 
-        {messages?.map((msg, index) => {
+        {messages?.map((msg) => {
           return (
             <div
-              key={index}
+              key={msg.messageId}
               className={`border rounded-3xl p-3 break-words flex flex-col flex-wrap gap-4 ${
                 msg.senderId === user?.userId ? "ml-auto" : "mr-auto"
               }`}
@@ -173,13 +203,13 @@ export default function ChatContent({
                             getMediaLoading.loading
                           }
                         />
-                      ) : isPlaying[msg?.messageId!!] ? (
+                      ) : isPlaying[msg?.messageId] ? (
                         <IconButton
                           icon={<Pause />}
                           className="w-9 h-9"
                           onClick={() =>
                             handleAudio(
-                              msg?.messageId!!,
+                              msg?.messageId,
                               msg.audio as Blob,
                               false
                             )
@@ -190,11 +220,7 @@ export default function ChatContent({
                           icon={<Play />}
                           className="w-9 h-9"
                           onClick={() =>
-                            handleAudio(
-                              msg?.messageId!!,
-                              msg.audio as Blob,
-                              true
-                            )
+                            handleAudio(msg?.messageId, msg.audio as Blob, true)
                           }
                         />
                       )
@@ -254,10 +280,15 @@ export default function ChatContent({
                 <span className="text-xs text-muted-foreground">
                   {formateDate(msg.createdAt)}
                 </span>
-                <span className="text-xs text-muted-foreground">
-                 <Check className="w-4 h-4" />
-                 {/* <CheckCheck  className="w-4 h-4"/> */}
-                </span>
+                {msg.senderId === user?.userId && !msg.isDeleted && (
+                  <span className="text-xs text-muted-foreground">
+                    {IsRead(msg.status) ? (
+                      <CheckCheck className="w-4 h-4" />
+                    ) : (
+                      <Check className="w-4 h-4" />
+                    )}
+                  </span>
+                )}
               </div>
             </div>
           );
@@ -275,7 +306,7 @@ export default function ChatContent({
         <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 flex justify-center items-center z-20">
           <img
             src={lightboxImage}
-            alt="Lightbox Image"
+            alt="Lightbox"
             className="max-w-full max-h-full"
           />
           <IconButton

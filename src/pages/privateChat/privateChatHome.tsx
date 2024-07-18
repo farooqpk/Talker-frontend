@@ -29,7 +29,13 @@ import { useAudioRecorder } from "react-audio-voice-recorder";
 import { useToast } from "@/components/ui/use-toast";
 import msgRecieveSound from "../../assets/Pocket.mp3";
 import msgSendSound from "../../assets/Solo.mp3";
-import { addValueToMediaCacheIDB, clearOldestMediaCacheIDB, getValueFromMediaCacheIDB, getValueFromStoreIDB, sizeOfMediaCacheIDB } from "@/lib/idb";
+import {
+  addValueToMediaCacheIDB,
+  clearOldestMediaCacheIDB,
+  getValueFromMediaCacheIDB,
+  getValueFromStoreIDB,
+  sizeOfMediaCacheIDB,
+} from "@/lib/idb";
 import ChatContent from "@/components/chat/chatContent";
 import ChatFooter from "@/components/chat/chatFooter";
 import ChatHeader from "@/components/chat/chatHeader";
@@ -57,7 +63,7 @@ export default function PrivateChat(): ReactElement {
   } = useAudioRecorder();
   const encryptedChatKeyRef = useRef<ArrayBuffer | undefined>(undefined);
   const { toast } = useToast();
-  const [sendMessageLoading,setSendMessageLoading] = useState(false)
+  const [sendMessageLoading, setSendMessageLoading] = useState(false);
   const [getMediaLoading, setGetMediaLoading] = useState<{
     messageId: string;
     loading: boolean;
@@ -101,7 +107,6 @@ export default function PrivateChat(): ReactElement {
           if (message.isDeleted) return message;
 
           switch (message.contentType) {
-
             case ContentType.TEXT: {
               const textArrayBuffer = base64ToArrayBuffer(message?.content!);
               message.text = (await decryptMessage(
@@ -113,24 +118,28 @@ export default function PrivateChat(): ReactElement {
               break;
             }
             case ContentType.IMAGE: {
-              const getMediaFromCache = await getValueFromMediaCacheIDB(message.mediaPath!)
+              const getMediaFromCache = await getValueFromMediaCacheIDB(
+                message.mediaPath!
+              );
               if (!getMediaFromCache) break;
-              message.image = await decryptMessage(
+              message.image = (await decryptMessage(
                 getMediaFromCache,
                 decryptedChatKey,
                 ContentType.IMAGE
-              ) as Blob;
-              break
+              )) as Blob;
+              break;
             }
             case ContentType.AUDIO: {
-              const getMediaFromCache = await getValueFromMediaCacheIDB(message.mediaPath!)
+              const getMediaFromCache = await getValueFromMediaCacheIDB(
+                message.mediaPath!
+              );
               if (!getMediaFromCache) break;
-              message.audio = await decryptMessage(
+              message.audio = (await decryptMessage(
                 getMediaFromCache,
                 decryptedChatKey,
                 ContentType.AUDIO
-              ) as Blob;
-              break
+              )) as Blob;
+              break;
             }
             default:
               break;
@@ -160,7 +169,7 @@ export default function PrivateChat(): ReactElement {
     if (!privateKey) return;
 
     // for loading....
-    setSendMessageLoading(true)
+    setSendMessageLoading(true);
 
     const isChatAlreadyExist = recipient?.chatId;
 
@@ -215,10 +224,10 @@ export default function PrivateChat(): ReactElement {
       type === ContentType.TEXT
         ? typedText
         : type === ContentType.IMAGE
-          ? imgBlob!
-          : type === ContentType.AUDIO
-            ? recordingBlob!
-            : "";
+        ? imgBlob!
+        : type === ContentType.AUDIO
+        ? recordingBlob!
+        : "";
 
     const chatKey = isChatAlreadyExist
       ? encryptedChatKeyRef.current
@@ -371,6 +380,14 @@ export default function PrivateChat(): ReactElement {
       );
     };
 
+    const handleReadMessage = (messageId: string) => {
+      setMessages((prev) =>
+        prev.map((item) =>
+          item.messageId === messageId ? { ...item, isRead: true } : item
+        )
+      );
+    };
+
     socket.emit(SocketEvents.IS_ONLINE, id);
 
     socket.on(SocketEvents.IS_ONLINE, handleIsOnline);
@@ -387,6 +404,8 @@ export default function PrivateChat(): ReactElement {
 
     socket.on(SocketEvents.DELETE_MESSAGE, handleDeleteMessage);
 
+    socket.on(SocketEvents.READ_MESSAGE, handleReadMessage);
+
     return () => {
       socket.off(SocketEvents.IS_ONLINE, handleIsOnline);
       socket.off(SocketEvents.IS_DISCONNECTED, handleIsDisconnected);
@@ -395,6 +414,7 @@ export default function PrivateChat(): ReactElement {
       socket.off(SocketEvents.IS_NOT_TYPING, handleIsNotTyping);
       socket.off(SocketEvents.SEND_PRIVATE_MESSAGE, handleRecieveMessage);
       socket.off(SocketEvents.DELETE_MESSAGE, handleDeleteMessage);
+      socket.off(SocketEvents.READ_MESSAGE, handleReadMessage);
     };
   }, [id, socket, encryptedChatKeyRef.current]);
 
@@ -442,7 +462,7 @@ export default function PrivateChat(): ReactElement {
 
     const mediaFromApi = await getMediaApi(mediapath);
     // check current size of cache in idb
-    const cacheSize = await sizeOfMediaCacheIDB()
+    const cacheSize = await sizeOfMediaCacheIDB();
     // if cache size is greater than 10 MB, clear oldest media
     if (cacheSize > 10 * 1024 * 1024) {
       await clearOldestMediaCacheIDB();
@@ -483,14 +503,21 @@ export default function PrivateChat(): ReactElement {
     setGetMediaLoading((prev) => ({ ...prev, messageId, loading: false }));
   };
 
+  const handleReadMessage = async (messageId: string) => {
+    if (!socket) return;
+    socket.emit(SocketEvents.READ_MESSAGE, {
+      messageId,
+    });
+  };
+
   return (
     <>
       <main className="flex flex-col h-full">
         {isLoading ||
-          !socket ||
-          (recipient?.chatId && messagesLoading) ||
-          chatKeyLoading ||
-          !recipient ? (
+        !socket ||
+        (recipient?.chatId && messagesLoading) ||
+        chatKeyLoading ||
+        !recipient ? (
           <Loader />
         ) : (
           <>
@@ -506,6 +533,7 @@ export default function PrivateChat(): ReactElement {
               sendMessageLoading={sendMessageLoading}
               handleGetMedia={handleGetMedia}
               getMediaLoading={getMediaLoading}
+              handleReadMessage={handleReadMessage}
             />
 
             <ChatFooter
