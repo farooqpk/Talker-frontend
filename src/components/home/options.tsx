@@ -24,12 +24,15 @@ import ChangeUsername from "../common/ChangeUsername";
 import { useMutation } from "react-query";
 import { logoutApi } from "@/services/api/auth";
 import { useToast } from "../ui/use-toast";
+import { AlertDialogDescription } from "@radix-ui/react-alert-dialog";
 
 const Options = () => {
   const navigate = useNavigate();
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isChangeUsernameModalOpen, setIsChangeUsernameModalOpen] =
+    useState(false);
+  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] =
     useState(false);
   const { mutate: logoutMutate, isLoading: logoutIsLoading } =
     useMutation(logoutApi);
@@ -49,6 +52,8 @@ const Options = () => {
       }
     );
   };
+
+  const handleDeleteAccount = () => {};
 
   return (
     <div className="w-full max-w-lg mx-auto p-4 ">
@@ -85,6 +90,12 @@ const Options = () => {
               >
                 Logout
               </DropdownMenuItem>
+              {/* <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => setIsDeleteAccountModalOpen(true)}
+              >
+                Delete account
+              </DropdownMenuItem> */}
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -121,6 +132,39 @@ const Options = () => {
           onClose={() => setIsChangeUsernameModalOpen(false)}
           isChangeUsernameModalOpen={isChangeUsernameModalOpen}
         />
+      )}
+
+      {isDeleteAccountModalOpen && (
+        <AlertDialog open={isDeleteAccountModalOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Are you sure to delete account?
+              </AlertDialogTitle>
+            </AlertDialogHeader>
+            <AlertDialogDescription>
+              If you delete your account, you will not be able to access your
+              account again. This action cannot be undone.
+            </AlertDialogDescription>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                onClick={() => setIsDeleteAccountModalOpen(false)}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAccount}
+                className="bg-red-600 hover:bg-red-800"
+              >
+                {logoutIsLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Delete"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </div>
   );

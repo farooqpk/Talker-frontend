@@ -25,7 +25,7 @@ import { signup } from "@/services/api/auth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   createAsymmetricKeys,
   encryptPrivateKeyWithPassword,
@@ -84,7 +84,7 @@ const Signup = () => {
     password,
   }: z.infer<typeof signupFormSchema>) => {
     const keys = await createAsymmetricKeys();
-    privateKeyRef.current = keys.privateKey
+    privateKeyRef.current = keys.privateKey;
 
     signupMutate(
       {
@@ -116,7 +116,6 @@ const Signup = () => {
     setShowDownloadConfirmation(false);
     handleSuccess();
   };
-
 
   const signupForm = () => (
     <Form {...form}>
@@ -167,13 +166,23 @@ const Signup = () => {
               )}
             />
           </CardContent>
-          <CardFooter>
-            <Button disabled={signupLoading}>
+          <CardFooter className="flex flex-col items-start gap-3">
+            <Button disabled={signupLoading} className="w-full">
               {signupLoading && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Submit
             </Button>
+
+            <div className="text-sm text-gray-500">
+              By signing up, you agree to our{" "}
+              <Link
+                to="/privacy-policy"
+                className="text-blue-500 hover:text-blue-700 underline"
+              >
+                Privacy Policy
+              </Link>
+            </div>
           </CardFooter>
         </Card>
       </form>
@@ -215,13 +224,9 @@ const Signup = () => {
 
   return (
     <>
-      {
-        showDownloadConfirmation
-          ?
-          downloadPrivateKeyConfirmation()
-          : signupForm()
-
-      }
+      {showDownloadConfirmation
+        ? downloadPrivateKeyConfirmation()
+        : signupForm()}
     </>
   );
 };

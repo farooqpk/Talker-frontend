@@ -266,7 +266,10 @@ const Login = () => {
             )}
           </CardContent>
           <CardFooter>
-            <Button disabled={loginLoading}>
+            <Button
+              disabled={loginLoading || loginTokenLoading}
+              className="w-full"
+            >
               {loginLoading ||
                 (loginTokenLoading && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
