@@ -93,3 +93,19 @@ export interface Chat {
   Group: Group[];
   ChatKey: ChatKey[];
 }
+
+export interface GroupDetails {
+  groupId: string;
+  chatId: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  Chat: {
+    participants: {
+      userId: string;
+      username: string;
+    }[];
+    encryptedKey: string
+  };
+  admins: string[];
+}

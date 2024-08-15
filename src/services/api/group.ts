@@ -1,4 +1,5 @@
 import _axios from "@/lib/_axios";
+import { GroupDetails } from "@/types";
 
 export const getPublicKeysApi = async (
   data: any
@@ -10,7 +11,9 @@ export const createGroupApi = async (data: any) => {
   return (await _axios.post(`/api/group/create-group`, data)).data;
 };
 
-export const getGroupDetailsApi = async (groupId: string) => {
+export const getGroupDetailsApi = async (
+  groupId: string
+): Promise<GroupDetails> => {
   return (await _axios.get(`/api/group/${groupId}`)).data;
 };
 
