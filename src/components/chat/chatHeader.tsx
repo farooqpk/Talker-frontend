@@ -1,6 +1,12 @@
 import { Link } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "../ui/button";
-import { ArrowLeft, Pencil, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, CircleEllipsis, Pencil, Save } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -38,19 +44,7 @@ import { Option } from "../../types/index";
 import { useQuery } from "react-query";
 import { IconButton } from "../IconButton";
 
-export default function ChatHeader({
-  groupDetails,
-  recipient,
-  userStatus,
-  isGroup,
-  handleExitGroup,
-  handleUpdateGroupDetails,
-  handleKickUserFromGroup,
-  isKickMemberClicked,
-  setIsKickMemberClicked,
-  handleAddNewMembers,
-  isAddingNewMembersLoading,
-}: {
+type Props = {
   groupDetails?: GroupDetails;
   recipient?: User;
   userStatus?: UserStatusEnum;
@@ -61,11 +55,23 @@ export default function ChatHeader({
     description?: string;
   }) => void;
   handleKickUserFromGroup?: (userId: string) => void;
-  isKickMemberClicked?: boolean;
-  setIsKickMemberClicked?: (value: boolean) => void;
   handleAddNewMembers?: (selectedUsers: string[]) => void;
   isAddingNewMembersLoading?: boolean;
-}) {
+  handleSetAsAdmin?: (userId: string) => void;
+};
+
+export default function ChatHeader({
+  groupDetails,
+  recipient,
+  userStatus,
+  isGroup,
+  handleExitGroup,
+  handleUpdateGroupDetails,
+  handleKickUserFromGroup,
+  handleAddNewMembers,
+  isAddingNewMembersLoading,
+  handleSetAsAdmin,
+}: Props) {
   const { user } = useGetUser();
   const [isExitGroupModalOpen, setIsExitGroupModalOpen] = useState(false);
   const [isGroupNameEdit, setIsGroupNameEdit] = useState(false);
@@ -77,8 +83,17 @@ export default function ChatHeader({
   const [isAddNewMemberInputClicked, setIsAddNewMemberInputClicked] =
     useState(false);
   const [users, setUsers] = useState([] as Option[]);
-  const [kickMemberId, setKickMemberId] = useState<string>("");
   const [newMembers, setNewMembers] = useState<string[]>([]);
+  const [isKickMemberClicked, setIsKickMemberClicked] = useState(false);
+  const [kickMember, setKickMember] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [isSetAsAdminClicked, setIsSetAsAdminClicked] = useState(false);
+  const [newAdmin, setNewAdmin] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   useQuery<Option[]>({
     queryKey: ["addnewmemberstogroupu"],
@@ -300,16 +315,39 @@ export default function ChatHeader({
                           </Badge>
                         )}
                       </Link>
+                      {/* admin can't remove themselves and can't remove other admins */}
                       {groupDetails?.admins?.includes(user?.userId!) &&
+                        !groupDetails?.admins?.includes(participant?.userId) &&
                         participant?.userId !== user?.userId && (
-                          <IconButton
-                            className="w-8 h-8 border-none"
-                            icon={<Trash2 color="red" className="w-5 h-5" />}
-                            onClick={() => {
-                              setKickMemberId(participant?.userId);
-                              setIsKickMemberClicked?.(true);
-                            }}
-                          />
+                          <DropdownMenu>
+                            <DropdownMenuTrigger>
+                              <CircleEllipsis />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setNewAdmin({
+                                    id: participant?.userId,
+                                    name: participant?.username,
+                                  });
+                                  setIsSetAsAdminClicked(true);
+                                }}
+                              >
+                                Set as Admin
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setKickMember({
+                                    id: participant?.userId,
+                                    name: participant?.username,
+                                  });
+                                  setIsKickMemberClicked?.(true);
+                                }}
+                              >
+                                Remove Member
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         )}
                     </div>
                   ))}
@@ -359,7 +397,10 @@ export default function ChatHeader({
               <AlertDialogCancel onClick={() => setIsExitGroupModalOpen(false)}>
                 Cancel
               </AlertDialogCancel>
-              <AlertDialogAction onClick={() => handleExitGroup?.()}>
+              <AlertDialogAction
+                className="bg-destructive text-white hover:bg-destructive/80"
+                onClick={() => handleExitGroup?.()}
+              >
                 Continue
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -372,17 +413,56 @@ export default function ChatHeader({
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                Are you sure to kick this user?
+                {`Are you sure to remove ${kickMember?.name} from the group?`}
               </AlertDialogTitle>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel
-                onClick={() => setIsKickMemberClicked?.(false)}
+                onClick={() => {
+                  setIsKickMemberClicked?.(false);
+                  setKickMember(null);
+                }}
               >
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => handleKickUserFromGroup?.(kickMemberId)}
+                onClick={() => {
+                  handleKickUserFromGroup?.(kickMember?.id!);
+                  setIsKickMemberClicked(false);
+                  setKickMember(null);
+                }}
+                className="bg-destructive text-white hover:bg-destructive/80"
+              >
+                Continue
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {isSetAsAdminClicked && (
+        <AlertDialog open={isSetAsAdminClicked}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {`Are you sure to set ${newAdmin?.name} as a admin?`}
+              </AlertDialogTitle>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                onClick={() => {
+                  setIsSetAsAdminClicked(false);
+                  setNewAdmin(null);
+                }}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  handleSetAsAdmin?.(newAdmin?.id!);
+                  setIsSetAsAdminClicked(false);
+                  setNewAdmin(null);
+                }}
               >
                 Continue
               </AlertDialogAction>

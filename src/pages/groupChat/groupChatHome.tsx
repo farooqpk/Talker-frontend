@@ -58,7 +58,6 @@ export default function GroupChat(): ReactElement {
     messageId: string;
     loading: boolean;
   }>({ messageId: "", loading: false });
-  const [isKickMemberClicked, setIsKickMemberClicked] = useState(false);
   const [isAddingNewMembersLoading, setIsAddingNewMembersLoading] =
     useState(false);
 
@@ -284,7 +283,6 @@ export default function GroupChat(): ReactElement {
       removedUserId: string;
       removedUserName: string;
     }) => {
-      setIsKickMemberClicked(false);
       if (removedUserId === user?.userId) {
         toast({
           description: "You have been kicked from the group.",
@@ -307,12 +305,22 @@ export default function GroupChat(): ReactElement {
         });
     };
 
-    const handleReadMessage = (messageId: string) => {
+    const handleReadMessageReciever = (messageId: string) => {
       setMessages((prev) =>
         prev.map((item) =>
           item.messageId === messageId ? { ...item, isRead: true } : item
         )
       );
+    };
+
+    const handleSetAsAdminReceiver = async (adminId: string) => {
+      await refetchGroup();
+
+      if (user?.userId === adminId) {
+        toast({
+          description: "You have been set as admin.",
+        });
+      }
     };
 
     socket?.on(SocketEvents.SEND_GROUP_MESSAGE, recieveMessage);
@@ -325,7 +333,8 @@ export default function GroupChat(): ReactElement {
       SocketEvents.ADD_NEW_MEMBER_TO_GROUP,
       addNewMembersToGroupReceiver
     );
-    socket.on(SocketEvents.READ_MESSAGE, handleReadMessage);
+    socket.on(SocketEvents.READ_MESSAGE, handleReadMessageReciever);
+    socket.on(SocketEvents.SET_ADMIN, handleSetAsAdminReceiver);
 
     return () => {
       socket?.off(SocketEvents.SEND_GROUP_MESSAGE, recieveMessage);
@@ -338,7 +347,8 @@ export default function GroupChat(): ReactElement {
         SocketEvents.ADD_NEW_MEMBER_TO_GROUP,
         addNewMembersToGroupReceiver
       );
-      socket.off(SocketEvents.READ_MESSAGE, handleReadMessage);
+      socket.off(SocketEvents.READ_MESSAGE, handleReadMessageReciever);
+      socket.off(SocketEvents.SET_ADMIN, handleSetAsAdminReceiver);
     };
   }, [id, socket, encryptedChatKeyRef.current, user]);
 
@@ -505,6 +515,14 @@ export default function GroupChat(): ReactElement {
     });
   };
 
+  const handleSetAsAdmin = (userId: string) => {
+    if (!socket) return;
+    socket.emit(SocketEvents.SET_ADMIN, {
+      groupId: id,
+      userId,
+    });
+  };
+
   return (
     <>
       <main className="flex flex-col h-full">
@@ -518,10 +536,9 @@ export default function GroupChat(): ReactElement {
               handleExitGroup={handleExitGroup}
               handleUpdateGroupDetails={handleUpdateGroupDetails}
               handleKickUserFromGroup={handleKickUserFromGroup}
-              isKickMemberClicked={isKickMemberClicked}
-              setIsKickMemberClicked={setIsKickMemberClicked}
               handleAddNewMembers={handleAddNewMembers}
               isAddingNewMembersLoading={isAddingNewMembersLoading}
+              handleSetAsAdmin={handleSetAsAdmin}
             />
             <ChatContent
               messages={messages}

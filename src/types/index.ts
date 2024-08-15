@@ -68,6 +68,8 @@ export enum SocketEvents {
   KICK_MEMBER = "kickMember",
   ADD_NEW_MEMBER_TO_GROUP = "addNewMemberToGroup",
   READ_MESSAGE = "readMessage",
+  SET_ADMIN = "setAdmin",
+  ERROR = "error",
 }
 
 interface Participant {
