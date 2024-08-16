@@ -73,7 +73,9 @@ export enum SocketEvents {
 }
 
 interface Participant {
-  user: User;
+  userId: string;
+  username: string;
+  publicKey: string;
 }
 
 interface Group {
@@ -82,18 +84,14 @@ interface Group {
   description: string;
 }
 
-interface ChatKey {
-  encryptedKey: string;
-}
-
 export interface Chat {
   chatId: string;
   createdAt: string;
   isGroup: boolean;
-  messages: MessageType[];
-  participants: Participant[];
-  Group: Group[];
-  ChatKey: ChatKey[];
+  message: MessageType;
+  recipient: Participant;
+  group: Group;
+  encryptedKey: string;
 }
 
 export interface GroupDetails {
@@ -102,12 +100,12 @@ export interface GroupDetails {
   name: string;
   description: string;
   createdAt: string;
-  Chat: {
-    participants: {
-      userId: string;
-      username: string;
-    }[];
-    encryptedKey: string
+  chat: {
+    participants: Omit<Participant, "publicKey">[];
+    encryptedKey: string;
   };
-  admins: string[];
+  admins: {
+    adminId: string;
+    isPrimaryAdmin?: boolean;
+  }[];
 }

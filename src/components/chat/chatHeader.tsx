@@ -102,7 +102,7 @@ export default function ChatHeader({
     onSuccess: (data) => {
       if (!data) return;
       const existingMembers =
-        groupDetails?.Chat?.participants?.map(({ userId }) => userId) || [];
+        groupDetails?.chat?.participants?.map(({ userId }) => userId) || [];
       const filteredData: Option[] = data.filter(
         (item) => !existingMembers.includes(item.value)
       );
@@ -142,7 +142,7 @@ export default function ChatHeader({
             </SheetTrigger>
             <SheetContent side={"right"} className="max-h-full overflow-y-auto">
               <SheetHeader className="pt-5">
-                {groupDetails?.admins?.includes(user?.userId!) ? (
+                {groupDetails?.admins?.includes({ adminId: user?.userId! }) ? (
                   <>
                     <div className="flex items-center gap-2">
                       <Input
@@ -212,7 +212,7 @@ export default function ChatHeader({
 
               <div className="border my-5" />
               <div className="flex flex-col gap-3">
-                {groupDetails?.admins?.includes(user?.userId!) && (
+                {groupDetails?.admins?.includes({ adminId: user?.userId! }) && (
                   <>
                     <div className="flex flex-col gap-1">
                       <MultiSelector
@@ -278,12 +278,12 @@ export default function ChatHeader({
                 <div className="flex flex-col gap-1">
                   <h1>Members</h1>
                   <p className="text-muted-foreground text-xs">
-                    {groupDetails?.Chat?.participants?.length} members
+                    {groupDetails?.chat?.participants?.length} members
                   </p>
                 </div>
 
                 <div className="max-h-[120px] overflow-y-auto flex flex-col gap-3 px-2">
-                  {groupDetails?.Chat?.participants?.map((participant) => (
+                  {groupDetails?.chat?.participants?.map((participant) => (
                     <div
                       key={participant?.userId}
                       className="flex justify-between items-center hover:bg-slate-900 rounded-xl cursor-pointer p-2 "
@@ -307,17 +307,21 @@ export default function ChatHeader({
                             ? "You"
                             : participant?.username}
                         </p>
-                        {groupDetails?.admins?.includes(
-                          participant?.userId
-                        ) && (
+                        {groupDetails?.admins?.includes({
+                          adminId: participant?.userId,
+                        }) && (
                           <Badge className="text-xs" variant={"outline"}>
                             Admin
                           </Badge>
                         )}
                       </Link>
                       {/* admin can't remove themselves and can't remove other admins */}
-                      {groupDetails?.admins?.includes(user?.userId!) &&
-                        !groupDetails?.admins?.includes(participant?.userId) &&
+                      {groupDetails?.admins?.includes({
+                        adminId: user?.userId!,
+                      }) &&
+                        !groupDetails?.admins?.includes({
+                          adminId: participant?.userId,
+                        }) &&
                         participant?.userId !== user?.userId && (
                           <DropdownMenu>
                             <DropdownMenuTrigger>

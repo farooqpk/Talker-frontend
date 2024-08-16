@@ -24,23 +24,21 @@ export const HomeList = ({
 
   const ChatItem = ({ chat }: { chat: Chat }) => {
     const isGroup = chat.isGroup;
-    const name = isGroup
-      ? chat.Group?.[0]?.name
-      : chat.participants[0]?.user?.username;
+    const name = isGroup ? chat.group?.name : chat.recipient?.username;
     const avatar = name?.[0].toUpperCase();
     const link = isGroup
-      ? `/group/${chat.Group?.[0]?.groupId}`
-      : `/chat/${chat.participants[0]?.user?.userId}`;
-    const date = formateDate(chat.messages[0]?.createdAt || chat.createdAt);
-    const isUserTyping =
-      !isGroup && isTyping.includes(chat.participants[0]?.user?.userId);
-    const senderName = chat?.messages?.[0]?.senderId === user?.userId
-      ? "You"
-      : chat?.messages[0]?.sender?.username;
-    const contentType = chat.messages[0]?.contentType;
-    const isDeleted = chat.messages[0]?.isDeleted;
-    const textContent = truncateMessage(chat.messages[0]?.text || "");
-    const description = isGroup ? chat.Group?.[0]?.description : null;
+      ? `/group/${chat.group?.groupId}`
+      : `/chat/${chat.recipient?.userId}`;
+    const date = formateDate(chat.message?.createdAt || chat.createdAt);
+    const isUserTyping = !isGroup && isTyping.includes(chat.recipient?.userId);
+    const senderName =
+      chat?.message?.senderId === user?.userId
+        ? "You"
+        : chat?.message?.sender?.username;
+    const contentType = chat.message?.contentType;
+    const isDeleted = chat.message?.isDeleted;
+    const textContent = truncateMessage(chat.message?.text || "");
+    const description = isGroup ? chat.group?.description : null;
 
     let content: ReactElement | string = "";
     if (contentType === ContentType.TEXT) {
@@ -64,7 +62,9 @@ export const HomeList = ({
         <div className="flex-grow">
           <h2 className="text-lg font-medium truncate">{name}</h2>
           <div
-            className={`text-sm ${isUserTyping ? "text-warning" : "text-muted-foreground"} truncate mt-1`}
+            className={`text-sm ${
+              isUserTyping ? "text-warning" : "text-muted-foreground"
+            } truncate mt-1`}
           >
             {isUserTyping ? (
               "typing..."

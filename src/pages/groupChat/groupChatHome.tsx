@@ -71,7 +71,7 @@ export default function GroupChat(): ReactElement {
     enabled: !!id,
     onSuccess: (data) => {
       if (!data) navigate("/");
-      const encryptedKey = data?.Chat?.encryptedKey;
+      const encryptedKey = data?.chat?.encryptedKey;
       const encryptedKeyArrayBuffer = base64ToArrayBuffer(encryptedKey);
       encryptedChatKeyRef.current = encryptedKeyArrayBuffer;
     },
@@ -264,8 +264,8 @@ export default function GroupChat(): ReactElement {
         navigate("/");
         toast({
           description:
-            // isExitByAdmin && groupDetails?.adminId !== user?.userId
-            isExitByAdmin && !groupDetails?.admins?.includes(user?.userId)
+            isExitByAdmin &&
+            !groupDetails?.admins?.includes({ adminId: user?.userId })
               ? "Group has been deleted by admin."
               : "Group left successfully.",
         });
