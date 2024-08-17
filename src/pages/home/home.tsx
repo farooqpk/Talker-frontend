@@ -207,6 +207,7 @@ export const Home = (): ReactElement => {
     };
   }, [socket, chatData, user, isTyping]);
 
+  
   return (
     <main className="h-[calc(100dvh)] flex flex-col py-6 px-4 gap-8">
       <HomeHeader />
