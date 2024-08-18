@@ -104,8 +104,5 @@ export interface GroupDetails {
     participants: Omit<Participant, "publicKey">[];
     encryptedKey: string;
   };
-  admins: {
-    adminId: string;
-    isPrimaryAdmin?: boolean;
-  }[];
+  admins: string[];
 }

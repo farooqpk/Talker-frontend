@@ -142,9 +142,7 @@ export default function ChatHeader({
             </SheetTrigger>
             <SheetContent side={"right"} className="max-h-full overflow-y-auto">
               <SheetHeader className="pt-5">
-                {groupDetails?.admins?.some(
-                  ({ adminId }) => user?.userId === adminId
-                ) ? (
+                {groupDetails?.admins?.includes(user?.userId!) ? (
                   <>
                     <div className="flex items-center gap-2">
                       <Input
@@ -214,9 +212,7 @@ export default function ChatHeader({
 
               <div className="border my-5" />
               <div className="flex flex-col gap-3">
-                {groupDetails?.admins?.some(
-                  ({ adminId }) => user?.userId === adminId
-                ) && (
+                {groupDetails?.admins?.includes(user?.userId!) && (
                   <>
                     <div className="flex flex-col gap-1">
                       <MultiSelector
@@ -311,8 +307,8 @@ export default function ChatHeader({
                             ? "You"
                             : participant?.username}
                         </p>
-                        {groupDetails?.admins?.some(
-                          ({ adminId }) => participant?.userId === adminId
+                        {groupDetails?.admins?.includes(
+                          participant?.userId!
                         ) && (
                           <Badge className="text-xs" variant={"outline"}>
                             Admin
@@ -320,12 +316,8 @@ export default function ChatHeader({
                         )}
                       </Link>
                       {/* admin can't remove themselves and can't remove other admins */}
-                      {groupDetails?.admins?.some(
-                        ({ adminId }) => user?.userId === adminId
-                      ) &&
-                        !groupDetails?.admins?.some(
-                          ({ adminId }) => participant?.userId === adminId
-                        ) &&
+                      {groupDetails?.admins?.includes(user?.userId!) &&
+                        !groupDetails?.admins?.includes(participant?.userId!) &&
                         participant?.userId !== user?.userId && (
                           <DropdownMenu>
                             <DropdownMenuTrigger>
