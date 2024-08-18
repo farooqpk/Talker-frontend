@@ -43,6 +43,7 @@ import { Input } from "@/components/ui/input";
 import { Option } from "../../types/index";
 import { useQuery } from "react-query";
 import { IconButton } from "../IconButton";
+import { AlertDialogDescription } from "@radix-ui/react-alert-dialog";
 
 type Props = {
   groupDetails?: GroupDetails;
@@ -94,6 +95,7 @@ export default function ChatHeader({
     id: string;
     name: string;
   } | null>(null);
+  const [isDeleteGroupModalOpen, setIsDeleteGroupModalOpen] = useState(false);
 
   useQuery<Option[]>({
     queryKey: ["addnewmemberstogroupu"],
@@ -354,7 +356,6 @@ export default function ChatHeader({
                 </div>
 
                 <div className="border my-3" />
-
                 <Button
                   variant={"destructive"}
                   size={"sm"}
@@ -363,6 +364,17 @@ export default function ChatHeader({
                 >
                   Exit Group
                 </Button>
+
+                {groupDetails?.admins?.includes(user?.userId!) && (
+                  <Button
+                    variant={"destructive"}
+                    size={"sm"}
+                    onClick={() => setIsDeleteGroupModalOpen(true)}
+                    disabled={isDeleteGroupModalOpen}
+                  >
+                    Delete Group
+                  </Button>
+                )}
               </div>
             </SheetContent>
           </Sheet>
@@ -393,6 +405,13 @@ export default function ChatHeader({
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure to exit?</AlertDialogTitle>
             </AlertDialogHeader>
+            {groupDetails?.admins?.includes(user?.userId!) &&
+              groupDetails?.admins?.length === 1 && (
+                <AlertDialogDescription>
+                  As you are the only admin of this group, you have to add a new
+                  admin before you can exit the group.
+                </AlertDialogDescription>
+              )}
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => setIsExitGroupModalOpen(false)}>
                 Cancel
@@ -400,6 +419,10 @@ export default function ChatHeader({
               <AlertDialogAction
                 className="bg-destructive text-white hover:bg-destructive/80"
                 onClick={() => handleExitGroup?.()}
+                disabled={
+                  groupDetails?.admins?.includes(user?.userId!) &&
+                  groupDetails?.admins?.length === 1
+                }
               >
                 Continue
               </AlertDialogAction>
