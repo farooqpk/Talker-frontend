@@ -157,21 +157,6 @@ export const Home = (): ReactElement => {
       });
     };
 
-    const handleExitGroup = ({
-      groupId,
-      isExitByAdmin,
-    }: {
-      groupId: string;
-      isExitByAdmin: boolean;
-    }) => {
-      if (isExitByAdmin) {
-        socket?.emit(SocketEvents.LEAVE_GROUP, { groupIds: [groupId] });
-        setChatData((prev) =>
-          prev.filter((item) => item?.group?.groupId !== groupId)
-        );
-      }
-    };
-
     socket?.emit(SocketEvents.JOIN_GROUP, { groupIds });
 
     socket?.on(SocketEvents.IS_TYPING, handleIsTyping);
@@ -185,8 +170,6 @@ export const Home = (): ReactElement => {
     socket?.on(SocketEvents.DELETE_MESSAGE, handleDeleteMessage);
 
     socket?.on(SocketEvents.GROUP_CREATED, handleGroupCreated);
-
-    socket.on(SocketEvents.EXIT_GROUP, handleExitGroup);
 
     return () => {
       socket?.off(SocketEvents.IS_TYPING, handleIsTyping);
@@ -202,12 +185,9 @@ export const Home = (): ReactElement => {
       socket?.off(SocketEvents.DELETE_MESSAGE, handleDeleteMessage);
 
       socket?.off(SocketEvents.GROUP_CREATED, handleGroupCreated);
-
-      socket.off(SocketEvents.EXIT_GROUP, handleExitGroup);
     };
   }, [socket, chatData, user, isTyping]);
 
-  
   return (
     <main className="h-[calc(100dvh)] flex flex-col py-6 px-4 gap-8">
       <HomeHeader />

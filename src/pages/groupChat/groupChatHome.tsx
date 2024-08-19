@@ -251,24 +251,20 @@ export default function GroupChat(): ReactElement {
     };
 
     const exitGroupReceiver = ({
-      isExitByAdmin,
       exitedUserId,
       groupId,
     }: {
-      isExitByAdmin: boolean;
       exitedUserId: string;
       groupId: string;
     }) => {
-      if (isExitByAdmin || exitedUserId === user?.userId) {
+      if (exitedUserId === user?.userId) {
         socket?.emit(SocketEvents.LEAVE_GROUP, { groupIds: [groupId] });
-        navigate("/");
         toast({
-          description:
-            isExitByAdmin &&
-            !groupDetails?.admins?.includes({ adminId: user?.userId })
-              ? "Group has been deleted by admin."
-              : "Group left successfully.",
+          description: "Group left successfully.",
         });
+        navigate("/");
+      } else {
+        refetchGroup();
       }
     };
 
