@@ -31,16 +31,6 @@ import {
   encryptPrivateKeyWithPassword,
   importPrivateKeyAsNonExtractable,
 } from "@/lib/ecrypt_decrypt";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { addValueToStoreIDB } from "@/lib/idb";
 import { downloadDataAsFile } from "@/lib/downloadDataAsFile";
 
@@ -70,15 +60,6 @@ const Signup = () => {
     isError: signupIsError,
   } = useMutation(signup);
 
-  const handleSuccess = () => {
-    toast({
-      title: "Signup Success",
-      description: "You have successfully signed up.",
-      variant: "default",
-    });
-    navigate("/");
-  };
-
   const handleSignup = async ({
     username,
     password,
@@ -101,7 +82,14 @@ const Signup = () => {
           );
           await addValueToStoreIDB(data?.user?.userId, newPrivateKey);
           localStorage.setItem("user", JSON.stringify(data?.user));
-          setShowDownloadConfirmation(true);
+          toast({
+            title: "Signup Success",
+            description: "You have successfully signed up.",
+            variant: "default",
+          });
+          setTimeout(() => {
+            setShowDownloadConfirmation(true);
+          }, 0);
         },
       }
     );
@@ -114,120 +102,108 @@ const Signup = () => {
     });
     downloadDataAsFile(encryptedPrivateKey, "talker_private_key.enc");
     setShowDownloadConfirmation(false);
-    handleSuccess();
+    navigate("/");
   };
 
-  const signupForm = () => (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSignup)}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Welcome to Talker</CardTitle>
-            <CardDescription>Please sign up to continue.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {signupIsError && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  {(
-                    signupError as {
-                      response?: { data?: { message?: string } };
-                    }
-                  )?.response?.data?.message || "An error occurred"}
-                </AlertDescription>
-              </Alert>
-            )}
-            <FormField
-              control={form.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-          <CardFooter className="flex flex-col items-start gap-3">
-            <Button disabled={signupLoading} className="w-full">
-              {signupLoading && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Submit
-            </Button>
-
-            <div className="text-sm text-gray-500">
-              By signing up, you agree to our{" "}
-              <Link
-                to="/privacy-policy"
-                className="text-blue-500 hover:text-blue-700 underline"
-              >
-                Privacy Policy
-              </Link>
-            </div>
-          </CardFooter>
-        </Card>
-      </form>
-    </Form>
-  );
-
-  const downloadPrivateKeyConfirmation = () => (
-    <main className="p-4 px-6 md:px-24">
-      <AlertDialog
-        open={showDownloadConfirmation}
-        onOpenChange={setShowDownloadConfirmation}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Download and Keep Your Private Key
-            </AlertDialogTitle>
-          </AlertDialogHeader>
-          <AlertDialogDescription>
-            If you do not download your private key, you will not be able to
-            access your account from another device, browser, or after clearing
-            your IndexedDB. Do you want to download the private key?
-          </AlertDialogDescription>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              className="bg-red-600 hover:bg-red-800"
-              onClick={handleSuccess}
-            >
-              Cancel Anyway
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleDownloadPrivateKey}>
-              Download
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </main>
-  );
-
   return (
-    <>
-      {showDownloadConfirmation
-        ? downloadPrivateKeyConfirmation()
-        : signupForm()}
-    </>
+    <div className="relative">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSignup)}>
+          <Card>
+            <CardHeader>
+              <CardTitle>Welcome to Talker</CardTitle>
+              <CardDescription>Please sign up to continue.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {signupIsError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    {(
+                      signupError as {
+                        response?: { data?: { message?: string } };
+                      }
+                    )?.response?.data?.message || "An error occurred"}
+                  </AlertDescription>
+                </Alert>
+              )}
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+            <CardFooter className="flex flex-col items-start gap-3">
+              <Button disabled={signupLoading} className="w-full">
+                {signupLoading && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Submit
+              </Button>
+
+              <div className="text-sm text-gray-500">
+                By signing up, you agree to our{" "}
+                <Link
+                  to="/privacy-policy"
+                  className="text-blue-500 hover:text-blue-700 underline"
+                >
+                  Privacy Policy
+                </Link>
+              </div>
+            </CardFooter>
+          </Card>
+        </form>
+      </Form>
+
+      {showDownloadConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+          <div className="bg-background p-6 rounded-lg max-w-md w-full border">
+            <h2 className="text-lg font-bold mb-4">
+              Download and Keep Your Private Key
+            </h2>
+            <p className="mb-6 text-sm">
+              If you do not download your private key, you will not be able to
+              access your account from another device, browser, or after
+              clearing your IndexedDB. Do you want to download the private key?
+            </p>
+            <div className="flex justify-end space-x-4">
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setShowDownloadConfirmation(false);
+                  navigate("/");
+                }}
+              >
+                Cancel Anyway
+              </Button>
+              <Button onClick={handleDownloadPrivateKey}>Download</Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

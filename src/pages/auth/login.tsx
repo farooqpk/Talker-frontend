@@ -27,7 +27,10 @@ import { AlertCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import {
+  createSymetricKey,
   decryptPrivateKeyWithPassword,
+  decryptSymetricKeyWithPrivateKey,
+  encryptSymetricKeyWithPublicKey,
   importPrivateKeyAsNonExtractable,
 } from "@/lib/ecrypt_decrypt";
 import { addValueToStoreIDB, getValueFromStoreIDB } from "@/lib/idb";
@@ -129,6 +132,24 @@ const Login = () => {
     const privateKey = await importPrivateKeyAsNonExtractable(
       decryptedPrivateKey
     );
+
+    // encrypt and decrypt the sample symmetric key to test its valid or not
+    try {
+      const sampleSymetricKey = await createSymetricKey();
+      const encryptedSampleSymetricKey = await encryptSymetricKeyWithPublicKey(
+        sampleSymetricKey,
+        userDataRef.current?.publicKey
+      );
+      await decryptSymetricKeyWithPrivateKey(
+        encryptedSampleSymetricKey,
+        privateKey
+      );
+    } catch (error) {
+      form.setError("privateKeyFile", {
+        message: "Invalid private key file. Please try again.",
+      });
+      return;
+    }
 
     await addValueToStoreIDB(userDataRef.current?.userId, privateKey);
 

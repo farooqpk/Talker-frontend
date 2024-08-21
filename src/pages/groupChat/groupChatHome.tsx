@@ -21,7 +21,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import msgRecieveSound from "../../assets/Pocket.mp3";
 import msgSendSound from "../../assets/Solo.mp3";
-import { addValueToMediaCacheIDB, clearOldestMediaCacheIDB, getValueFromMediaCacheIDB, getValueFromStoreIDB, sizeOfMediaCacheIDB } from "@/lib/idb";
+import {
+  addValueToMediaCacheIDB,
+  clearOldestMediaCacheIDB,
+  getValueFromMediaCacheIDB,
+  getValueFromStoreIDB,
+  sizeOfMediaCacheIDB,
+} from "@/lib/idb";
 import ChatContent from "@/components/chat/chatContent";
 import ChatFooter from "@/components/chat/chatFooter";
 import ChatHeader from "@/components/chat/chatHeader";
@@ -47,14 +53,13 @@ export default function GroupChat(): ReactElement {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useGetUser();
-   const [sendMessageLoading,setSendMessageLoading] = useState(false)
+  const [sendMessageLoading, setSendMessageLoading] = useState(false);
   const [getMediaLoading, setGetMediaLoading] = useState<{
     messageId: string;
     loading: boolean;
   }>({ messageId: "", loading: false });
-  const [isKickMemberClicked, setIsKickMemberClicked] = useState(false);
-  const [isAddingNewMembersLoading, setIsAddingNewMembersLoading] = useState(false);
-
+  const [isAddingNewMembersLoading, setIsAddingNewMembersLoading] =
+    useState(false);
 
   const {
     data: groupDetails,
@@ -65,13 +70,14 @@ export default function GroupChat(): ReactElement {
     queryFn: () => getGroupDetailsApi(id!),
     enabled: !!id,
     onSuccess: (data) => {
-      if (!data) navigate("/")
-      const encryptedKey = data?.Chat?.ChatKey?.[0]?.encryptedKey;
+      if (!data) navigate("/");
+      const encryptedKey = data?.chat?.encryptedKey;
       const encryptedKeyArrayBuffer = base64ToArrayBuffer(encryptedKey);
       encryptedChatKeyRef.current = encryptedKeyArrayBuffer;
-    }, onError: () => {
-      navigate("/")
-    }
+    },
+    onError: () => {
+      navigate("/");
+    },
   });
 
   const { isLoading: messagesLoading, refetch: refetchMessages } = useQuery({
@@ -106,25 +112,29 @@ export default function GroupChat(): ReactElement {
             }
 
             case ContentType.IMAGE: {
-              const getMediaFromCache = await getValueFromMediaCacheIDB(message.mediaPath!)
+              const getMediaFromCache = await getValueFromMediaCacheIDB(
+                message.mediaPath!
+              );
               if (!getMediaFromCache) break;
-              message.image = await decryptMessage(
+              message.image = (await decryptMessage(
                 getMediaFromCache,
                 decryptedChatKey,
                 ContentType.IMAGE
-              ) as Blob;
-              break
+              )) as Blob;
+              break;
             }
 
             case ContentType.AUDIO: {
-              const getMediaFromCache = await getValueFromMediaCacheIDB(message.mediaPath!)
+              const getMediaFromCache = await getValueFromMediaCacheIDB(
+                message.mediaPath!
+              );
               if (!getMediaFromCache) break;
-              message.image = await decryptMessage(
+              message.image = (await decryptMessage(
                 getMediaFromCache,
                 decryptedChatKey,
                 ContentType.IMAGE
-              ) as Blob;
-              break
+              )) as Blob;
+              break;
             }
             default:
               break;
@@ -147,16 +157,16 @@ export default function GroupChat(): ReactElement {
 
     const privateKey = await getValueFromStoreIDB(user.userId);
 
-   setSendMessageLoading(true)
+    setSendMessageLoading(true);
 
     const chatContent =
       type === "TEXT"
         ? typedText
         : type === "IMAGE"
-          ? imgBlob!
-          : type === "AUDIO"
-            ? recordingBlob!
-            : "";
+        ? imgBlob!
+        : type === "AUDIO"
+        ? recordingBlob!
+        : "";
 
     const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
       encryptedChatKeyRef.current!,
@@ -207,7 +217,6 @@ export default function GroupChat(): ReactElement {
       if (!privateKey) return;
 
       if (message.contentType === ContentType.TEXT) {
-
         const textArrayBuffer = base64ToArrayBuffer(message?.content!);
 
         const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
@@ -220,14 +229,12 @@ export default function GroupChat(): ReactElement {
           decryptedChatKey,
           ContentType.TEXT
         )) as string;
-
-
       }
 
       setMessages((prev) => [...prev, message]);
 
       if (message.senderId === user?.userId) {
-       setSendMessageLoading(false)
+        setSendMessageLoading(false);
       }
 
       await new Audio(
@@ -244,23 +251,20 @@ export default function GroupChat(): ReactElement {
     };
 
     const exitGroupReceiver = ({
-      isExitByAdmin,
       exitedUserId,
       groupId,
     }: {
-      isExitByAdmin: boolean;
       exitedUserId: string;
       groupId: string;
     }) => {
-      if (isExitByAdmin || exitedUserId === user?.userId) {
+      if (exitedUserId === user?.userId) {
         socket?.emit(SocketEvents.LEAVE_GROUP, { groupIds: [groupId] });
-        navigate("/");
         toast({
-          description:
-            isExitByAdmin && groupDetails?.adminId !== user?.userId
-              ? "Group has been deleted by admin."
-              : "Group left successfully.",
+          description: "Group left successfully.",
         });
+        navigate("/");
+      } else {
+        refetchGroup();
       }
     };
 
@@ -268,42 +272,65 @@ export default function GroupChat(): ReactElement {
       refetchGroup();
     };
 
-    const kickMemberReceiver = async ({ removedUserId, removedUserName }: { removedUserId: string, removedUserName: string }) => {
-      setIsKickMemberClicked(false);
+    const kickMemberReceiver = async ({
+      removedUserId,
+      removedUserName,
+    }: {
+      removedUserId: string;
+      removedUserName: string;
+    }) => {
       if (removedUserId === user?.userId) {
         toast({
           description: "You have been kicked from the group.",
-        })
+        });
         navigate("/");
       } else {
-
-        await Promise.all([
-          refetchGroup(),
-          refetchMessages()
-        ])
+        await Promise.all([refetchGroup(), refetchMessages()]);
 
         toast({
           description: `${removedUserName} has been kicked from the group.`,
-        })
-
+        });
       }
-    }
+    };
 
     const addNewMembersToGroupReceiver = async () => {
       setIsAddingNewMembersLoading(false);
       await refetchGroup(),
         toast({
           description: "New members have been added to the group.",
-        })
-    }
+        });
+    };
+
+    const handleReadMessageReciever = (messageId: string) => {
+      setMessages((prev) =>
+        prev.map((item) =>
+          item.messageId === messageId ? { ...item, isRead: true } : item
+        )
+      );
+    };
+
+    const handleSetAsAdminReceiver = async (adminId: string) => {
+      await refetchGroup();
+
+      if (user?.userId === adminId) {
+        toast({
+          description: "You have been set as admin.",
+        });
+      }
+    };
 
     socket?.on(SocketEvents.SEND_GROUP_MESSAGE, recieveMessage);
     socket?.emit(SocketEvents.JOIN_GROUP, { groupIds: [id] });
     socket.on(SocketEvents.DELETE_MESSAGE, deleteMessageReceiver);
     socket.on(SocketEvents.EXIT_GROUP, exitGroupReceiver);
     socket.on(SocketEvents.UPDATE_GROUP_DETAILS, updateGroupDetailsReceiver);
-    socket.on(SocketEvents.KICK_MEMBER, kickMemberReceiver)
-    socket.on(SocketEvents.ADD_NEW_MEMBER_TO_GROUP, addNewMembersToGroupReceiver)
+    socket.on(SocketEvents.KICK_MEMBER, kickMemberReceiver);
+    socket.on(
+      SocketEvents.ADD_NEW_MEMBER_TO_GROUP,
+      addNewMembersToGroupReceiver
+    );
+    socket.on(SocketEvents.READ_MESSAGE, handleReadMessageReciever);
+    socket.on(SocketEvents.SET_ADMIN, handleSetAsAdminReceiver);
 
     return () => {
       socket?.off(SocketEvents.SEND_GROUP_MESSAGE, recieveMessage);
@@ -311,11 +338,15 @@ export default function GroupChat(): ReactElement {
       socket.off(SocketEvents.DELETE_MESSAGE, recieveMessage);
       socket.off(SocketEvents.EXIT_GROUP, exitGroupReceiver);
       socket.off(SocketEvents.UPDATE_GROUP_DETAILS, updateGroupDetailsReceiver);
-      socket.off(SocketEvents.KICK_MEMBER, kickMemberReceiver)
-      socket.off(SocketEvents.ADD_NEW_MEMBER_TO_GROUP, addNewMembersToGroupReceiver)
+      socket.off(SocketEvents.KICK_MEMBER, kickMemberReceiver);
+      socket.off(
+        SocketEvents.ADD_NEW_MEMBER_TO_GROUP,
+        addNewMembersToGroupReceiver
+      );
+      socket.off(SocketEvents.READ_MESSAGE, handleReadMessageReciever);
+      socket.off(SocketEvents.SET_ADMIN, handleSetAsAdminReceiver);
     };
   }, [id, socket, encryptedChatKeyRef.current, user]);
-
 
   useEffect(() => {
     if (!recordingBlob) return;
@@ -374,7 +405,7 @@ export default function GroupChat(): ReactElement {
 
     const mediaFromApi = await getMediaApi(mediapath);
     // check current size of cache in idb
-    const cacheSize = await sizeOfMediaCacheIDB()
+    const cacheSize = await sizeOfMediaCacheIDB();
     // if cache size is greater than 10 MB, clear oldest media
     if (cacheSize > 10 * 1024 * 1024) {
       await clearOldestMediaCacheIDB();
@@ -415,15 +446,13 @@ export default function GroupChat(): ReactElement {
     setGetMediaLoading((prev) => ({ ...prev, messageId, loading: false }));
   };
 
-
   const handleKickUserFromGroup = (userId: string) => {
     if (!socket) return;
     socket.emit(SocketEvents.KICK_MEMBER, {
       groupId: id,
       userId,
     });
-  }
-
+  };
 
   const handleAddNewMembers = async (newMembers: string[]) => {
     if (!socket) return;
@@ -445,7 +474,10 @@ export default function GroupChat(): ReactElement {
     );
     if (!decryptedKey) return;
 
-    const decryptedKeyAsArrayBuffer = await crypto.subtle.exportKey("raw", decryptedKey);
+    const decryptedKeyAsArrayBuffer = await crypto.subtle.exportKey(
+      "raw",
+      decryptedKey
+    );
 
     const membersPublicKeys = await getPublicKeysApi(newMembers);
     if (!membersPublicKeys || membersPublicKeys.length === 0) return;
@@ -468,10 +500,24 @@ export default function GroupChat(): ReactElement {
 
     socket.emit(SocketEvents.ADD_NEW_MEMBER_TO_GROUP, {
       groupId: id,
-      members: encryptedChatKeyForUsers
+      members: encryptedChatKeyForUsers,
     });
   };
 
+  const handleReadMessage = async (messageId: string) => {
+    if (!socket) return;
+    socket.emit(SocketEvents.READ_MESSAGE, {
+      messageId,
+    });
+  };
+
+  const handleSetAsAdmin = (userId: string) => {
+    if (!socket) return;
+    socket.emit(SocketEvents.SET_ADMIN, {
+      groupId: id,
+      userId,
+    });
+  };
 
   return (
     <>
@@ -486,10 +532,9 @@ export default function GroupChat(): ReactElement {
               handleExitGroup={handleExitGroup}
               handleUpdateGroupDetails={handleUpdateGroupDetails}
               handleKickUserFromGroup={handleKickUserFromGroup}
-              isKickMemberClicked={isKickMemberClicked}
-              setIsKickMemberClicked={setIsKickMemberClicked}
               handleAddNewMembers={handleAddNewMembers}
               isAddingNewMembersLoading={isAddingNewMembersLoading}
+              handleSetAsAdmin={handleSetAsAdmin}
             />
             <ChatContent
               messages={messages}
@@ -497,6 +542,7 @@ export default function GroupChat(): ReactElement {
               sendMessageLoading={sendMessageLoading}
               getMediaLoading={getMediaLoading}
               handleGetMedia={handleGetMedia}
+              handleReadMessage={handleReadMessage}
             />
             <ChatFooter
               handleTyping={handleTyping}

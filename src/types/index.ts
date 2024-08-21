@@ -68,10 +68,14 @@ export enum SocketEvents {
   KICK_MEMBER = "kickMember",
   ADD_NEW_MEMBER_TO_GROUP = "addNewMemberToGroup",
   READ_MESSAGE = "readMessage",
+  SET_ADMIN = "setAdmin",
+  ERROR = "error",
 }
 
 interface Participant {
-  user: User;
+  userId: string;
+  username: string;
+  publicKey: string;
 }
 
 interface Group {
@@ -80,16 +84,25 @@ interface Group {
   description: string;
 }
 
-interface ChatKey {
-  encryptedKey: string;
-}
-
 export interface Chat {
   chatId: string;
   createdAt: string;
   isGroup: boolean;
-  messages: MessageType[];
-  participants: Participant[];
-  Group: Group[];
-  ChatKey: ChatKey[];
+  message: MessageType;
+  recipient: Participant;
+  group: Group;
+  encryptedKey: string;
+}
+
+export interface GroupDetails {
+  groupId: string;
+  chatId: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  chat: {
+    participants: Omit<Participant, "publicKey">[];
+    encryptedKey: string;
+  };
+  admins: string[];
 }
