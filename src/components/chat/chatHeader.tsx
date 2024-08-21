@@ -59,6 +59,7 @@ type Props = {
   handleAddNewMembers?: (selectedUsers: string[]) => void;
   isAddingNewMembersLoading?: boolean;
   handleSetAsAdmin?: (userId: string) => void;
+  handleDeleteGroup?: () => void;
 };
 
 export default function ChatHeader({
@@ -72,6 +73,7 @@ export default function ChatHeader({
   handleAddNewMembers,
   isAddingNewMembersLoading,
   handleSetAsAdmin,
+  handleDeleteGroup
 }: Props) {
   const { user } = useGetUser();
   const [isExitGroupModalOpen, setIsExitGroupModalOpen] = useState(false);
@@ -486,6 +488,31 @@ export default function ChatHeader({
                   setIsSetAsAdminClicked(false);
                   setNewAdmin(null);
                 }}
+              >
+                Continue
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {isDeleteGroupModalOpen && (
+        <AlertDialog open={isDeleteGroupModalOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Are you sure to delete this group?
+              </AlertDialogTitle>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                onClick={() => setIsDeleteGroupModalOpen(false)}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-white hover:bg-destructive/80"
+                onClick={handleDeleteGroup}
               >
                 Continue
               </AlertDialogAction>

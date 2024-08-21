@@ -286,7 +286,6 @@ export default function GroupChat(): ReactElement {
         navigate("/");
       } else {
         await Promise.all([refetchGroup(), refetchMessages()]);
-
         toast({
           description: `${removedUserName} has been kicked from the group.`,
         });
@@ -519,6 +518,13 @@ export default function GroupChat(): ReactElement {
     });
   };
 
+  const handleDeleteGroup = () => {
+    if (!socket) return;
+    socket.emit(SocketEvents.DELETE_GROUP, {
+      groupId: id,
+    });
+  };
+
   return (
     <>
       <main className="flex flex-col h-full">
@@ -535,6 +541,7 @@ export default function GroupChat(): ReactElement {
               handleAddNewMembers={handleAddNewMembers}
               isAddingNewMembersLoading={isAddingNewMembersLoading}
               handleSetAsAdmin={handleSetAsAdmin}
+              handleDeleteGroup={handleDeleteGroup}
             />
             <ChatContent
               messages={messages}

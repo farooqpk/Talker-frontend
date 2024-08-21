@@ -71,8 +71,6 @@ export const Home = (): ReactElement => {
     },
   });
 
-  // to update latest message in the home
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (!socket || !user) return;
 
@@ -157,6 +155,26 @@ export const Home = (): ReactElement => {
       });
     };
 
+    const kickMemberReceiver = ({
+      removedUserId,
+      chatId,
+      groupName,
+    }: {
+      removedUserId: string;
+      chatId: string;
+      groupName: string;
+    }) => {
+      if (removedUserId === user?.userId) {
+        setChatData((prev) => {
+          const updatedChatData = prev.filter((item) => item?.chatId !== chatId);
+          return updatedChatData;
+        });
+        toast({
+          title: `You were removed from group '${groupName}'`,
+        });
+      }
+    };
+
     socket?.emit(SocketEvents.JOIN_GROUP, { groupIds });
 
     socket?.on(SocketEvents.IS_TYPING, handleIsTyping);
@@ -170,6 +188,8 @@ export const Home = (): ReactElement => {
     socket?.on(SocketEvents.DELETE_MESSAGE, handleDeleteMessage);
 
     socket?.on(SocketEvents.GROUP_CREATED, handleGroupCreated);
+
+    socket.on(SocketEvents.KICK_MEMBER, kickMemberReceiver);
 
     return () => {
       socket?.off(SocketEvents.IS_TYPING, handleIsTyping);
@@ -185,6 +205,8 @@ export const Home = (): ReactElement => {
       socket?.off(SocketEvents.DELETE_MESSAGE, handleDeleteMessage);
 
       socket?.off(SocketEvents.GROUP_CREATED, handleGroupCreated);
+
+      socket.off(SocketEvents.KICK_MEMBER, kickMemberReceiver);
     };
   }, [socket, chatData, user, isTyping]);
 

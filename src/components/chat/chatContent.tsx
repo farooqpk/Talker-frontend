@@ -258,7 +258,7 @@ export default function ChatContent({
                           <p>Image..</p>
                         </div>
                       ) : (
-                        <div className="md:h-48 ">
+                        <div className="md:h-48 md:max-w-md">
                           <img
                             src={URL.createObjectURL(msg.image as Blob)}
                             alt="Image"
