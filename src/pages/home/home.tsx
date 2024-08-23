@@ -166,13 +166,31 @@ export const Home = (): ReactElement => {
     }) => {
       if (removedUserId === user?.userId) {
         setChatData((prev) => {
-          const updatedChatData = prev.filter((item) => item?.chatId !== chatId);
+          const updatedChatData = prev.filter(
+            (item) => item?.chatId !== chatId
+          );
           return updatedChatData;
         });
         toast({
           title: `You were removed from group '${groupName}'`,
         });
       }
+    };
+
+    const handleDeleteGroupReceiver = async ({
+      groupName,
+      chatId,
+    }: {
+      groupName: string;
+      chatId: string;
+    }) => {
+      setChatData((prev) => {
+        const updatedChatData = prev.filter((item) => item?.chatId !== chatId);
+        return updatedChatData;
+      });
+      toast({
+        title: `Group '${groupName}' was deleted by admin.`,
+      });
     };
 
     socket?.emit(SocketEvents.JOIN_GROUP, { groupIds });
@@ -191,6 +209,8 @@ export const Home = (): ReactElement => {
 
     socket.on(SocketEvents.KICK_MEMBER, kickMemberReceiver);
 
+    socket?.on(SocketEvents.DELETE_GROUP, handleDeleteGroupReceiver);
+
     return () => {
       socket?.off(SocketEvents.IS_TYPING, handleIsTyping);
 
@@ -207,6 +227,8 @@ export const Home = (): ReactElement => {
       socket?.off(SocketEvents.GROUP_CREATED, handleGroupCreated);
 
       socket.off(SocketEvents.KICK_MEMBER, kickMemberReceiver);
+
+      socket?.off(SocketEvents.DELETE_GROUP, handleDeleteGroupReceiver);
     };
   }, [socket, chatData, user, isTyping]);
 

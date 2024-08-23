@@ -73,7 +73,7 @@ export default function ChatHeader({
   handleAddNewMembers,
   isAddingNewMembersLoading,
   handleSetAsAdmin,
-  handleDeleteGroup
+  handleDeleteGroup,
 }: Props) {
   const { user } = useGetUser();
   const [isExitGroupModalOpen, setIsExitGroupModalOpen] = useState(false);
@@ -512,7 +512,10 @@ export default function ChatHeader({
               </AlertDialogCancel>
               <AlertDialogAction
                 className="bg-destructive text-white hover:bg-destructive/80"
-                onClick={handleDeleteGroup}
+                onClick={() => {
+                  handleDeleteGroup?.();
+                  setIsDeleteGroupModalOpen(false);
+                }}
               >
                 Continue
               </AlertDialogAction>

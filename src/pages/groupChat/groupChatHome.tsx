@@ -318,6 +318,20 @@ export default function GroupChat(): ReactElement {
       }
     };
 
+    const handleDeleteGroupReceiver = async ({
+      deletedBy,
+    }: {
+      deletedBy: string;
+    }) => {
+      toast({
+        title:
+          deletedBy === user?.userId
+            ? "Group deleted successfully."
+            : "Group was deleted by admin.",
+      });
+      navigate("/");
+    };
+
     socket?.on(SocketEvents.SEND_GROUP_MESSAGE, recieveMessage);
     socket?.emit(SocketEvents.JOIN_GROUP, { groupIds: [id] });
     socket.on(SocketEvents.DELETE_MESSAGE, deleteMessageReceiver);
@@ -330,6 +344,7 @@ export default function GroupChat(): ReactElement {
     );
     socket.on(SocketEvents.READ_MESSAGE, handleReadMessageReciever);
     socket.on(SocketEvents.SET_ADMIN, handleSetAsAdminReceiver);
+    socket.on(SocketEvents.DELETE_GROUP, handleDeleteGroupReceiver);
 
     return () => {
       socket?.off(SocketEvents.SEND_GROUP_MESSAGE, recieveMessage);
@@ -344,6 +359,7 @@ export default function GroupChat(): ReactElement {
       );
       socket.off(SocketEvents.READ_MESSAGE, handleReadMessageReciever);
       socket.off(SocketEvents.SET_ADMIN, handleSetAsAdminReceiver);
+      socket.off(SocketEvents.DELETE_GROUP, handleDeleteGroupReceiver);
     };
   }, [id, socket, encryptedChatKeyRef.current, user]);
 
