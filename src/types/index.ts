@@ -90,8 +90,8 @@ export interface Chat {
   createdAt: string;
   isGroup: boolean;
   message: MessageType;
-  recipient: Participant;
-  group: Group;
+  recipient?: Participant;
+  group?: Group;
   encryptedKey: string;
 }
 

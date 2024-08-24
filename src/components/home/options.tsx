@@ -21,10 +21,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import ChangeUsername from "../common/ChangeUsername";
-import { useMutation } from "react-query";
+import { useMutation, useQuery } from "react-query";
 import { logoutApi } from "@/services/api/auth";
 import { useToast } from "../ui/use-toast";
 import { AlertDialogDescription } from "@radix-ui/react-alert-dialog";
+import { deleteAccountApi, isAnyGroupAdminApi } from "@/services/api/user";
+import { useGetUser } from "@/hooks/useGetUser";
 
 const Options = () => {
   const navigate = useNavigate();
@@ -34,9 +36,13 @@ const Options = () => {
     useState(false);
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] =
     useState(false);
+  const { toast } = useToast();
+  const { user } = useGetUser();
+
   const { mutate: logoutMutate, isLoading: logoutIsLoading } =
     useMutation(logoutApi);
-  const { toast } = useToast();
+  const { mutate: deleteAccountMutate, isLoading: deleteAcccountLoading } =
+    useMutation(deleteAccountApi);
 
   const handleLogout = () => {
     logoutMutate(
@@ -53,7 +59,40 @@ const Options = () => {
     );
   };
 
-  const handleDeleteAccount = () => {};
+  const { data: groupAdmin } = useQuery({
+    queryKey: ["isAnyGroupAdmin", isDeleteAccountModalOpen, user?.userId],
+    queryFn: () => isAnyGroupAdminApi(user?.userId!),
+    enabled: isDeleteAccountModalOpen,
+  });
+
+  function getDeleteAccountDescription() {
+    const {
+      isAnyGroupAdmin,
+      doAllGroupsHaveRemainingAdmins,
+      groupsHaveNoRemainingAdmins,
+    } = groupAdmin || {};
+
+    if (isAnyGroupAdmin && !doAllGroupsHaveRemainingAdmins) {
+      return `You are the only admin of the groups '${groupsHaveNoRemainingAdmins}'. You have to make another admin of the groups before you can delete your account.`;
+    } else {
+      return `If you delete your account, you will not be able to access your account again. This action cannot be undone and you will lose all your data.`;
+    }
+  }
+
+  const handleDeleteAccount = () => {
+    deleteAccountMutate(
+      {},
+      {
+        onSuccess: () => {
+          toast({
+            title: "Account Deleted",
+            description: "Your account has been deleted successfully",
+          });
+          navigate("/auth");
+        },
+      }
+    );
+  };
 
   return (
     <div className="w-full max-w-lg mx-auto p-4 ">
@@ -90,12 +129,12 @@ const Options = () => {
               >
                 Logout
               </DropdownMenuItem>
-              {/* <DropdownMenuItem
+              <DropdownMenuItem
                 className="cursor-pointer"
                 onClick={() => setIsDeleteAccountModalOpen(true)}
               >
                 Delete account
-              </DropdownMenuItem> */}
+              </DropdownMenuItem>
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -143,8 +182,7 @@ const Options = () => {
               </AlertDialogTitle>
             </AlertDialogHeader>
             <AlertDialogDescription>
-              If you delete your account, you will not be able to access your
-              account again. This action cannot be undone.
+              {getDeleteAccountDescription()}
             </AlertDialogDescription>
             <AlertDialogFooter>
               <AlertDialogCancel
@@ -154,9 +192,14 @@ const Options = () => {
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDeleteAccount}
-                className="bg-red-600 hover:bg-red-800"
+                className="bg-red-600 hover:bg-red-800 text-white"
+                disabled={
+                  (groupAdmin?.isAnyGroupAdmin &&
+                    !groupAdmin?.doAllGroupsHaveRemainingAdmins) ||
+                  deleteAcccountLoading
+                }
               >
-                {logoutIsLoading ? (
+                {deleteAcccountLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   "Delete"

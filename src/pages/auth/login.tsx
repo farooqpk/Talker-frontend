@@ -195,6 +195,7 @@ const Login = () => {
           const isPrivateKeyExist = await getValueFromStoreIDB(
             data?.user?.userId
           );
+
           // if not exit then we update the state and show the file input then return from here,
           if (!isPrivateKeyExist) {
             setIsPrivateKeyNotExist(true);
