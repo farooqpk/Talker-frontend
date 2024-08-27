@@ -30,7 +30,8 @@ export const HomeList = ({
       ? `/group/${chat.group?.groupId}`
       : `/chat/${chat.recipient?.userId}`;
     const date = formateDate(chat.message?.createdAt || chat.createdAt);
-    const isUserTyping = !isGroup && isTyping.includes(chat.recipient?.userId);
+    const isUserTyping =
+      !isGroup && isTyping.includes(chat?.recipient?.userId || "");
     const senderName =
       chat?.message?.senderId === user?.userId
         ? "You"
