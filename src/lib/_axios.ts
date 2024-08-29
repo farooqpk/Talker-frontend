@@ -2,14 +2,10 @@ import { createAccessTokenFromRefreshToken } from "@/services/api/auth";
 import axios from "axios";
 
 const _axios = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true,
 });
-
-_axios.defaults.withCredentials = true;
 
 _axios.interceptors.request.use(
   (config) => config,

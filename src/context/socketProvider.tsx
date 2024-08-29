@@ -19,9 +19,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<Socket | undefined>();
 
   const connectSocket = () => {
-    const newSocket: Socket = io(import.meta.env.VITE_API_URL, {
+    const newSocket: Socket = io({
       autoConnect: true,
-      withCredentials: true,
     });
 
     newSocket.on("connect", () => {
