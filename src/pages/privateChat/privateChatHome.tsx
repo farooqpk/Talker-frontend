@@ -25,8 +25,6 @@ import {
   encryptSymetricKeyWithPublicKey,
 } from "@/lib/ecrypt_decrypt";
 import { useGetUser } from "@/hooks/useGetUser";
-import { useAudioRecorder } from "react-audio-voice-recorder";
-import { useToast } from "@/components/ui/use-toast";
 import msgRecieveSound from "../../assets/Pocket.mp3";
 import msgSendSound from "../../assets/Solo.mp3";
 import {
@@ -54,15 +52,7 @@ export default function PrivateChat(): ReactElement {
   );
   const [typedText, setTypedText] = useState<string>("");
   const [messages, setMessages] = useState<MessageType[]>([]);
-  const {
-    isRecording,
-    startRecording,
-    stopRecording,
-    recordingBlob,
-    recordingTime,
-  } = useAudioRecorder();
   const encryptedChatKeyRef = useRef<ArrayBuffer | undefined>(undefined);
-  const { toast } = useToast();
   const [sendMessageLoading, setSendMessageLoading] = useState(false);
   const [getMediaLoading, setGetMediaLoading] = useState<{
     messageId: string;
@@ -162,7 +152,7 @@ export default function PrivateChat(): ReactElement {
     }
   };
 
-  const handleSendMessage = async (type: ContentType, imgBlob?: Blob) => {
+  const handleSendMessage = async (type: ContentType, blob?: Blob) => {
     if (!socket || !recipient || !user?.publicKey) return;
 
     const privateKey: CryptoKey = await getValueFromStoreIDB(user.userId);
@@ -224,9 +214,9 @@ export default function PrivateChat(): ReactElement {
       type === ContentType.TEXT
         ? typedText
         : type === ContentType.IMAGE
-        ? imgBlob!
+        ? blob!
         : type === ContentType.AUDIO
-        ? recordingBlob!
+        ? blob!
         : "";
 
     const chatKey = isChatAlreadyExist
@@ -418,23 +408,6 @@ export default function PrivateChat(): ReactElement {
     };
   }, [id, socket, encryptedChatKeyRef.current]);
 
-  useEffect(() => {
-    if (!recordingBlob) return;
-    const sendAudioMessage = async () => {
-      try {
-        await handleSendMessage(ContentType.AUDIO);
-      } catch (error) {
-        console.log(error);
-        toast({
-          title: "Error sending audio message",
-          variant: "destructive",
-        });
-      }
-    };
-
-    sendAudioMessage();
-  }, [recordingBlob]);
-
   const handleDeleteMsg = (msgId: string) => {
     if (!socket) return;
     socket.emit(SocketEvents.DELETE_MESSAGE, {
@@ -540,10 +513,6 @@ export default function PrivateChat(): ReactElement {
               handleTyping={handleTyping}
               handleSendMessage={handleSendMessage}
               typedText={typedText}
-              isRecording={isRecording}
-              startRecoring={startRecording}
-              stopRecording={stopRecording}
-              recordingTime={recordingTime}
             />
           </>
         )}

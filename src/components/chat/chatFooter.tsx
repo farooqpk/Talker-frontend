@@ -9,29 +9,29 @@ import { useToast } from "../ui/use-toast";
 import imageCompression from "browser-image-compression";
 import { ContentType } from "@/types";
 import { IconButton } from "../IconButton";
+import { useAudioRecorder } from "react-audio-voice-recorder";
 
 type Props = {
   handleTyping: (value: string) => void;
-  handleSendMessage: (type: ContentType, imgBlob?: Blob) => void;
+  handleSendMessage: (type: ContentType, blob?: Blob) => void;
   typedText: string;
-  isRecording: boolean;
-  startRecoring: () => void;
-  stopRecording: () => void;
-  recordingTime: number;
 };
 
 export default function ChatFooter({
   handleTyping,
   handleSendMessage,
   typedText,
-  isRecording,
-  startRecoring,
-  stopRecording,
-  recordingTime,
 }: Props) {
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const {
+    isRecording,
+    startRecording,
+    stopRecording,
+    recordingBlob,
+    recordingTime,
+  } = useAudioRecorder();
 
   const handleOnEmojiClick = (emojiData: any) => {
     if (chatInputRef.current) {
@@ -53,15 +53,6 @@ export default function ChatFooter({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // if greater than 2MB then return
-    if (file.size > 2 * 1024 * 1024) {
-      toast({
-        description: "Image size should be less than 2MB",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
       // compress under 100kb
       const compressedFile = await imageCompression(file, {
@@ -75,24 +66,27 @@ export default function ChatFooter({
     } catch (error) {
       toast({
         title: "Error",
-        description: "Error compressing image",
+        description: "Failed to sent image, please try again",
         variant: "destructive",
       });
     }
   };
 
   useEffect(() => {
-    if(recordingTime ===60){
+    if (recordingTime === 60) {
       stopRecording();
       toast({
         title: "Recording stopped",
-        description: "Recording time exceeded 60 seconds",
+        description: "Recording time exceeded 1 minutes",
         variant: "destructive",
-      })
+      });
     }
   }, [recordingTime]);
 
-
+  useEffect(() => {
+    if (!recordingBlob) return;
+    handleSendMessage(ContentType.AUDIO, recordingBlob);
+  }, [recordingBlob]);
 
   return (
     <section className="flex gap-1 md:gap-4 items-center px-5 md:px-24 relative">
@@ -108,7 +102,6 @@ export default function ChatFooter({
             width={"95%"}
             style={{ backgroundColor: "transparent" }}
             lazyLoadEmojis
-            searchDisabled
           />
         </DialogContent>
       </Dialog>
@@ -139,9 +132,13 @@ export default function ChatFooter({
       {typedText.trim().length > 0 ? (
         <IconButton
           icon={<SendHorizontal />}
-          className={`p-2 border-none ${typedText.length === 500 ? "cursor-not-allowed hover:bg-transparent" : ""}`}
+          className={`p-2 border-none ${
+            typedText.length === 500
+              ? "cursor-not-allowed hover:bg-transparent"
+              : ""
+          }`}
           onClick={() => handleSendMessage(ContentType.TEXT)}
-          disabled={typedText.length===500}
+          disabled={typedText.length === 500}
         />
       ) : (
         <IconButton
@@ -154,7 +151,7 @@ export default function ChatFooter({
                 color="red"
               />
             ) : (
-              <Mic onClick={startRecoring} />
+              <Mic onClick={startRecording} />
             )
           }
         />

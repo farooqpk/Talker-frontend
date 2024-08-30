@@ -15,7 +15,6 @@ import {
 } from "@/services/api/chat";
 import { getGroupDetailsApi, getPublicKeysApi } from "@/services/api/group";
 import { ReactElement, useEffect, useRef, useState } from "react";
-import { useAudioRecorder } from "react-audio-voice-recorder";
 import { useQuery } from "react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
@@ -42,13 +41,6 @@ export default function GroupChat(): ReactElement {
   const socket = useSocket();
   const [typedText, setTypedText] = useState<string>("");
   const [messages, setMessages] = useState<MessageType[]>([]);
-  const {
-    isRecording,
-    startRecording,
-    stopRecording,
-    recordingBlob,
-    recordingTime,
-  } = useAudioRecorder();
   const encryptedChatKeyRef = useRef<ArrayBuffer | undefined>(undefined);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -152,7 +144,7 @@ export default function GroupChat(): ReactElement {
     setTypedText(value);
   };
 
-  const handleSendMessage = async (type: ContentType, imgBlob?: Blob) => {
+  const handleSendMessage = async (type: ContentType, blob?: Blob) => {
     if (!socket || !encryptedChatKeyRef.current || !user) return;
 
     const privateKey = await getValueFromStoreIDB(user.userId);
@@ -163,9 +155,9 @@ export default function GroupChat(): ReactElement {
       type === "TEXT"
         ? typedText
         : type === "IMAGE"
-        ? imgBlob!
+        ? blob!
         : type === "AUDIO"
-        ? recordingBlob!
+        ? blob!
         : "";
 
     const decryptedChatKey = await decryptSymetricKeyWithPrivateKey(
@@ -363,21 +355,6 @@ export default function GroupChat(): ReactElement {
     };
   }, [id, socket, encryptedChatKeyRef.current, user]);
 
-  useEffect(() => {
-    if (!recordingBlob) return;
-    const sendAudioMessage = async () => {
-      try {
-        await handleSendMessage(ContentType.AUDIO);
-      } catch (error) {
-        toast({
-          title: "Error sending audio message",
-          variant: "destructive",
-        });
-      }
-    };
-    sendAudioMessage();
-  }, [recordingBlob]);
-
   const handleDeleteMsg = (msgId: string) => {
     if (!socket) return;
     socket.emit(SocketEvents.DELETE_MESSAGE, {
@@ -571,10 +548,6 @@ export default function GroupChat(): ReactElement {
               handleTyping={handleTyping}
               handleSendMessage={handleSendMessage}
               typedText={typedText}
-              isRecording={isRecording}
-              startRecoring={startRecording}
-              stopRecording={stopRecording}
-              recordingTime={recordingTime}
             />
           </>
         )}
