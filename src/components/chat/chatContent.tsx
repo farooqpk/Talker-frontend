@@ -135,7 +135,7 @@ export default function ChatContent({
         className="flex flex-col gap-4 h-[67vh] md:h-[65vh] overflow-y-scroll px-3 md:px-14 py-4"
       >
         <Alert>
-          <AlertDescription className="text-warning">
+          <AlertDescription className="text-warning text-center">
             All messages are secured using <strong>hybrid encryption</strong>,
             combining the strengths of both RSA and AES algorithms for
             end-to-end encryption.

@@ -81,7 +81,7 @@ export default function AiChat(): ReactElement {
           {messages.map(({ text, type }, index) => (
             <div
               key={index}
-              className={`border rounded-3xl p-3 break-words flex flex-col flex-wrap gap-4 max-w-2xl ${
+              className={`border rounded-3xl p-3 break-words flex flex-col flex-wrap gap-4 ${
                 type === "input" ? "ml-auto" : "mr-auto"
               }`}
             >
@@ -93,7 +93,7 @@ export default function AiChat(): ReactElement {
               <div>
                 <Markdown
                   className={
-                    "text-sm text-muted-foreground font-semibold overflow-auto whitespace-pre-wrap"
+                    "text-sm text-muted-foreground font-semibold whitespace-pre-wrap"
                   }
                 >
                   {text}
