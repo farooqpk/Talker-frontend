@@ -1,5 +1,10 @@
-import { Loader2, Plus } from "lucide-react";
-import { Button } from "../ui/button";
+import { Loader2, Plus, Sparkle } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +32,7 @@ import { useToast } from "../ui/use-toast";
 import { AlertDialogDescription } from "@radix-ui/react-alert-dialog";
 import { deleteAccountApi, isAnyGroupAdminApi } from "@/services/api/user";
 import { useGetUser } from "@/hooks/useGetUser";
+import { IconButton } from "../IconButton";
 
 const Options = () => {
   const navigate = useNavigate();
@@ -96,49 +102,71 @@ const Options = () => {
 
   return (
     <div className="w-full max-w-lg mx-auto p-4 ">
-      <div className="fixed bottom-7 right-5 md:bottom-6 md:right-6">
-        <DropdownMenu>
-          <DropdownMenuTrigger>
-            <Button
-              variant={"secondary"}
-              size={"icon"}
-              className="rounded-full h-12 w-12"
-            >
-              <Plus className="h-5 w-5" strokeWidth={3} />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="mr-3">
-            <DropdownMenuLabel>Options</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <div className="grid gap-2">
-              <DropdownMenuItem
-                className="cursor-pointer hover:bg-muted"
-                onClick={() => setIsCreateGroupModalOpen(true)}
-              >
-                Create group
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="cursor-pointer hover:bg-muted"
-                onClick={() => setIsChangeUsernameModalOpen(true)}
-              >
-                Change username
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="cursor-pointer hover:bg-muted"
-                onClick={() => setIsLogoutModalOpen(true)}
-              >
-                Logout
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="cursor-pointer"
-                onClick={() => setIsDeleteAccountModalOpen(true)}
-              >
-                Delete account
-              </DropdownMenuItem>
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <div className="fixed bottom-7 right-5 md:bottom-10 md:right-6">
+        <div className="flex flex-col gap-4">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <IconButton
+                  className="rounded-full h-12 w-12 bg-secondary hover:bg-secondary/70"
+                  icon={<Sparkle className="h-5 w-5" strokeWidth={3} />}
+                  onClick={() => navigate("/chat/ai")}
+                />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Talker AI</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger>
+                <DropdownMenu>
+                  <DropdownMenuTrigger>
+                    <IconButton
+                      className="rounded-full h-12 w-12 bg-secondary hover:bg-secondary/70"
+                      icon={<Plus className="h-5 w-5" strokeWidth={3} />}
+                    />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="mr-3">
+                    <DropdownMenuLabel>Options</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <div className="grid gap-2">
+                      <DropdownMenuItem
+                        className="cursor-pointer hover:bg-muted"
+                        onClick={() => setIsCreateGroupModalOpen(true)}
+                      >
+                        Create group
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer hover:bg-muted"
+                        onClick={() => setIsChangeUsernameModalOpen(true)}
+                      >
+                        Change username
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer hover:bg-muted"
+                        onClick={() => setIsLogoutModalOpen(true)}
+                      >
+                        Logout
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => setIsDeleteAccountModalOpen(true)}
+                      >
+                        Delete account
+                      </DropdownMenuItem>
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Options</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
+
       {isCreateGroupModalOpen && (
         <CreateGroup
           onClose={() => setIsCreateGroupModalOpen(false)}

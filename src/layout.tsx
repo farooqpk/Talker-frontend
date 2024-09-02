@@ -1,11 +1,12 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Auth from "./pages/auth/auth";
-import { Home } from "./pages/home/home";
+import Auth from "./pages/auth";
+import { Home } from "./pages/home";
 import { VerifyRoute } from "./components/auth/verifyRoute";
 import { SocketLayout } from "./components/socketLayout/socketLayout";
-import PrivateChat from "./pages/privateChat/privateChatHome";
-import GroupChat from "./pages/groupChat/groupChatHome";
-import { PrivacyPolicy } from "./pages/privacy-policy/privacy-policy";
+import PrivateChat from "./pages/privateChat";
+import GroupChat from "./pages/groupChat";
+import { PrivacyPolicy } from "./pages/privacyPolicy";
+import AiChat from "./pages/aiChat";
 
 const Layout = () => {
   return (
@@ -17,6 +18,7 @@ const Layout = () => {
           <Route element={<VerifyRoute />}>
             <Route element={<SocketLayout />}>
               <Route path="/" element={<Home />} />
+              <Route path="/chat/ai" element={<AiChat />} />
               <Route path="/chat/:id" element={<PrivateChat />} />
               <Route path="/group/:id" element={<GroupChat />} />
             </Route>
