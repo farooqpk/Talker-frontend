@@ -81,7 +81,7 @@ export default function AiChat(): ReactElement {
           {messages.map(({ text, type }, index) => (
             <div
               key={index}
-              className={`border rounded-3xl p-3 break-words flex flex-col flex-wrap gap-4 md:max-w-2xl ${
+              className={`border rounded-3xl p-3 break-words flex flex-col flex-wrap gap-4 max-w-2xl ${
                 type === "input" ? "ml-auto" : "mr-auto"
               }`}
             >
