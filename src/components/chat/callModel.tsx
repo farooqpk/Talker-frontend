@@ -49,32 +49,52 @@ export const CallModal: React.FC = () => {
 
   return (
     <Dialog open={callState.isOpen}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent
+        hideCloseButton
+        className="w-full max-w-3xl h-auto max-h-[90vh] overflow-y-auto"
+      >
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold text-center">
+          <DialogTitle className="text-lg sm:text-base font-bold text-center">
             {callState.status === "ringing"
               ? callState.initiaterId === user?.userId
-                ? "Calling..."
+                ? `Calling ${callState.recipientName}...`
                 : `Incoming ${callState.callType} call from ${callState?.initiaterName}`
-              : "..."}
+              : `${callState.callType} call`}
           </DialogTitle>
         </DialogHeader>
-        <div className="py-6">
-          {callState.status === "ringing" &&
-            callState.initiaterId !== user?.userId && (
-              <div className="flex items-center justify-center mb-4">
-                {callState.callType === "video" ? (
-                  <VideoIcon className="w-12 h-12 text-blue-500" />
-                ) : (
+        <div className="py-3 flex flex-col items-center">
+          {callState.status === "ringing" && (
+            <div className="flex justify-center mb-4">
+              {callState.callType === "video" &&
+              user?.userId !== callState.initiaterId ? (
+                <VideoIcon className="w-12 h-12 text-blue-500" />
+              ) : (
+                callState.callType === "audio" && (
                   <PhoneIcon className="w-12 h-12 text-green-500" />
-                )}
-              </div>
-            )}
+                )
+              )}
+            </div>
+          )}
 
           {callState.callType === "video" && (
-            <div className="flex justify-around mt-4 space-x-4">
+            <div className="flex flex-col sm:flex-row w-full justify-center items-center gap-4">
+              {showRemoteVideo && (
+                <div className="relative w-full sm:w-1/2 aspect-video bg-gray-200 rounded-lg overflow-hidden">
+                  <video
+                    ref={remoteMediaRef as React.RefObject<HTMLVideoElement>}
+                    autoPlay
+                    playsInline
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                    {callState.initiaterId === user?.userId
+                      ? callState.recipientName
+                      : callState?.initiaterName}
+                  </div>
+                </div>
+              )}
               {showLocalVideo && (
-                <div className="relative w-1/2 aspect-video bg-gray-200 rounded-lg overflow-hidden">
+                <div className="relative w-full sm:w-1/2 aspect-video bg-gray-200 rounded-lg overflow-hidden">
                   <video
                     ref={localMediaRef as React.RefObject<HTMLVideoElement>}
                     autoPlay
@@ -84,19 +104,6 @@ export const CallModal: React.FC = () => {
                   />
                   <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
                     You
-                  </div>
-                </div>
-              )}
-              {showRemoteVideo && (
-                <div className="relative w-1/2 aspect-video bg-gray-200 rounded-lg overflow-hidden">
-                  <video
-                    ref={remoteMediaRef as React.RefObject<HTMLVideoElement>}
-                    autoPlay
-                    playsInline
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                  <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                    {callState?.initiaterName}
                   </div>
                 </div>
               )}
@@ -119,7 +126,7 @@ export const CallModal: React.FC = () => {
             </div>
           )}
         </div>
-        <DialogFooter>
+        <DialogFooter className="mt-4">
           {callState.status === "ringing" &&
             callState.initiaterId !== user?.userId && (
               <div className="flex flex-col sm:flex-row w-full gap-3">
@@ -141,7 +148,7 @@ export const CallModal: React.FC = () => {
             )}
           {(callState.status === "connected" ||
             callState.initiaterId === user?.userId) && (
-            <Button onClick={endCall} variant="destructive" className="w-full">
+            <Button onClick={endCall} variant="destructive">
               End Call
             </Button>
           )}

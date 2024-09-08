@@ -132,7 +132,11 @@ export default function ChatHeader({
 
   const handleMakeCall = (type: "audio" | "video") => {
     if (!recipient) return;
-    initiateCall(recipient?.userId, type);
+    initiateCall({
+      callType: type,
+      recipientId: recipient?.userId,
+      recipientName: recipient?.username,
+    });
   };
 
   return (
@@ -432,13 +436,13 @@ export default function ChatHeader({
           </div>
           <div className="flex gap-4">
             <IconButton
-              icon={<Phone />}
-              className="w-8 h-8"
+              icon={<Phone size={20} />}
+              className="w-8 h-8 "
               onClick={() => handleMakeCall("audio")}
             />
             <IconButton
-              icon={<Video />}
-              className="w-8 h-8"
+              icon={<Video size={20} />}
+              className="w-8 h-8 "
               onClick={() => handleMakeCall("video")}
             />
           </div>

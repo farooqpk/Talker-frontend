@@ -16,15 +16,26 @@ interface CallState {
   initiaterId: string | null;
   initiaterName: string | null;
   recipientId: string | null;
+  recipientName: string | null;
   recipientPeerId: string | null;
   localStream: MediaStream | null;
   remoteStream: MediaStream | null;
   incomingCall: MediaConnection | null;
 }
 
+type InitiateCallArgs = {
+  recipientId: string;
+  recipientName: string;
+  callType: CallType;
+};
+
 interface CallContextType {
   callState: CallState;
-  initiateCall: (recipientId: string, callType: CallType) => void;
+  initiateCall: ({
+    recipientId,
+    recipientName,
+    callType,
+  }: InitiateCallArgs) => void;
   answerCall: () => void;
   rejectCall: () => void;
   endCall: () => void;
@@ -42,6 +53,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
     initiaterId: null,
     initiaterName: null,
     recipientId: null,
+    recipientName: null,
     recipientPeerId: null,
     localStream: null,
     remoteStream: null,
@@ -65,7 +77,11 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const initiateCall = async (recipientId: string, callType: CallType) => {
+  const initiateCall = async ({
+    recipientId,
+    recipientName,
+    callType,
+  }: InitiateCallArgs) => {
     try {
       const stream = await getMediaStream(callType);
 
@@ -76,6 +92,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
         initiaterId: user?.userId || null,
         initiaterName: user?.username || null,
         recipientId,
+        recipientName,
         recipientPeerId: null,
         localStream: stream,
         remoteStream: null,
@@ -107,17 +124,23 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
         }));
       });
     } catch (error) {
-      toast({ title: "Error answering call" });
+      toast({ title: "Failed to answer call" });
     }
   };
 
-  const rejectCall = () => {
-    // Close the incoming call if exists
+  const shutdownCall = () => {
     if (callState.incomingCall) {
       callState.incomingCall.close();
     }
 
-    // Reset the call state
+    if (callState.localStream) {
+      callState.localStream.getTracks().forEach((track) => track.stop());
+    }
+
+    if (callState.remoteStream) {
+      callState.remoteStream.getTracks().forEach((track) => track.stop());
+    }
+
     setCallState({
       isOpen: false,
       callType: null,
@@ -125,6 +148,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
       initiaterId: null,
       initiaterName: null,
       recipientId: null,
+      recipientName: null,
       recipientPeerId: null,
       localStream: null,
       remoteStream: null,
@@ -133,29 +157,23 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const endCall = () => {
-    // Close peer connections
-    if (callState.incomingCall) {
-      callState.incomingCall.close();
-    }
+    const opponentId =
+      callState.initiaterId === user?.userId
+        ? callState.recipientId
+        : callState?.initiaterId;
 
-    // Close local media streams
-    if (callState.localStream) {
-      callState.localStream.getTracks().forEach((track) => track.stop());
-    }
+    socket?.emit(SocketEvents.END_CALL, opponentId);
+    shutdownCall();
+  };
 
-    // Reset call state
-    setCallState({
-      isOpen: false,
-      callType: null,
-      status: "ended",
-      initiaterId: null,
-      initiaterName: null,
-      recipientId: null,
-      recipientPeerId: null,
-      localStream: null,
-      remoteStream: null,
-      incomingCall: null,
-    });
+  const rejectCall = () => {
+    const opponentId =
+      callState.initiaterId === user?.userId
+        ? callState.recipientId
+        : callState?.initiaterId;
+
+    socket?.emit(SocketEvents.REJECT_CALL, opponentId);
+    shutdownCall();
   };
 
   const handleGetRecipientPeerId = (recipientPeerId: string) => {
@@ -167,11 +185,38 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
     }));
   };
 
+  const callEndedByOpponent = () => {
+    toast({
+      title: `Call ended by ${
+        callState.initiaterId === user?.userId
+          ? callState.recipientName
+          : callState?.initiaterName
+      }`,
+    });
+    shutdownCall();
+  };
+
+  const callRejectedByOpponent = () => {
+    toast({
+      title: `Call rejected by ${
+        callState.initiaterId === user?.userId
+          ? callState.recipientName
+          : callState?.initiaterName
+      }`,
+    });
+    shutdownCall();
+  };
+
   useEffect(() => {
     if (!socket || !peer) return;
 
     socket.on(SocketEvents.GET_RECIPIENT_PEER_ID, handleGetRecipientPeerId);
 
+    socket.on(SocketEvents.END_CALL, callEndedByOpponent);
+
+    socket.on(SocketEvents.REJECT_CALL, callRejectedByOpponent);
+
+    // getting incoming call
     peer.on("call", (call) => {
       const { initiater, initiaterId, callType } = call.metadata;
 
@@ -186,18 +231,13 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
       }));
     });
 
-    return () => {
-      socket.off(SocketEvents.GET_RECIPIENT_PEER_ID, handleGetRecipientPeerId);
-    };
-  }, [socket, peer]);
-
-  useEffect(() => {
-    if (!peer || !callState.recipientPeerId || !callState.localStream) return;
-
     if (
       callState.status === "ringing" &&
-      callState.initiaterId === user?.userId
+      callState.initiaterId === user?.userId &&
+      callState.recipientPeerId &&
+      callState.localStream
     ) {
+      // making call
       const call = peer.call(callState.recipientPeerId, callState.localStream, {
         metadata: {
           initiater: user?.username,
@@ -206,6 +246,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
         },
       });
 
+      // getting remote stream
       call.on("stream", (remoteStream) => {
         setCallState((prevState) => ({
           ...prevState,
@@ -214,17 +255,23 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
         }));
       });
 
-      call.on("close", () => {
-        console.log("closed");
-        endCall();
-      });
+      call.on("close", endCall);
       call.on("error", endCall);
     }
+
+    return () => {
+      socket.off(SocketEvents.GET_RECIPIENT_PEER_ID, handleGetRecipientPeerId);
+      socket.off(SocketEvents.END_CALL, callEndedByOpponent);
+      socket.off(SocketEvents.REJECT_CALL, callRejectedByOpponent);
+      peer.removeAllListeners();
+    };
   }, [
+    socket,
+    peer,
     callState.status,
     callState.recipientPeerId,
     callState.localStream,
-    peer,
+    user?.userId,
   ]);
 
   return (
