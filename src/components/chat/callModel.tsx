@@ -18,11 +18,11 @@ export const CallModal: React.FC = () => {
   const { user } = useGetUser();
 
   useEffect(() => {
-    if (localMediaRef.current && callState.localStream) {
+    if (callState.localStream && localMediaRef.current) {
       localMediaRef.current.srcObject = callState.localStream;
     }
 
-    if (remoteMediaRef.current && callState.remoteStream) {
+    if (callState.remoteStream && remoteMediaRef.current) {
       remoteMediaRef.current.srcObject = callState.remoteStream;
     }
   }, [
@@ -51,28 +51,46 @@ export const CallModal: React.FC = () => {
     <Dialog open={callState.isOpen}>
       <DialogContent
         hideCloseButton
-        className="w-full max-w-3xl h-auto max-h-[90vh] overflow-y-auto"
+        className={`w-full ${
+          callState.status === "connected" && callState.callType === "video"
+            ? "max-w-3xl"
+            : "max-w-xl"
+        } h-auto max-h-[95vh] overflow-y-auto`}
       >
         <DialogHeader>
-          <DialogTitle className="text-lg sm:text-base font-bold text-center">
-            {callState.status === "ringing"
-              ? callState.initiaterId === user?.userId
-                ? `Calling ${callState.recipientName}...`
-                : `Incoming ${callState.callType} call from ${callState?.initiaterName}`
-              : `${callState.callType} call`}
+          <DialogTitle className="text-lg md:text-xl sm:text-base font-bold text-center">
+            {(() => {
+              if (
+                callState.status === "initiating" ||
+                callState.status === "ringing"
+              ) {
+                if (callState.initiaterId === user?.userId) {
+                  return callState.status === "initiating"
+                    ? `Calling ${callState.recipientName}...`
+                    : `Ringing ${callState.recipientName}...`;
+                } else {
+                  return `Incoming ${callState.callType} call from ${callState?.initiaterName}`;
+                }
+              }
+              return `${callState.callType} call`;
+            })()}
           </DialogTitle>
         </DialogHeader>
+
+        {!callState.recipientPeerId &&
+          callState.initiaterId === user?.userId && (
+            <p className="text-warning text-sm text-center">User is offline</p>
+          )}
+
         <div className="py-3 flex flex-col items-center">
-          {callState.status === "ringing" && (
-            <div className="flex justify-center mb-4">
-              {callState.callType === "video" &&
-              user?.userId !== callState.initiaterId ? (
+          {(callState.status === "ringing" ||
+            callState.status === "initiating") && (
+            <div className="flex justify-center mb-2">
+              {callState.callType === "video" ? (
                 <VideoIcon className="w-12 h-12 text-blue-500" />
-              ) : (
-                callState.callType === "audio" && (
-                  <PhoneIcon className="w-12 h-12 text-green-500" />
-                )
-              )}
+              ) : callState.callType === "audio" ? (
+                <PhoneIcon className="w-12 h-12 text-green-500" />
+              ) : null}
             </div>
           )}
 
@@ -111,9 +129,35 @@ export const CallModal: React.FC = () => {
           )}
 
           {showAudio && (
-            <div className="flex justify-center items-center space-x-4">
-              <Mic className="w-8 h-8 text-blue-500" />
-              <div className="text-lg">Audio call connected</div>
+            <div className="flex flex-col items-center space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="relative flex flex-col items-center">
+                  <Mic className="w-8 h-8 text-blue-500" />
+                  <div className="absolute -top-1 -right-1">
+                    <span className="flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                    </span>
+                  </div>
+                  <span className="mt-2 text-sm">You</span>
+                </div>
+
+                <div className="relative flex flex-col items-center">
+                  <Mic className="w-8 h-8 text-blue-500" />
+                  <div className="absolute -top-1 -right-1">
+                    <span className="flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                    </span>
+                  </div>
+                  <span className="mt-2 text-sm">
+                    {callState.initiaterId === user?.userId
+                      ? callState.recipientName
+                      : callState?.initiaterName}
+                  </span>
+                </div>
+              </div>
+
               <audio
                 ref={localMediaRef as React.RefObject<HTMLAudioElement>}
                 autoPlay
@@ -148,7 +192,11 @@ export const CallModal: React.FC = () => {
             )}
           {(callState.status === "connected" ||
             callState.initiaterId === user?.userId) && (
-            <Button onClick={endCall} variant="destructive">
+            <Button
+              onClick={endCall}
+              variant="destructive"
+              className="w-full md:w-[60%] md:mx-auto"
+            >
               End Call
             </Button>
           )}

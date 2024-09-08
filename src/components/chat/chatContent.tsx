@@ -59,6 +59,7 @@ export default function ChatContent({
     Record<string, HTMLAudioElement>
   >({});
   const [isPlaying, setIsPlaying] = useState<Record<string, boolean>>({});
+  const currentAudioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -76,6 +77,7 @@ export default function ChatContent({
           console.error("Failed to play audio:", error);
         })
         .then(() => {
+          currentAudioPlayerRef.current = audioPlayer;
           setAudioPlayers((prevState) => ({
             ...prevState,
             [audioId]: audioPlayer,
@@ -105,6 +107,7 @@ export default function ChatContent({
           ...prevState,
           [audioId]: false,
         }));
+        currentAudioPlayerRef.current = null;
       }
     }
   };
@@ -127,6 +130,18 @@ export default function ChatContent({
       handleReadMessage(lastMessage.messageId);
     }
   }, [messages]);
+
+  // when component unmounts, pause the audio and reset the state
+  useEffect(() => {
+    return () => {
+      if (currentAudioPlayerRef.current) {
+        currentAudioPlayerRef.current.pause();
+        currentAudioPlayerRef.current.currentTime = 0;
+      }
+      setAudioPlayers({});
+      setIsPlaying({});
+    };
+  }, []);
 
   return (
     <Container>

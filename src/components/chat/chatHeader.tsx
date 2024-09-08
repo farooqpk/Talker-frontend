@@ -414,7 +414,7 @@ export default function ChatHeader({
           </div> */}
         </div>
       ) : (
-        <div className="flex items-center justify-between py-3 px-1 sm:px-3 rounded-xl border-b">
+        <div className="flex items-center justify-between py-3 px-4 sm:px-10 rounded-xl border-b">
           <div className="flex items-center gap-4 flex-1">
             <Link to={`/`}>
               <IconButton icon={<ArrowLeft />} className="w-8 h-8" />
@@ -434,7 +434,7 @@ export default function ChatHeader({
               ) : null}
             </div>
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-4 sm:gap-5">
             <IconButton
               icon={<Phone size={20} />}
               className="w-8 h-8 "

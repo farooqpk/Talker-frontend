@@ -70,7 +70,7 @@ export const HomeList = ({
             {isUserTyping ? (
               "typing..."
             ) : isDeleted ? (
-              "This message was deleted"
+              "Message was deleted"
             ) : isGroup && !content ? (
               description
             ) : (

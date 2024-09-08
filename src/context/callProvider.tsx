@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+} from "react";
 import { useSocket } from "./socketProvider";
 import { usePeer } from "./peerProvider";
 import { SocketEvents } from "@/types/index";
@@ -6,6 +12,7 @@ import { CallModal } from "@/components/chat/callModel";
 import { useGetUser } from "@/hooks/useGetUser";
 import { MediaConnection } from "peerjs";
 import { toast } from "@/components/ui/use-toast";
+import ringMp3 from "../assets/ring.mp3";
 
 type CallType = "audio" | "video";
 
@@ -62,6 +69,32 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
   const { user } = useGetUser();
   const socket = useSocket();
   const peer = usePeer();
+  const ringAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    ringAudioRef.current = new Audio(ringMp3);
+    ringAudioRef.current.loop = true;
+
+    return () => {
+      if (ringAudioRef.current) {
+        ringAudioRef.current.pause();
+        ringAudioRef.current = null;
+      }
+    };
+  }, []);
+
+  const playRingtone = () => {
+    ringAudioRef.current
+      ?.play()
+      .catch((error) => console.error("Error playing ringtone:", error));
+  };
+
+  const stopRingtone = () => {
+    if (ringAudioRef.current) {
+      ringAudioRef.current.pause();
+      ringAudioRef.current.currentTime = 0;
+    }
+  };
 
   const getMediaStream = async (callType: CallType): Promise<MediaStream> => {
     const constraints = {
@@ -84,7 +117,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
   }: InitiateCallArgs) => {
     try {
       const stream = await getMediaStream(callType);
-
+      playRingtone();
       setCallState({
         isOpen: true,
         callType,
@@ -98,6 +131,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
         remoteStream: null,
         incomingCall: null,
       });
+
       socket?.emit(SocketEvents.GET_RECIPIENT_PEER_ID, { recipientId });
     } catch (error) {
       toast({ title: "Failed to initiate call" });
@@ -106,8 +140,9 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const answerCall = async () => {
     try {
-      const stream = await getMediaStream(callState.callType || "video");
+      stopRingtone();
 
+      const stream = await getMediaStream(callState.callType || "video");
       callState.incomingCall?.answer(stream);
 
       setCallState((prevState) => ({
@@ -141,6 +176,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
       callState.remoteStream.getTracks().forEach((track) => track.stop());
     }
 
+    stopRingtone();
+
     setCallState({
       isOpen: false,
       callType: null,
@@ -157,6 +194,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const endCall = () => {
+    stopRingtone();
+
     const opponentId =
       callState.initiaterId === user?.userId
         ? callState.recipientId
@@ -167,6 +206,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const rejectCall = () => {
+    stopRingtone();
     const opponentId =
       callState.initiaterId === user?.userId
         ? callState.recipientId
@@ -178,6 +218,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const handleGetRecipientPeerId = (recipientPeerId: string) => {
     if (!peer || !recipientPeerId) return;
+
     setCallState((prevState) => ({
       ...prevState,
       recipientPeerId,
@@ -187,22 +228,14 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const callEndedByOpponent = () => {
     toast({
-      title: `Call ended by ${
-        callState.initiaterId === user?.userId
-          ? callState.recipientName
-          : callState?.initiaterName
-      }`,
+      title: `Call has ended`,
     });
     shutdownCall();
   };
 
   const callRejectedByOpponent = () => {
     toast({
-      title: `Call rejected by ${
-        callState.initiaterId === user?.userId
-          ? callState.recipientName
-          : callState?.initiaterName
-      }`,
+      title: `Call was rejected`,
     });
     shutdownCall();
   };
@@ -219,7 +252,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
     // getting incoming call
     peer.on("call", (call) => {
       const { initiater, initiaterId, callType } = call.metadata;
-
+      playRingtone();
       setCallState((prevState) => ({
         ...prevState,
         isOpen: true,
