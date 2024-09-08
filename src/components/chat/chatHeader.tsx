@@ -6,7 +6,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "../ui/button";
-import { ArrowLeft, CircleEllipsis, Pencil, Save } from "lucide-react";
+import {
+  ArrowLeft,
+  CircleEllipsis,
+  Pencil,
+  Phone,
+  Save,
+  Video,
+} from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -44,6 +51,7 @@ import { Option } from "../../types/index";
 import { useQuery } from "react-query";
 import { IconButton } from "../IconButton";
 import { AlertDialogDescription } from "@radix-ui/react-alert-dialog";
+import { useCallContext } from "@/context/callProvider";
 
 type Props = {
   groupDetails?: GroupDetails;
@@ -99,6 +107,8 @@ export default function ChatHeader({
   } | null>(null);
   const [isDeleteGroupModalOpen, setIsDeleteGroupModalOpen] = useState(false);
 
+  const { initiateCall } = useCallContext();
+
   useQuery<Option[]>({
     queryKey: ["addnewmemberstogroupu"],
     queryFn: () => getUsersForSearch({ isInfiniteScroll: false }),
@@ -119,6 +129,11 @@ export default function ChatHeader({
       setNewMembers([]);
     }
   }, [isAddingNewMembersLoading]);
+
+  const handleMakeCall = (type: "audio" | "video") => {
+    if (!recipient) return;
+    initiateCall(recipient?.userId, type);
+  };
 
   return (
     <>
@@ -380,23 +395,52 @@ export default function ChatHeader({
               </div>
             </SheetContent>
           </Sheet>
+
+          {/* <div className="flex gap-4">
+            <IconButton
+              icon={<Phone />}
+              className="w-8 h-8"
+              onClick={() => handleMakeCall("audio")}
+            />
+            <IconButton
+              icon={<Video />}
+              className="w-8 h-8"
+              onClick={() => handleMakeCall("video")}
+            />
+          </div> */}
         </div>
       ) : (
-        <div className="flex items-center p-3 rounded-xl border-b ">
-          <Link to={`/`} className="absolute">
-            <IconButton icon={<ArrowLeft />} className="w-8 h-8" />
-          </Link>
-          <div className="flex flex-col md:gap-2 mx-auto">
-            <p className="text-lg truncate font-semibold">
-              {truncateUsername(recipient?.username!)}
-            </p>
-            {userStatus === UserStatusEnum.ONLINE ? (
-              <span className="text-sm md:text-sm text-success">Online</span>
-            ) : userStatus === UserStatusEnum.OFFLINE ? (
-              <span className="text-sm md:text-sm text-error">Offline</span>
-            ) : userStatus === UserStatusEnum.TYPING ? (
-              <span className="text-sm md:text-sm text-warning">Typing...</span>
-            ) : null}
+        <div className="flex items-center justify-between py-3 px-1 sm:px-3 rounded-xl border-b">
+          <div className="flex items-center gap-4 flex-1">
+            <Link to={`/`}>
+              <IconButton icon={<ArrowLeft />} className="w-8 h-8" />
+            </Link>
+            <div className="flex flex-col items-center justify-center flex-1">
+              <p className="text-lg truncate font-semibold">
+                {truncateUsername(recipient?.username!)}
+              </p>
+              {userStatus === UserStatusEnum.ONLINE ? (
+                <span className="text-sm md:text-sm text-success">Online</span>
+              ) : userStatus === UserStatusEnum.OFFLINE ? (
+                <span className="text-sm md:text-sm text-error">Offline</span>
+              ) : userStatus === UserStatusEnum.TYPING ? (
+                <span className="text-sm md:text-sm text-warning">
+                  Typing...
+                </span>
+              ) : null}
+            </div>
+          </div>
+          <div className="flex gap-4">
+            <IconButton
+              icon={<Phone />}
+              className="w-8 h-8"
+              onClick={() => handleMakeCall("audio")}
+            />
+            <IconButton
+              icon={<Video />}
+              className="w-8 h-8"
+              onClick={() => handleMakeCall("video")}
+            />
           </div>
         </div>
       )}

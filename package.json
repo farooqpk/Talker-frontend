@@ -42,6 +42,7 @@
     "idb": "^8.0.0",
     "lucide-react": "^0.344.0",
     "parse-json": "^8.1.0",
+    "peerjs": "^1.5.4",
     "react": "^18.2.0",
     "react-audio-voice-recorder": "^2.2.0",
     "react-dom": "^18.2.0",

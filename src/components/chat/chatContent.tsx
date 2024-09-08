@@ -311,7 +311,7 @@ export default function ChatContent({
           />
           <IconButton
             icon={<X />}
-            className="absolute top-4 right-4 rounded-full w-10 h-10"
+            className="absolute top-4 right-4 rounded-full w-10 h-10 bg-primary-foreground"
             onClick={() => setLightboxImage(null)}
           />
         </div>
