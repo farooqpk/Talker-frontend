@@ -1,16 +1,7 @@
-export function truncateUsername(username: string) {
-  const maxLength = 10; // Define the maximum length for the truncated username
-  if (username.length <= maxLength) {
-    return username;
+export function truncateText(text: string, length?: number) {
+  const maxLength = length || 10;
+  if (text.length <= maxLength) {
+    return text;
   }
-  return username?.substring(0, maxLength) + "...";
-}
-
-export function truncateMessage(msg: string) {
-  if (!msg) return;
-  const maxLength = 20;
-  if (msg.length <= maxLength) {
-    return msg;
-  }
-  return msg?.substring(0, maxLength) + "....";
+  return text?.substring(0, maxLength) + "...";
 }

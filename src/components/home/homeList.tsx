@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formateDate } from "@/lib/format-date";
-import { truncateMessage } from "@/lib/trunctuate";
+import { truncateText } from "@/lib/trunctuate";
 import Loader from "../loader";
 import { ContentType, type Chat } from "@/types";
 import { useGetUser } from "@/hooks/useGetUser";
@@ -38,7 +38,7 @@ export const HomeList = ({
         : chat?.message?.sender?.username;
     const contentType = chat.message?.contentType;
     const isDeleted = chat.message?.isDeleted;
-    const textContent = truncateMessage(chat.message?.text || "");
+    const textContent = truncateText(chat.message?.text || "");
     const description = isGroup ? chat.group?.description : null;
 
     let content: ReactElement | string = "";
@@ -70,9 +70,9 @@ export const HomeList = ({
             {isUserTyping ? (
               "typing..."
             ) : isDeleted ? (
-              "Message was deleted"
+              truncateText("This message was deleted",15)
             ) : isGroup && !content ? (
-              description
+              truncateText(description || "")
             ) : (
               <p className="flex items-center">
                 {senderName}: {content}

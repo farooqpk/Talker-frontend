@@ -115,35 +115,36 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
     recipientName,
     callType,
   }: InitiateCallArgs) => {
-    try {
-      const stream = await getMediaStream(callType);
-      playRingtone();
-      setCallState({
-        isOpen: true,
-        callType,
-        status: "initiating",
-        initiaterId: user?.userId || null,
-        initiaterName: user?.username || null,
-        recipientId,
-        recipientName,
-        recipientPeerId: null,
-        localStream: stream,
-        remoteStream: null,
-        incomingCall: null,
-      });
-
-      socket?.emit(SocketEvents.GET_RECIPIENT_PEER_ID, { recipientId });
-    } catch (error) {
-      toast({ title: "Failed to initiate call" });
-    }
+    playRingtone();
+    setCallState({
+      isOpen: true,
+      callType,
+      status: "initiating",
+      initiaterId: user?.userId || null,
+      initiaterName: user?.username || null,
+      recipientId,
+      recipientName,
+      recipientPeerId: null,
+      localStream: null,
+      remoteStream: null,
+      incomingCall: null,
+    });
+    socket?.emit(SocketEvents.GET_RECIPIENT_PEER_ID, { recipientId });
   };
 
   const answerCall = async () => {
-    try {
-      stopRingtone();
+    stopRingtone();
 
+    if (!callState.incomingCall) {
+      console.error("No incoming call to answer");
+      toast({ title: "Error: No incoming call to answer" });
+      return;
+    }
+
+    try {
       const stream = await getMediaStream(callState.callType || "video");
-      callState.incomingCall?.answer(stream);
+
+      callState.incomingCall.answer(stream);
 
       setCallState((prevState) => ({
         ...prevState,
@@ -151,7 +152,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
         localStream: stream,
       }));
 
-      callState.incomingCall?.on("stream", (remoteStream) => {
+      callState.incomingCall.on("stream", (remoteStream) => {
+        console.log("Received remote stream");
         setCallState((prevState) => ({
           ...prevState,
           remoteStream,
@@ -159,7 +161,10 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
         }));
       });
     } catch (error) {
+      console.error("Failed to answer call:", error);
       toast({ title: "Failed to answer call" });
+      stopRingtone();
+      shutdownCall();
     }
   };
 
@@ -216,14 +221,20 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
     shutdownCall();
   };
 
-  const handleGetRecipientPeerId = (recipientPeerId: string) => {
+  const handleGetRecipientPeerId = async (recipientPeerId: string) => {
     if (!peer || !recipientPeerId) return;
+    try {
+      const stream = await getMediaStream(callState.callType || "video");
 
-    setCallState((prevState) => ({
-      ...prevState,
-      recipientPeerId,
-      status: "ringing",
-    }));
+      setCallState((prevState) => ({
+        ...prevState,
+        recipientPeerId,
+        status: "ringing",
+        localStream: stream,
+      }));
+    } catch (error) {
+      toast({ title: "Failed to initiate call" });
+    }
   };
 
   const callEndedByOpponent = () => {
@@ -281,6 +292,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // getting remote stream
       call.on("stream", (remoteStream) => {
+        stopRingtone();
         setCallState((prevState) => ({
           ...prevState,
           remoteStream,

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useCallContext } from "@/context/callProvider";
 import {
   Dialog,
@@ -13,9 +13,16 @@ import { PhoneIcon, VideoIcon, Mic } from "lucide-react";
 
 export const CallModal: React.FC = () => {
   const { callState, answerCall, rejectCall, endCall } = useCallContext();
-  const localMediaRef = useRef<HTMLVideoElement | HTMLAudioElement>(null);
-  const remoteMediaRef = useRef<HTMLVideoElement | HTMLAudioElement>(null);
   const { user } = useGetUser();
+
+  const localMediaRef = useRef<HTMLVideoElement | HTMLAudioElement | null>(
+    null
+  );
+  const remoteMediaRef = useRef<HTMLVideoElement | HTMLAudioElement | null>(
+    null
+  );
+
+  const [showUserOfflineMsg, setShowUserOfflineMsg] = useState(false);
 
   useEffect(() => {
     if (callState.localStream && localMediaRef.current) {
@@ -28,7 +35,6 @@ export const CallModal: React.FC = () => {
   }, [
     localMediaRef.current,
     remoteMediaRef.current,
-    callState.callType,
     callState.localStream,
     callState.remoteStream,
   ]);
@@ -36,7 +42,8 @@ export const CallModal: React.FC = () => {
   const showLocalVideo =
     callState.callType === "video" &&
     callState.localStream &&
-    (callState.initiaterId === user?.userId ||
+    ((callState.status === "ringing" &&
+      callState.initiaterId === user?.userId) ||
       callState.status === "connected");
 
   const showRemoteVideo =
@@ -46,6 +53,20 @@ export const CallModal: React.FC = () => {
 
   const showAudio =
     callState.callType === "audio" && callState.status === "connected";
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (!callState.recipientPeerId && callState.initiaterId === user?.userId) {
+      timer = setTimeout(() => {
+        setShowUserOfflineMsg(true);
+      }, 4000);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      setShowUserOfflineMsg(false);
+    };
+  }, [callState.recipientPeerId, callState.initiaterId]);
 
   return (
     <Dialog open={callState.isOpen}>
@@ -58,12 +79,10 @@ export const CallModal: React.FC = () => {
         } h-auto max-h-[95vh] overflow-y-auto`}
       >
         <DialogHeader>
-          <DialogTitle className="text-lg md:text-xl sm:text-base font-bold text-center">
-            {(() => {
-              if (
-                callState.status === "initiating" ||
-                callState.status === "ringing"
-              ) {
+          {(callState.status === "initiating" ||
+            callState.status === "ringing") && (
+            <DialogTitle className="text-lg md:text-xl sm:text-base font-bold text-center">
+              {(() => {
                 if (callState.initiaterId === user?.userId) {
                   return callState.status === "initiating"
                     ? `Calling ${callState.recipientName}...`
@@ -71,16 +90,16 @@ export const CallModal: React.FC = () => {
                 } else {
                   return `Incoming ${callState.callType} call from ${callState?.initiaterName}`;
                 }
-              }
-              return `${callState.callType} call`;
-            })()}
-          </DialogTitle>
+              })()}
+            </DialogTitle>
+          )}
         </DialogHeader>
 
-        {!callState.recipientPeerId &&
-          callState.initiaterId === user?.userId && (
-            <p className="text-warning text-sm text-center">User is offline</p>
-          )}
+        {showUserOfflineMsg && (
+          <p className="text-warning text-sm text-center">
+            {"Recipient is offline. Please try again later."}
+          </p>
+        )}
 
         <div className="py-3 flex flex-col items-center">
           {(callState.status === "ringing" ||
@@ -129,44 +148,44 @@ export const CallModal: React.FC = () => {
           )}
 
           {showAudio && (
-            <div className="flex flex-col items-center space-y-4">
-              <div className="flex justify-between items-center">
-                <div className="relative flex flex-col items-center">
-                  <Mic className="w-8 h-8 text-blue-500" />
-                  <div className="absolute -top-1 -right-1">
-                    <span className="flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-                    </span>
+            <div className="flex flex-col items-center space-y-8 w-full">
+              <div className="flex justify-around items-center w-full max-w-2xl px-12">
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="relative">
+                    <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Mic className="w-12 h-12 text-blue-500" />
+                    </div>
+                    <div className="absolute -top-1 -right-1">
+                      <span className="flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                      </span>
+                    </div>
                   </div>
-                  <span className="mt-2 text-sm">You</span>
+                  <span className="text-sm font-medium">You</span>
                 </div>
 
-                <div className="relative flex flex-col items-center">
-                  <Mic className="w-8 h-8 text-blue-500" />
-                  <div className="absolute -top-1 -right-1">
-                    <span className="flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-                    </span>
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="relative">
+                    <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Mic className="w-12 h-12 text-blue-500" />
+                    </div>
+                    <div className="absolute -top-1 -right-1">
+                      <span className="flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                      </span>
+                    </div>
                   </div>
-                  <span className="mt-2 text-sm">
+                  <span className="text-sm font-medium">
                     {callState.initiaterId === user?.userId
                       ? callState.recipientName
                       : callState?.initiaterName}
                   </span>
                 </div>
               </div>
-
-              <audio
-                ref={localMediaRef as React.RefObject<HTMLAudioElement>}
-                autoPlay
-                muted
-              />
-              <audio
-                ref={remoteMediaRef as React.RefObject<HTMLAudioElement>}
-                autoPlay
-              />
+              <audio ref={localMediaRef} autoPlay muted hidden />
+              <audio ref={remoteMediaRef} autoPlay hidden />
             </div>
           )}
         </div>

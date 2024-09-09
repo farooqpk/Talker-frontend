@@ -26,7 +26,7 @@ import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useGetUser } from "@/hooks/useGetUser";
 import { GroupDetails, User, UserStatusEnum } from "../../types";
-import { truncateUsername } from "@/lib/trunctuate";
+import { truncateText } from "@/lib/trunctuate";
 import { useEffect, useState } from "react";
 import {
   AlertDialog,
@@ -421,7 +421,7 @@ export default function ChatHeader({
             </Link>
             <div className="flex flex-col items-center justify-center flex-1">
               <p className="text-lg truncate font-semibold">
-                {truncateUsername(recipient?.username!)}
+                {truncateText(recipient?.username!)}
               </p>
               {userStatus === UserStatusEnum.ONLINE ? (
                 <span className="text-sm md:text-sm text-success">Online</span>
