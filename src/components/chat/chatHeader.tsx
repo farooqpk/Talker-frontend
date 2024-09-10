@@ -399,22 +399,9 @@ export default function ChatHeader({
               </div>
             </SheetContent>
           </Sheet>
-
-          {/* <div className="flex gap-4">
-            <IconButton
-              icon={<Phone />}
-              className="w-8 h-8"
-              onClick={() => handleMakeCall("audio")}
-            />
-            <IconButton
-              icon={<Video />}
-              className="w-8 h-8"
-              onClick={() => handleMakeCall("video")}
-            />
-          </div> */}
         </div>
       ) : (
-        <div className="flex items-center justify-between py-3 px-4 sm:px-10 rounded-xl border-b">
+        <div className="flex items-center justify-between py-3 px-4 sm:px-20 rounded-xl border-b">
           <div className="flex items-center gap-4 flex-1">
             <Link to={`/`}>
               <IconButton icon={<ArrowLeft />} className="w-8 h-8" />

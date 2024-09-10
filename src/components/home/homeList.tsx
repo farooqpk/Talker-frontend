@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formateDate } from "@/lib/format-date";
@@ -23,6 +23,17 @@ export const HomeList = ({
   }
 
   const ChatItem = ({ chat }: { chat: Chat }) => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+      const handleResize = () => {
+        setIsMobile(window.innerWidth < 768);
+      };
+
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
     const isGroup = chat.isGroup;
     const name = isGroup ? chat.group?.name : chat.recipient?.username;
     const avatar = name?.[0].toUpperCase();
@@ -38,7 +49,7 @@ export const HomeList = ({
         : chat?.message?.sender?.username;
     const contentType = chat.message?.contentType;
     const isDeleted = chat.message?.isDeleted;
-    const textContent = truncateText(chat.message?.text || "");
+    const textContent = chat.message?.text;
     const description = isGroup ? chat.group?.description : null;
 
     let content: ReactElement | string = "";
@@ -53,15 +64,21 @@ export const HomeList = ({
     return (
       <Link
         to={link}
-        className="flex items-center gap-2 p-4 hover:bg-slate-900 rounded-xl transition-colors duration-200"
+        className="flex items-center gap-2 p-4 px-2 md:px-4 hover:bg-slate-900 rounded-xl transition-colors duration-200"
       >
-        <Avatar className="h-12 w-12 mr-4">
+        <Avatar className="h-12 w-12 mr-2 md:mr-4">
           <AvatarFallback className="text-lg font-semibold">
             {avatar}
           </AvatarFallback>
         </Avatar>
-        <div className="flex-grow">
-          <h2 className="text-lg font-medium truncate">{name}</h2>
+        <div className="flex-grow space-y-1">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-medium truncate">{name}</h2>
+            <span className="text-xs text-muted-foreground ml-4 whitespace-nowrap">
+              {date}
+            </span>
+          </div>
+
           <div
             className={`text-sm ${
               isUserTyping ? "text-warning" : "text-muted-foreground"
@@ -70,19 +87,23 @@ export const HomeList = ({
             {isUserTyping ? (
               "typing..."
             ) : isDeleted ? (
-              truncateText("This message was deleted",15)
+              "This message was deleted"
             ) : isGroup && !content ? (
               truncateText(description || "")
+            ) : contentType === ContentType.TEXT ? (
+              <p className="flex items-center">
+                {truncateText(
+                  `${senderName}: ${textContent}`,
+                  isMobile ? 24 : 55
+                )}
+              </p>
             ) : (
               <p className="flex items-center">
-                {senderName}: {content}
+                {truncateText(senderName || "", 15)}: {content}
               </p>
             )}
           </div>
         </div>
-        <span className="text-xs text-muted-foreground ml-4 whitespace-nowrap">
-          {date}
-        </span>
       </Link>
     );
   };

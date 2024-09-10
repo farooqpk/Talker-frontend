@@ -19,6 +19,7 @@ import Options from "@/components/home/options";
 import { useToast } from "@/components/ui/use-toast";
 import { getValueFromStoreIDB } from "@/lib/idb";
 import { decode as base64ToArrayBuffer } from "base64-arraybuffer";
+import msgRecieveSound from "../../assets/Pocket.mp3";
 
 export const Home = (): ReactElement => {
   const [chatData, setChatData] = useState<Chat[]>([]);
@@ -129,6 +130,8 @@ export const Home = (): ReactElement => {
         }
         return [...prev];
       });
+
+      new Audio(msgRecieveSound).play();
     };
 
     const handleDeleteMessage = (messageId: string) => {

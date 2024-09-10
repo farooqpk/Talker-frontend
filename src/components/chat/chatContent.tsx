@@ -147,7 +147,7 @@ export default function ChatContent({
     <Container>
       <section
         ref={scrollRef}
-        className="flex flex-col gap-4 h-[67vh] md:h-[65vh] overflow-y-scroll px-3 md:px-14 py-4"
+        className="flex flex-col gap-4 h-[66vh] md:h-[65vh] overflow-y-scroll px-3 md:px-14 py-4"
       >
         <Alert>
           <AlertDescription className="text-warning text-center">
@@ -188,7 +188,7 @@ export default function ChatContent({
                     This message was deleted
                   </p>
                 ) : msg.contentType === ContentType.TEXT ? (
-                  <p className="text-sm text-muted-foreground font-semibold">
+                  <p className="text-sm md:max-w-xl text-muted-foreground font-semibold">
                     {msg.text}
                   </p>
                 ) : msg.contentType === ContentType.AUDIO ? (

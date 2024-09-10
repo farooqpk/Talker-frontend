@@ -89,7 +89,7 @@ export default function ChatFooter({
   }, [recordingBlob]);
 
   return (
-    <section className="flex gap-1 md:gap-4 items-center px-5 md:px-24 relative">
+    <section className="flex gap-1 md:gap-4 items-center px-5 md:px-20 relative">
       <Dialog>
         <DialogTrigger>
           <IconButton icon={<Smile />} className="p-2 border-none" />
