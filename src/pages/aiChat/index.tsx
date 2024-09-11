@@ -54,8 +54,8 @@ export default function AiChat(): ReactElement {
   };
 
   return (
-    <main className="flex flex-col h-full">
-      <div className="flex items-center p-6 rounded-xl border-b">
+    <main className="flex flex-col absolute inset-0">
+      <div className="flex items-center p-6 border-b">
         <Link to={`/`} className="absolute">
           <IconButton icon={<ArrowLeft />} className="w-8 h-8" />
         </Link>
@@ -66,10 +66,10 @@ export default function AiChat(): ReactElement {
         </div>
       </div>
 
-      <Container>
+      <Container className="flex-1 flex flex-col overflow-hidden">
         <section
           ref={scrollRef}
-          className="flex flex-col gap-4 h-[67vh] md:h-[65vh] overflow-y-scroll px-3 md:px-14 py-4"
+          className="flex-1 flex flex-col gap-4 overflow-y-auto p-4"
         >
           <Alert>
             <AlertDescription className="text-warning text-center">
@@ -108,6 +108,7 @@ export default function AiChat(): ReactElement {
             </div>
           )}
 
+          {/* Error message */}
           {isError && (
             <div className="ml-auto border rounded-3xl p-3 bg-red-100">
               <p className="text-sm text-red-600 font-semibold">
@@ -118,7 +119,7 @@ export default function AiChat(): ReactElement {
         </section>
       </Container>
 
-      <section className="flex gap-1 md:gap-4 items-center px-5 md:px-24 relative">
+      <section className="flex items-center p-5 border-t">
         <Dialog>
           <DialogTrigger>
             <IconButton icon={<Smile />} className="p-2 border-none" />
@@ -136,7 +137,7 @@ export default function AiChat(): ReactElement {
 
         <Textarea
           placeholder="Type something..."
-          className="resize-none"
+          className="resize-none flex-grow"
           ref={chatInputRef}
           onChange={(e) => setTypedText(e.target.value)}
           value={typedText}

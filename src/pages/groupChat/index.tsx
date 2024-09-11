@@ -520,7 +520,7 @@ export default function GroupChat(): ReactElement {
 
   return (
     <>
-      <main className="flex flex-col h-full">
+      <main className="flex flex-col absolute inset-0">
         {groupDetailsLoading || messagesLoading || !socket ? (
           <Loader />
         ) : (

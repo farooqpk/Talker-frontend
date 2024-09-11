@@ -144,10 +144,10 @@ export default function ChatContent({
   }, []);
 
   return (
-    <Container>
+    <Container className="flex-1 flex flex-col overflow-hidden">
       <section
         ref={scrollRef}
-        className="flex flex-col gap-4 h-[66vh] md:h-[65vh] overflow-y-scroll px-3 md:px-14 py-4"
+        className="flex-1 flex flex-col gap-4 overflow-y-auto p-4"
       >
         <Alert>
           <AlertDescription className="text-warning text-center">

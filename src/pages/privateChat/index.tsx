@@ -356,9 +356,9 @@ export default function PrivateChat(): ReactElement {
       }
 
       if (message.senderId === user?.userId) {
-        await new Audio(msgSendSound).play();
+        new Audio(msgSendSound).play();
       } else if (message.senderId !== user?.userId) {
-        await new Audio(msgRecieveSound).play();
+        new Audio(msgRecieveSound).play();
       }
     };
 
@@ -485,7 +485,7 @@ export default function PrivateChat(): ReactElement {
 
   return (
     <>
-      <main className="flex flex-col h-full">
+      <main className="flex flex-col absolute inset-0">
         {isLoading ||
         !socket ||
         (recipient?.chatId && messagesLoading) ||
