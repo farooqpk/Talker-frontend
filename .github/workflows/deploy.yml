@@ -32,7 +32,7 @@ jobs:
           target: /home/${{ secrets.USERNAME }}/app/frontend
           debug: true
 
-      - name: Update containers
+      - name: Reload Nginx
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST }}
