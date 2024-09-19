@@ -1,16 +1,14 @@
 name: Deploy Frontend
-
 on:
   push:
     branches:
       - master
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout to repo
         uses: actions/checkout@v2
 
       - name: Setup Node.js
@@ -31,6 +29,19 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "./dist/*"
-          target: "/usr/share/nginx/html/frontend"
-          strip_components: 1
+          target: /home/${{ secrets.USERNAME }}/app/frontend
           debug: true
+
+      - name: Update containers
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          debug: true
+          script: |
+            set -e
+            echo "Reloading nginx..."
+            cd /home/${{ secrets.USERNAME }}/app
+            docker compose exec nginx nginx -s reload
+            echo "Deployment completed successfully🚀🚀🚀"    
