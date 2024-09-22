@@ -60,10 +60,9 @@ const Signup = () => {
     isError: signupIsError,
   } = useMutation(signup);
 
-  const handleSignup = async ({
-    username,
-    password,
-  }: z.infer<typeof signupFormSchema>) => {
+  type SignupFormSchema = z.infer<typeof signupFormSchema>;
+
+  const handleSignup = async ({ username, password }: SignupFormSchema) => {
     const keys = await createAsymmetricKeys();
     privateKeyRef.current = keys.privateKey;
 
@@ -87,9 +86,7 @@ const Signup = () => {
             description: "You have successfully signed up.",
             variant: "default",
           });
-          setTimeout(() => {
-            setShowDownloadConfirmation(true);
-          }, 0);
+          setShowDownloadConfirmation(true);
         },
       }
     );

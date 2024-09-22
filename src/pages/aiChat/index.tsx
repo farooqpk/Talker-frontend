@@ -12,13 +12,16 @@ import { useMutation } from "react-query";
 import { Link } from "react-router-dom";
 import Markdown from "react-markdown";
 
+type Message = {
+  text: string;
+  type: "input" | "output";
+};
+
 export default function AiChat(): ReactElement {
   const scrollRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const [typedText, setTypedText] = useState("");
-  const [messages, setMessages] = useState<
-    { text: string; type: "input" | "output" }[]
-  >([]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const { mutate, isLoading, isError } = useMutation(chatWithAiApi, {
     onSuccess(data) {

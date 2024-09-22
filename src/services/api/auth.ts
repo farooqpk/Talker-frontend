@@ -5,11 +5,27 @@ export const signup = async (data: {
   username: string;
   password: string;
   publicKey: string;
-}) => {
+}): Promise<{
+  user: {
+    userId: string;
+    username: string;
+    publicKey: string;
+  };
+}> => {
   return (await _axios.post(`/api/auth/signup`, data)).data;
 };
 
-export const login = async (data: { username: string; password: string }) => {
+export const login = async (data: {
+  username: string;
+  password: string;
+}): Promise<{
+  loginToken: string;
+  user: {
+    userId: string;
+    username: string;
+    publicKey: string;
+  };
+}> => {
   return (await _axios.post(`/api/auth/login`, data)).data;
 };
 
@@ -29,12 +45,7 @@ export const loginTokenApi = async (data: {
 };
 
 export const createAccessTokenFromRefreshToken = async () => {
-  return (
-    await axios.post(
-      `/api/auth/refresh`,
-      {},
-    )
-  ).data;
+  return (await axios.post(`/api/auth/refresh`, {})).data;
 };
 
 export const logoutApi = (data: {}) => {

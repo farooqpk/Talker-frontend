@@ -165,11 +165,13 @@ const Login = () => {
     handleLoginToken();
   };
 
+  type LoginFormSchema = z.infer<typeof loginFormSchema>;
+
   const handleLogin = async ({
     username,
     password,
     privateKeyFile,
-  }: z.infer<typeof loginFormSchema>) => {
+  }: LoginFormSchema) => {
     // after upload the private key file
     if (isPrivateKeyNotExist) {
       handleIsPrivateKeyNotExist(privateKeyFile);
