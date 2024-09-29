@@ -30,18 +30,13 @@ This is the Talker frontend for a real-time chat application built with Node.js 
    
    npm run dev
    
-
 2. The application will be available at `http://localhost:5173`.
-
-## Building for Production
 
 To create a production build:
 
 npm run build
 
 The built files will be in the `dist` directory.
-
-# Usage
 
 npm start
 
