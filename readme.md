@@ -26,11 +26,11 @@ This is the Talker frontend for a real-time chat application built with Node.js 
 
 ## Usage
 
-1. Start the development server:
+Start the development server:
    
-   npm run dev
-   
-2. The application will be available at `http://localhost:5173`.
+npm run dev
+
+The application will be available at `http://localhost:5173`.
 
 To create a production build:
 
