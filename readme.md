@@ -37,11 +37,13 @@ This is the Talker frontend for a real-time chat application built with Node.js 
 
 To create a production build:
 
-
 npm run build
 
-
 The built files will be in the `dist` directory.
+
+# Usage
+
+npm start
 
 ## Contributing
 
