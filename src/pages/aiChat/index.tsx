@@ -3,45 +3,83 @@ import { IconButton } from "@/components/IconButton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { chatWithAiApi } from "@/services/api/ai";
+import { chatWithAiApi, getAiChatHistoryApi } from "@/services/api/ai";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import { ArrowLeft, SendHorizontal, Smile, Sparkle } from "lucide-react";
 import { ReactElement, useEffect, useRef, useState } from "react";
 import { ThreeDots } from "react-loader-spinner";
-import { useMutation } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import { Link } from "react-router-dom";
 import Markdown from "react-markdown";
-
-type Message = {
-  text: string;
-  type: "input" | "output";
-};
+import Loader from "@/components/loader";
+import { toast } from "@/components/ui/use-toast";
 
 export default function AiChat(): ReactElement {
   const scrollRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const [typedText, setTypedText] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const queryClient = useQueryClient();
 
-  const { mutate, isLoading, isError } = useMutation(chatWithAiApi, {
-    onSuccess(data) {
-      if (!data) return;
-      setMessages((prev) => [...prev, { text: data?.message, type: "output" }]);
-    },
+  const { data: history, isLoading: historyLoading } = useQuery(
+    ["aiChatHistory"],
+    {
+      queryFn: getAiChatHistoryApi,
+    }
+  );
+
+  const {
+    mutate,
+    isLoading: mutateLoading,
+    isError,
+  } = useMutation({
+    mutationFn: chatWithAiApi,
   });
 
   const onSubmit = () => {
     if (typedText.trim().length === 0) return;
     setTypedText("");
-    setMessages((prev) => [...prev, { text: typedText, type: "input" }]);
-    mutate({ message: typedText });
+    const updatedHistory = [
+      ...(history || []),
+      {
+        content: typedText,
+        role: "user",
+      },
+    ];
+    queryClient.setQueryData(["aiChatHistory"], updatedHistory);
+    mutate(
+      { message: typedText },
+      {
+        onSuccess: (data) => {
+          if (!data) return;
+          queryClient.setQueryData(
+            ["aiChatHistory"],
+            [
+              ...updatedHistory,
+              {
+                content: data.message,
+                role: "model",
+              },
+            ]
+          );
+        },
+        onError: (error: any) => {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description:
+              error?.response?.data?.message ||
+              "Something went wrong. Please try again.",
+          });
+        },
+      }
+    );
   };
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [history]);
 
   const handleOnEmojiClick = (emojiData: any) => {
     const emoji = emojiData.emoji;
@@ -55,6 +93,10 @@ export default function AiChat(): ReactElement {
       onSubmit();
     }
   };
+
+  if (historyLoading) {
+    return <Loader />;
+  }
 
   return (
     <main className="flex flex-col absolute inset-0">
@@ -81,16 +123,16 @@ export default function AiChat(): ReactElement {
             </AlertDescription>
           </Alert>
 
-          {messages.map(({ text, type }, index) => (
+          {history?.map(({ content, role }, index) => (
             <div
               key={index}
               className={`border rounded-3xl p-3 break-words flex flex-col flex-wrap gap-4 ${
-                type === "input" ? "ml-auto" : "mr-auto"
+                role === "user" ? "ml-auto" : "mr-auto"
               }`}
             >
               <div className="border-b flex justify-between items-center gap-3 pb-2">
                 <h3 className="text-sm font-semibold">
-                  {type === "input" ? "You" : "AI"}
+                  {role === "user" ? "You" : "AI"}
                 </h3>
               </div>
               <div>
@@ -99,13 +141,13 @@ export default function AiChat(): ReactElement {
                     "text-sm text-muted-foreground font-semibold whitespace-pre-wrap"
                   }
                 >
-                  {text}
+                  {content}
                 </Markdown>
               </div>
             </div>
           ))}
 
-          {isLoading && (
+          {mutateLoading && (
             <div className="mr-auto border rounded-3xl p-3">
               <ThreeDots color="#E5E7EB" width={50} />
             </div>
