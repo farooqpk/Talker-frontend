@@ -44,7 +44,7 @@ jobs:
           target: /home/${{ secrets.USERNAME }}/app
           debug: true
 
-      - name: Reload Nginx
+      - name: Update containers
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST }}
@@ -53,7 +53,8 @@ jobs:
           debug: true
           script: |
             set -e
-            echo "Reloading nginx..."
+            echo "Starting deployment..."
             cd /home/${{ secrets.USERNAME }}/app
-            docker compose exec nginx nginx -s reload
+            docker compose down
+            docker compose up -d
             echo "Deployment completed successfully🚀🚀🚀"
