@@ -22,24 +22,26 @@ jobs:
       - name: Build React app
         run: npm run build
 
-        #Clean up old files
-      - name: Clean up old files
+      - name: Rename dist to frontend
+        run: |
+          mv dist frontend
+
+      - name: Remove old frontend directory
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: "rm -rf /home/${{ secrets.USERNAME }}/app/frontend/*"
+          script: "rm -rf /home/${{ secrets.USERNAME }}/app/frontend"
 
-        #Deploy new files
       - name: Deploy to Server
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "./dist/**"
-          target: /home/${{ secrets.USERNAME }}/app/frontend
+          source: "./frontend"
+          target: /home/${{ secrets.USERNAME }}/app
           debug: true
 
       - name: Reload Nginx
