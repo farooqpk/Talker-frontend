@@ -1,4 +1,4 @@
-export const PrivacyPolicy = () => {
+ const PrivacyPolicy = () => {
   return (
     <div className="p-12 flex flex-col gap-3">
       <h1>Privacy Policy</h1>
@@ -28,3 +28,5 @@ export const PrivacyPolicy = () => {
     </div>
   );
 };
+
+export default PrivacyPolicy;

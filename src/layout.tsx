@@ -5,10 +5,12 @@ import { VerifyRoute } from "./components/auth/verifyRoute";
 import { SocketLayout } from "./components/socketLayout";
 import PrivateChat from "./pages/privateChat";
 import GroupChat from "./pages/groupChat";
-import { PrivacyPolicy } from "./pages/privacyPolicy";
 import AiChat from "./pages/aiChat";
 import { PeerLayout } from "./components/peerLayout";
 import { CallLayout } from "./components/callLayout";
+import { lazy } from "react";
+const NotFound = lazy(() => import("./pages/404"));
+const PrivacyPolicy = lazy(() => import("./pages/privacyPolicy"));
 
 const Layout = () => {
   return (
@@ -25,6 +27,7 @@ const Layout = () => {
                   <Route path="/chat/ai" element={<AiChat />} />
                   <Route path="/chat/:id" element={<PrivateChat />} />
                   <Route path="/group/:id" element={<GroupChat />} />
+                  <Route path="*" element={<NotFound />} />
                 </Route>
               </Route>
             </Route>
