@@ -1,9 +1,4 @@
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { createAccessTokenFromRefreshToken } from "@/services/api/auth";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +16,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const connectSocket = () => {
     const newSocket: Socket = io({
       autoConnect: true,
+      transports: ["websocket"],
     });
 
     newSocket.on("connect", () => {
@@ -43,7 +39,6 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     setSocket(newSocket);
-   
 
     return newSocket;
   };

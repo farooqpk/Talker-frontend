@@ -42,6 +42,7 @@ import {
   decode as base64ToArrayBuffer,
   encode as arrayBufferToBase64,
 } from "base64-arraybuffer";
+import msgpack from "msgpack-lite";
 
 export default function PrivateChat(): ReactElement {
   const { id } = useParams();
@@ -146,9 +147,9 @@ export default function PrivateChat(): ReactElement {
     if (!socket) return;
     setTypedText(value);
     if (value.length > 0) {
-      socket.emit(SocketEvents.IS_TYPING, { toUserId: id });
+      socket.emit(SocketEvents.IS_TYPING, msgpack.encode({ toUserId: id }));
     } else {
-      socket.emit(SocketEvents.IS_NOT_TYPING, { toUserId: id });
+      socket.emit(SocketEvents.IS_NOT_TYPING, msgpack.encode({ toUserId: id }));
     }
   };
 
@@ -254,21 +255,24 @@ export default function PrivateChat(): ReactElement {
     const encryptedMessageBase64 =
       type === ContentType.TEXT ? arrayBufferToBase64(encryptedMessage) : null;
 
-    socket.emit(SocketEvents.SEND_PRIVATE_MESSAGE, {
-      recipientId: id,
-      message: {
-        content: type === ContentType.TEXT ? encryptedMessageBase64 : null,
-        contentType: type,
-        mediaPath: type !== ContentType.TEXT ? uploadedPath : null,
-      },
-      encryptedChatKey: !isChatAlreadyExist
-        ? encryptedChatKeyForUsersBase64
-        : null,
-    });
+    socket.emit(
+      SocketEvents.SEND_PRIVATE_MESSAGE,
+      msgpack.encode({
+        recipientId: id,
+        message: {
+          content: type === ContentType.TEXT ? encryptedMessageBase64 : null,
+          contentType: type,
+          mediaPath: type !== ContentType.TEXT ? uploadedPath : null,
+        },
+        encryptedChatKey: !isChatAlreadyExist
+          ? encryptedChatKeyForUsersBase64
+          : null,
+      })
+    );
 
     // Reset the input field and typing indicator
     setTypedText("");
-    socket.emit(SocketEvents.IS_NOT_TYPING, { toUserId: id });
+    socket.emit(SocketEvents.IS_NOT_TYPING, msgpack.encode({ toUserId: id }));
   };
 
   useEffect(() => {
@@ -310,16 +314,16 @@ export default function PrivateChat(): ReactElement {
       }
     };
 
-    const handleRecieveMessage = async ({
-      message,
-    }: {
-      message: MessageType & {
-        encryptedChatKeys?: Array<{
-          userId: string;
-          encryptedKey: string;
-        }>;
+    const handleRecieveMessage = async (data: ArrayBuffer) => {
+      const { message } = msgpack.decode(new Uint8Array(data)) as {
+        message: MessageType & {
+          encryptedChatKeys?: Array<{
+            userId: string;
+            encryptedKey: string;
+          }>;
+        };
       };
-    }) => {
+
       const privateKey = await getValueFromStoreIDB(user?.userId);
       if (!privateKey) return;
 
@@ -410,10 +414,13 @@ export default function PrivateChat(): ReactElement {
 
   const handleDeleteMsg = (msgId: string) => {
     if (!socket) return;
-    socket.emit(SocketEvents.DELETE_MESSAGE, {
-      messageId: msgId,
-      recipientId: id,
-    });
+    socket.emit(
+      SocketEvents.DELETE_MESSAGE,
+      msgpack.encode({
+        messageId: msgId,
+        recipientId: id,
+      })
+    );
   };
 
   const handleGetMedia = async (
@@ -478,9 +485,12 @@ export default function PrivateChat(): ReactElement {
 
   const handleReadMessage = async (messageId: string) => {
     if (!socket) return;
-    socket.emit(SocketEvents.READ_MESSAGE, {
-      messageId,
-    });
+    socket.emit(
+      SocketEvents.READ_MESSAGE,
+      msgpack.encode({
+        messageId,
+      })
+    );
   };
 
   return (
