@@ -35,6 +35,7 @@ import {
   decode as base64ToArrayBuffer,
   encode as arrayBufferToBase64,
 } from "base64-arraybuffer";
+import msgpack from "msgpack-lite";
 
 export default function GroupChat(): ReactElement {
   const { id } = useParams();
@@ -189,14 +190,17 @@ export default function GroupChat(): ReactElement {
     const encryptedMessageBase64 =
       type === ContentType.TEXT ? arrayBufferToBase64(encryptedMessage) : null;
 
-    socket.emit(SocketEvents.SEND_GROUP_MESSAGE, {
-      groupId: id,
-      message: {
-        content: type === ContentType.TEXT ? encryptedMessageBase64 : null,
-        contentType: type,
-        mediaPath: type !== ContentType.TEXT ? uploadedPath : null,
-      },
-    });
+    socket.emit(
+      SocketEvents.SEND_GROUP_MESSAGE,
+      msgpack.encode({
+        groupId: id,
+        message: {
+          content: type === ContentType.TEXT ? encryptedMessageBase64 : null,
+          contentType: type,
+          mediaPath: type !== ContentType.TEXT ? uploadedPath : null,
+        },
+      })
+    );
 
     setTypedText("");
   };
@@ -204,7 +208,10 @@ export default function GroupChat(): ReactElement {
   useEffect(() => {
     if (!socket || !id || !encryptedChatKeyRef.current || !user) return;
 
-    const recieveMessage = async ({ message }: { message: MessageType }) => {
+    const recieveMessage = async (data: Buffer) => {
+      const { message } = msgpack.decode(new Uint8Array(data)) as {
+        message: MessageType;
+      };
       const privateKey = await getValueFromStoreIDB(user.userId);
       if (!privateKey) return;
 
@@ -242,15 +249,17 @@ export default function GroupChat(): ReactElement {
       );
     };
 
-    const exitGroupReceiver = ({
-      exitedUserId,
-      groupId,
-    }: {
-      exitedUserId: string;
-      groupId: string;
-    }) => {
+    const exitGroupReceiver = (data: Buffer) => {
+      const { exitedUserId, groupId } = msgpack.decode(new Uint8Array(data)) as {
+        exitedUserId: string;
+        groupId: string;
+      };
+
       if (exitedUserId === user?.userId) {
-        socket?.emit(SocketEvents.LEAVE_GROUP, { groupIds: [groupId] });
+        socket?.emit(
+          SocketEvents.LEAVE_GROUP,
+          msgpack.encode({ groupIds: [groupId] })
+        );
         toast({
           description: "Group left successfully.",
         });
@@ -264,13 +273,11 @@ export default function GroupChat(): ReactElement {
       refetchGroup();
     };
 
-    const kickMemberReceiver = async ({
-      removedUserId,
-      removedUserName,
-    }: {
-      removedUserId: string;
-      removedUserName: string;
-    }) => {
+    const kickMemberReceiver = async (data: Buffer) => {
+      const { removedUserId, removedUserName } = msgpack.decode(new Uint8Array(data)) as {
+        removedUserId: string;
+        removedUserName: string;
+      };
       if (removedUserId === user?.userId) {
         toast({
           description: "You have been kicked from the group.",
@@ -310,11 +317,8 @@ export default function GroupChat(): ReactElement {
       }
     };
 
-    const handleDeleteGroupReceiver = async ({
-      deletedBy,
-    }: {
-      deletedBy: string;
-    }) => {
+    const handleDeleteGroupReceiver = async (data: Buffer) => {
+      const { deletedBy } = msgpack.decode(new Uint8Array(data)) as { deletedBy: string };
       toast({
         title:
           deletedBy === user?.userId
@@ -325,7 +329,7 @@ export default function GroupChat(): ReactElement {
     };
 
     socket?.on(SocketEvents.SEND_GROUP_MESSAGE, recieveMessage);
-    socket?.emit(SocketEvents.JOIN_GROUP, { groupIds: [id] });
+    socket?.emit(SocketEvents.JOIN_GROUP, msgpack.encode({ groupIds: [id] }));
     socket.on(SocketEvents.DELETE_MESSAGE, deleteMessageReceiver);
     socket.on(SocketEvents.EXIT_GROUP, exitGroupReceiver);
     socket.on(SocketEvents.UPDATE_GROUP_DETAILS, updateGroupDetailsReceiver);
@@ -340,8 +344,11 @@ export default function GroupChat(): ReactElement {
 
     return () => {
       socket?.off(SocketEvents.SEND_GROUP_MESSAGE, recieveMessage);
-      socket?.emit(SocketEvents.LEAVE_GROUP, { groupIds: [id] });
-      socket.off(SocketEvents.DELETE_MESSAGE, recieveMessage);
+      socket?.emit(
+        SocketEvents.LEAVE_GROUP,
+        msgpack.encode({ groupIds: [id] })
+      );
+      socket.off(SocketEvents.DELETE_MESSAGE, deleteMessageReceiver);
       socket.off(SocketEvents.EXIT_GROUP, exitGroupReceiver);
       socket.off(SocketEvents.UPDATE_GROUP_DETAILS, updateGroupDetailsReceiver);
       socket.off(SocketEvents.KICK_MEMBER, kickMemberReceiver);
@@ -357,25 +364,34 @@ export default function GroupChat(): ReactElement {
 
   const handleDeleteMsg = (msgId: string) => {
     if (!socket) return;
-    socket.emit(SocketEvents.DELETE_MESSAGE, {
-      messageId: msgId,
-      groupId: id,
-      isGroup: true,
-    });
+    socket.emit(
+      SocketEvents.DELETE_MESSAGE,
+      msgpack.encode({
+        messageId: msgId,
+        groupId: id,
+        isGroup: true,
+      })
+    );
   };
 
   const handleExitGroup = () => {
     if (!socket) return;
-    socket.emit(SocketEvents.EXIT_GROUP, {
-      groupId: id,
-    });
+    socket.emit(
+      SocketEvents.EXIT_GROUP,
+      msgpack.encode({
+        groupId: id,
+      })
+    );
   };
 
   const handleUpdateGroupDetails = (data: {
     name?: string;
     description?: string;
   }) => {
-    socket?.emit(SocketEvents.UPDATE_GROUP_DETAILS, { groupId: id, ...data });
+    socket?.emit(
+      SocketEvents.UPDATE_GROUP_DETAILS,
+      msgpack.encode({ groupId: id, ...data })
+    );
   };
 
   const handleGetMedia = async (
@@ -440,10 +456,13 @@ export default function GroupChat(): ReactElement {
 
   const handleKickUserFromGroup = (userId: string) => {
     if (!socket) return;
-    socket.emit(SocketEvents.KICK_MEMBER, {
-      groupId: id,
-      userId,
-    });
+    socket.emit(
+      SocketEvents.KICK_MEMBER,
+      msgpack.encode({
+        groupId: id,
+        userId,
+      })
+    );
   };
 
   const handleAddNewMembers = async (newMembers: string[]) => {
@@ -490,32 +509,44 @@ export default function GroupChat(): ReactElement {
       })
     );
 
-    socket.emit(SocketEvents.ADD_NEW_MEMBER_TO_GROUP, {
-      groupId: id,
-      members: encryptedChatKeyForUsers,
-    });
+    socket.emit(
+      SocketEvents.ADD_NEW_MEMBER_TO_GROUP,
+      msgpack.encode({
+        groupId: id,
+        members: encryptedChatKeyForUsers,
+      })
+    );
   };
 
   const handleReadMessage = async (messageId: string) => {
     if (!socket) return;
-    socket.emit(SocketEvents.READ_MESSAGE, {
-      messageId,
-    });
+    socket.emit(
+      SocketEvents.READ_MESSAGE,
+      msgpack.encode({
+        messageId,
+      })
+    );
   };
 
   const handleSetAsAdmin = (userId: string) => {
     if (!socket) return;
-    socket.emit(SocketEvents.SET_ADMIN, {
-      groupId: id,
-      userId,
-    });
+    socket.emit(
+      SocketEvents.SET_ADMIN,
+      msgpack.encode({
+        groupId: id,
+        userId,
+      })
+    );
   };
 
   const handleDeleteGroup = () => {
     if (!socket) return;
-    socket.emit(SocketEvents.DELETE_GROUP, {
-      groupId: id,
-    });
+    socket.emit(
+      SocketEvents.DELETE_GROUP,
+      msgpack.encode({
+        groupId: id,
+      })
+    );
   };
 
   return (

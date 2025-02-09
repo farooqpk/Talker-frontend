@@ -13,6 +13,7 @@ import { useGetUser } from "@/hooks/useGetUser";
 import { MediaConnection } from "peerjs";
 import { toast } from "@/components/ui/use-toast";
 import ringMp3 from "../assets/ring.mp3";
+import msgpack from 'msgpack-lite'
 
 type CallType = "audio" | "video";
 
@@ -129,7 +130,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({
       remoteStream: null,
       incomingCall: null,
     });
-    socket?.emit(SocketEvents.GET_RECIPIENT_PEER_ID, { recipientId });
+    socket?.emit(SocketEvents.GET_RECIPIENT_PEER_ID, msgpack.encode({ recipientId }));
   };
 
   const answerCall = async () => {

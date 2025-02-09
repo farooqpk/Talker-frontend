@@ -20,6 +20,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { getValueFromStoreIDB } from "@/lib/idb";
 import { decode as base64ToArrayBuffer } from "base64-arraybuffer";
 import msgRecieveSound from "../../assets/Pocket.mp3";
+import msgpack from "msgpack-lite";
 
 export const Home = (): ReactElement => {
   const [chatData, setChatData] = useState<Chat[]>([]);
@@ -87,13 +88,12 @@ export const Home = (): ReactElement => {
       setIsTyping(isTyping.filter((id) => id !== userId));
     };
 
-    const handleRecieveMessage = async ({
-      message,
-      isRefetchChatList,
-    }: {
-      message: MessageType;
-      isRefetchChatList?: boolean;
-    }) => {
+    const handleRecieveMessage = async (data: Buffer) => {
+      const decoded = msgpack.decode(new Uint8Array(data));
+      const { message, isRefetchChatList } = decoded as {
+        message: MessageType;
+        isRefetchChatList?: boolean;
+      };
       if (isRefetchChatList) {
         refetch();
         return;
@@ -158,15 +158,14 @@ export const Home = (): ReactElement => {
       });
     };
 
-    const kickMemberReceiver = ({
-      removedUserId,
-      chatId,
-      groupName,
-    }: {
-      removedUserId: string;
-      chatId: string;
-      groupName: string;
-    }) => {
+    const kickMemberReceiver = (data: ArrayBuffer) => {
+      const { removedUserId, chatId, groupName } = msgpack.decode(
+        new Uint8Array(data)
+      ) as {
+        removedUserId: string;
+        chatId: string;
+        groupName: string;
+      };
       if (removedUserId === user?.userId) {
         setChatData((prev) => {
           const updatedChatData = prev.filter(
@@ -180,13 +179,12 @@ export const Home = (): ReactElement => {
       }
     };
 
-    const handleDeleteGroupReceiver = async ({
-      groupName,
-      chatId,
-    }: {
-      groupName: string;
-      chatId: string;
-    }) => {
+    const handleDeleteGroupReceiver = async (data: Buffer) => {
+      const { groupName, chatId } = msgpack.decode(new Uint8Array(data)) as {
+        groupName: string;
+        chatId: string;
+      };
+
       setChatData((prev) => {
         const updatedChatData = prev.filter((item) => item?.chatId !== chatId);
         return updatedChatData;
@@ -196,7 +194,7 @@ export const Home = (): ReactElement => {
       });
     };
 
-    socket?.emit(SocketEvents.JOIN_GROUP, { groupIds });
+    socket?.emit(SocketEvents.JOIN_GROUP, msgpack.encode({ groupIds }));
 
     socket?.on(SocketEvents.IS_TYPING, handleIsTyping);
 
@@ -223,7 +221,7 @@ export const Home = (): ReactElement => {
 
       socket?.off(SocketEvents.SEND_PRIVATE_MESSAGE, handleRecieveMessage);
 
-      socket?.emit(SocketEvents.LEAVE_GROUP, { groupIds });
+      socket?.emit(SocketEvents.LEAVE_GROUP, msgpack.encode({ groupIds }));
 
       socket?.off(SocketEvents.DELETE_MESSAGE, handleDeleteMessage);
 
